@@ -1,0 +1,106 @@
+\documentclass{report}
+\usepackage{setspace}
+%\usepackage{subfigure}
+
+\pagestyle{plain}
+\usepackage{amssymb,graphicx,color}
+\usepackage{amsfonts}
+\usepackage{latexsym}
+\usepackage{a4wide}
+\usepackage{amsmath}
+\usepackage{cancel}
+
+\usepackage{tikz}
+\usetikzlibrary{bayesnet}
+\usetikzlibrary{arrows}
+\usetikzlibrary{calc}
+\usetikzlibrary{shadows}
+\usetikzlibrary{positioning}
+
+\newtheorem{theorem}{THEOREM}
+\newtheorem{lemma}[theorem]{LEMMA}
+\newtheorem{corollary}[theorem]{COROLLARY}
+\newtheorem{proposition}[theorem]{PROPOSITION}
+\newtheorem{remark}[theorem]{REMARK}
+\newtheorem{definition}[theorem]{DEFINITION}
+\newtheorem{fact}[theorem]{FACT}
+
+\newtheorem{problem}[theorem]{PROBLEM}
+\newtheorem{exercise}[theorem]{EXERCISE}
+\def \set#1{\{#1\} }
+
+\newenvironment{proof}{
+PROOF:
+\begin{quotation}}{
+$\Box$ \end{quotation}}
+
+\newcommand{\Phu}[1]{{\bf \color{red} [[Phu: #1]]}}
+
+\newcommand{\nats}{\mbox{\( \mathbb N \)}}
+\newcommand{\rat}{\mbox{\(\mathbb Q\)}}
+\newcommand{\rats}{\mbox{\(\mathbb Q\)}}
+\newcommand{\reals}{\mbox{\(\mathbb R\)}}
+\newcommand{\ints}{\mbox{\(\mathbb Z\)}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\title{{\vspace{-14em} \includegraphics[scale=0.4]{ucl_logo.png}}\\
+{{\Huge Probabilistic Multi-Agent Reinforcement Learning}}\\
+{\large Optional Subtitle}\\
+}
+\date{Submission date: Day Month Year}
+\author{Phu Sakulwongtana\thanks{
+{\bf Disclaimer:}
+This report is submitted as part requirement for the MY DEGREE at UCL. It is
+substantially the result of my own work except where explicitly indicated in the text.
+\emph{Either:} The report may be freely copied and distributed provided the source is explicitly acknowledged
+\newline  %% \\ messes it up
+\emph{Or:}\newline
+The report will be distributed to the internal and external examiners, but thereafter may not be copied or distributed except with permission from the author.}
+\\ \\
+Name of your degree\\ \\
+Supervisor's name}
+
+
+
+\begin{document}
+ 
+\onehalfspacing
+\maketitle
+\begin{abstract}
+\input{abstract.tex}
+\end{abstract}
+
+\tableofcontents
+\setcounter{page}{1}
+
+\chapter{Notation and Reviews}
+\input{chapters/chapter1.tex}
+
+\chapter{Unified View of Probabilistic Multi-agent Reinforcement Learning}
+\input{chapters/chapter2.tex}
+
+\chapter{Conclusion}
+\begin{itemize}
+    \item Pure Nash Strategy from VIREL
+    \item Graph Neural Network 
+    \item Unified View. 
+    \item Modeling Belief 
+\end{itemize}
+
+\appendix
+
+\bibliographystyle{alpha}
+\bibliography{bibilography}
+
+\chapter{Overview of ELBO, EM and Variational Inference}
+\input{appendix/appendix1.tex}
+
+\chapter{Soft-Q Learning Objective from Probabilistic Interpretation of Reinforcement Learning}
+\input{appendix/appendix2.tex}
+
+\chapter{ROMMEO\cite{tian2019regularized}}\label{ROMMEOFull}
+\input{appendix/appendix3.tex}
+
+\end{document}
