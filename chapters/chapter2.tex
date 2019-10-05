@@ -160,17 +160,15 @@ Substitute agent's action, we can recover optimal opponent model, which is
 \begin{equation}
     \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) = \frac{\exp (N(\boldsymbol{s}, \boldsymbol{a}^{-i})) P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)}{\exp (N(\boldsymbol{s}))}
 \end{equation}
-The extension to stochastic game version can be found in appendix \ref{ROMMEOFull}.
+The extension to stochastic game version can be found in appendix \ref{ROMMEOFull}. This will include derivation of $Q$-function via message passing.
 
-\section{PR2 \cite{wen2019probabilistic}}
-
-\section{Balance Soft Q-Learning \cite{grau2018balancing} \Phu{It is sloppy to define the probability this way, however, it fits the loss given in this work}}
-In this work, the authors use $\beta$ variables to control the semantic of the game and agents' rationality. The game itself is based on centralized reward $\boldsymbol{O}$. 
+\section{Balance Soft Q-Learning \cite{grau2018balancing}}
+In this work, the authors use $\beta$ variables to control the semantic of the game and agents' rationality. The game itself is based on centralized reward $\mathcal{R}_G$.  
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
     \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
-        \node[obs] (o) {$\mathcal{O}$};
+        \node[obs] (o) {$\mathcal{R}_G$};
         \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
         \node[latent, below=of a] (s) {$\boldsymbol{s}$};
         \node[obs, below=of s] (a1) {$\boldsymbol{a}^{-i}$};
@@ -194,36 +192,65 @@ In this work, the authors use $\beta$ variables to control the semantic of the g
 \end{figure}
 We can define the variational distribution to be equal to 
 \begin{equation}
-     q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) = P(s) \cdot P(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) \cdot P(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{op}})
+     q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) = P(\boldsymbol{s}) \cdot P(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) \cdot P(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{op}})
 \end{equation}
 In which, we define the agent's policy and opponent's policy to be 
 \begin{equation}
-     P(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{N_{\text{pl}}(\boldsymbol{s})} \quad \quad P(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{\rho_{\theta}(\boldsymbol{a}^{-i} |\boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{N_{\text{op}}(\boldsymbol{s})}
+     P(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{N_{\text{pl}}(\boldsymbol{s})} \quad \quad P(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{N_{\text{op}}(\boldsymbol{s})}
 \end{equation}
 Similarly, the joint probability distribution that we want to estimate is defined to be 
 \begin{equation}
     \begin{aligned}
-        P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O} = 1, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) = &P(\mathcal{R}_G | s, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\cdot P(s) \cdot \\
+        P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O} = 1, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) = &P(\mathcal{R}_G | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\cdot P(\bold{s}) \cdot \\
         &P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) \cdot P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{opp}}) \cdot \\
         &P(\beta_i) \cdot P(\beta_{-i})
     \end{aligned}
 \end{equation}
-In which, the priors for agent's and opponent is defined to be (slightly abusing a notation)
+In which, the priors for agent and opponent is defined to be (slightly abusing a notation)
 \begin{equation}
     P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{M_{\text{pl}}(\boldsymbol{s})} \quad \quad P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{op}}) = \frac{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{M_{\text{op}}(\boldsymbol{s})}
+\end{equation}
+The normalizing factor is defined in the form of 
+\begin{equation}
+    \int P_{\xi}(x | y)^{\alpha} \ dy
+\end{equation}
+The game reward for agents is defined to be 
+\begin{equation}
+    P(\mathcal{R}_G | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) = \exp \left( \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \right)
 \end{equation}
 Doing the variational approximation, we have that 
 \begin{equation}
     \begin{aligned}
-    
+        &\begin{aligned}[t]
+            \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}})}\Big[ &\log q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) \\
+            &- \log P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O} = 1, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) \Big]
+        \end{aligned} \\
+        &= \begin{aligned}[t]
+            \mathbb{E}\Bigg[\cancel{\log P(\boldsymbol{s})} &+\log \left[\frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{N_{\text{pl}}(\boldsymbol{s})}\right] + \log \left[ \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{N_{\text{op}}(\boldsymbol{s})} \right] \\
+            &- \log\left[\frac{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{M_{\text{pl}}(\boldsymbol{s})}\right] -\log\left[ \frac{P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{M_{\text{op}}(\boldsymbol{s})}\right] \\
+            &- \log P(\mathcal{R}_G | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})-\cancel{\log P(\boldsymbol{s})}  \\
+            &- \cancelto{0}{\log P(\beta_i)} - \cancelto{0}{\log P(\beta_{-i})}\Bigg] 
+        \end{aligned}  \\
+        &=\begin{aligned}[t]
+            \mathbb{E}\Bigg[\frac{1}{\beta_{\text{pl}}}&\log \pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s}) - \log N_{\text{pl}}(\boldsymbol{s}) + \frac{1}{\beta_{\text{op}}}\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s}) - \log N_{\text{op}}(\boldsymbol{s}) \\
+            &- \frac{1}{\beta_{\text{pl}}}\log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) + \log M_{\text{pl}}(\boldsymbol{s})  -\log \frac{1}{\beta_{\text{op}}}P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s}) + \log M_{\text{op}}(\boldsymbol{s}) - \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\Bigg] 
+        \end{aligned} \\
+        &=\begin{aligned}[t]
+            \mathbb{E}\Bigg[ - \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \frac{1}{\beta_{\text{pl}}}\left(\log \frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\right) + \frac{1}{\beta_{\text{op}}} \left(\log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s})}\right) + \cancelto{\text{Constant??}}{\log\left(\frac{M_{\text{pl}}(\boldsymbol{s})M_{\text{op}}(\boldsymbol{s})}{N_{\text{pl}}(\boldsymbol{s})N_{\text{op}}(\boldsymbol{s})}\right)} \Bigg]
+        \end{aligned}
     \end{aligned}
 \end{equation}
+This is equivalent to maximizing the following objective \Phu{Normalizing Factors depend on the parameters SAD}
+\begin{equation}
+    \mathbb{E}\Bigg[ \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_{\text{pl}}}\left(\log \frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\right) - \frac{1}{\beta_{\text{op}}} \left(\log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s})}\right)  \Bigg]
+\end{equation}
 
-$$
-\mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}})}\Big[ \log q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) - \log P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O} = 1, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) \Big]
-$$
+% \section{PR2 \cite{wen2019probabilistic}}
+% For PR2, the graphical model is similar to \cite{tian2019regularized}, therefore, the derivation is similar. 
 
 \section{ROMMEO \cite{tian2019regularized} x Balance Soft Q-Learning \cite{grau2018balancing}}
 
 \section{Probabilistic Model For General Sum Game}
 Most of the models in literature are all based on the centralized value of all agents, while in \cite{grau2018balancing} the type of the game is based on the sign of $\beta_{-i}$, which reflects how the opponent agent itself react based on the centralized value of the game. 
+
+This carves the way for us by defining $\beta_{op}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})$ to be varied according to all agents actions and state. \Phu{VERY VERY WEIRD INITIAL IDEA. This would be a disaster for defining the normalizing factor ?}
