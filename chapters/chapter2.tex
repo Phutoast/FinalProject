@@ -171,7 +171,7 @@ In this work, the authors use $\beta$ variables to control the semantic of the g
         \node[obs] (o) {$\mathcal{R}_G$};
         \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
         \node[latent, below=of a] (s) {$\boldsymbol{s}$};
-        \node[obs, below=of s] (a1) {$\boldsymbol{a}^{-i}$};
+        \node[latent, below=of s] (a1) {$\boldsymbol{a}^{-i}$};
         
         \node [obs, above right=1.3cm of a] (beta)  {$\beta_i$};
         
@@ -250,7 +250,48 @@ This is equivalent to maximizing the following objective \Phu{Normalizing Factor
 
 \section{ROMMEO \cite{tian2019regularized} x Balance Soft Q-Learning \cite{grau2018balancing}}
 
-\section{Probabilistic Model For General Sum Game}
-Most of the models in literature are all based on the centralized value of all agents, while in \cite{grau2018balancing} the type of the game is based on the sign of $\beta_{-i}$, which reflects how the opponent agent itself react based on the centralized value of the game. 
+Now we can merge the idea of both model into one, whereby this will enable \cite{tian2019regularized} to be able to work within the zero-sum domain with known other agent's rationality and intention.
 
-This carves the way for us by defining $\beta_{op}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})$ to be varied according to all agents actions and state. \Phu{VERY VERY WEIRD INITIAL IDEA. This would be a disaster for defining the normalizing factor ?}
+\section{Dealing with Unknown $\beta_{-i}$}
+Now we would like to extend the merge of ROMMEO \cite{tian2019regularized} and Balance Soft Q-Learning \cite{grau2018balancing}, in which, the agent have some belief over the rationality and intention of other agent. This must be employed some inverse reinforcement learning in multi-agent domain, which is extensively studied.
+
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.3cm}]
+        \node[obs] (o) {$\mathcal{O}^i$};
+        \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
+        \node[latent, below=of a] (s) {$\boldsymbol{s}$};
+        \node[latent, below left=1.3cm of s] (a1model) {$\boldsymbol{a}^{-i}_{\text{model}}$};
+        
+        \node[obs, right=2.3cm of a1model] (a1real) {$\boldsymbol{a}^{-i}_{\text{real}}$};
+        \node [obs, above right=1.3cm of a] (beta)  {$\beta_i$};
+        \node [latent, above right=1.5cm of a1real] (beta1)  {$\beta_{-i}$};
+        \node[obs, below=of a1model] (o1) {$\mathcal{O}^{-i}$};
+    
+        \edge {s} {a, a1model, a1real}
+        \edge {beta1} {a1model, a1real}
+        \edge {beta} {a}
+        \edge {a} {o}
+        \edge {o1} {a1model}
+        \path[->]  (a1model)  edge   [bend left=45] node {} (o);
+        \path[->]  (s)  edge   [bend left=30] node {} (o);
+        \path[->]  (o1)  edge   [bend left=60] node {} (o);
+        \path[->]  (a1model)  edge   [bend left=45] node {} (a);
+    \end{tikzpicture}
+    \label{Balancing-Graphical}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    We will model the belief over $\beta_{-i}$, which influences opponent's action, and we will use this value to construct perfect opponent model, such that agent can best response to. \Phu{It would be interesting if we assume that the real action of other agents based on our action (which isn't the case in one step game)}
+    \end{minipage}
+\end{figure}
+
+\blindtext
+
+\section{Probabilistic Model For General Sum Game}
+Most of the models till now are all based on the centralized game rewards of all agents, while in \cite{grau2018balancing} the type of the game is based on the sign of $\beta_{-i}$, which reflects how the opponent agent itself react based on its perspective of the game reward.
+
+This carves the way for us by defining $\beta_{-i}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})$ to be varied according to all agents actions and state. \Phu{VERY VERY WEIRD INITIAL IDEA. This would be a disaster for defining the normalizing factor ?}, notably 
+\begin{equation}
+    \beta_{-i}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) = \frac{R_{-i}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}{R_i(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}
+\end{equation}
