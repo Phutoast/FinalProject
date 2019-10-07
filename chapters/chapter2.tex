@@ -1,8 +1,61 @@
-We will start by formalizing difference graphical models representing our assumptions on agents and their interaction. This will lead to ELBO representing methods in difference literature including:  \cite{tian2019regularized}, \cite{grau2018balancing}, and \cite{wen2019probabilistic}. Furthermore, we will extend this framework to new objective function. Let's start with one-step game, and extending to stochastic game can be shown to be arbitrary.
+We will start by formalizing difference graphical models representing our assumptions on agents and their interaction. This will lead to ELBO representing methods in difference literature mainly:  \cite{tian2019regularized} and \cite{grau2018balancing}. Let's start with a one-step game, and extending to a stochastic game can be shown later.
 
-\section{Single-Step ROMMEO \cite{tian2019regularized}}
+\section{Conceptual Ideas}
+\subsection{\cite{grau2018balancing} is \emph{almost} the answer}
+ROMMEO \cite{tian2019regularized} is based on the fact that the game is fully-cooperative, and therefore, isn't working with the other other side of game spectrum -- zero-sum game. Looking carefully, this is due to its disability to model the perfect opponent to be totally adversary. (We will explore this fact later in the section. \emph{\textbf{Spoiler:} We believe that the graphical model isn't facilitate this}). 
 
-This is based on the perspective of agent $i$.
+Balancing Soft-Q \cite{grau2018balancing}, however, didn't rely on agent having a perfect opponent \emph{model}, instead, training a perfect opponent as another \emph{player}. Conceptually, the ideas between ROMMEO and Balancing Soft-Q are the same: training multi-agent game assuming perfect opponent. The biggest advantage of Balancing Soft-Q is due to the fact that its ability to represent both cooperative game and zero-sum game -- 2 ends of spectrum. Let's take a look at the Loss (There isn't such a thing as ELBO in Balancing Soft-Q but we can \emph{guess} its quantity first. This would be proven to be extremely confusing later on) for one step game: 
+
+\begin{equation}
+    \mathbb{E}\Bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_i} \log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})} - \frac{1}{\beta_{-i}} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}  \Bigg]
+\end{equation}
+We can then derive a optimal policy for both player and the opponent to be 
+
+\begin{equation}
+    \begin{aligned}
+        \pi_{\theta}^*(\boldsymbol{a}^i | \boldsymbol{s}) &= \frac{1}{N_{i}(\boldsymbol{s})} P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) \exp\left( \beta_i R(\boldsymbol{s}, \boldsymbol{a}^i) \right) \\
+        \rho_{\phi}^*(\boldsymbol{a}^{-i} | \boldsymbol{s}) &= \frac{1}{N_{-i}(\boldsymbol{s})} P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) \exp\left( \beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^{-i}) \right)
+    \end{aligned}
+\end{equation}
+And from this we can see that, the agent's policy or its \emph{perception} of the reward, which is based on the value of $\beta$. For instance, If $\beta_{-i}$ is negative, the opponent reward would be shifted to be negative of game reward, marginalized by agent's prior policy, hence creating a zero-sum scenario. Similarly, if $\beta_{-i}$ is small number (either negative or positive), the reward wouldn't matter, and therefore the policy of the opponent is near its prior. This as described in \cite{grau2018balancing} $\beta_{-i}$ indicates both the agent's rationality and its behavior (team or zero-sum).
+
+\begin{tcolorbox}
+\textbf{Lesson 1: } $\beta$ is important, only one variable can tell us almost everything about the opponent, from its behavior toward others to rationality. We will call it a \emph{characteristic variable}. 
+\end{tcolorbox}
+Although there is a way to characterized the notion of non-optimal, we believe that its definition is vague in both ends of the game spectrum, since non-optimal in team game can be either: near to prior (being uniform in this case) or being zero-sum, or not even both and vice versa for zero-sum game. Furthermore, its definition involves too many notion, instead, we will assign the optimality of each action, some are more optimal than the others. 
+
+Even with the success of \cite{grau2018balancing}, there are still a room for improvement and investigation, which we will discuss in the next section.
+
+\subsection{Conceptual problem with \cite{grau2018balancing}}
+
+The biggest problem with \cite{grau2018balancing} isn't with the method itself, but the steps it took to arrived at the objective. Firstly, lets see the objective for bounded rationality in the case of single agent:
+
+\begin{equation}
+    \begin{aligned}
+        &\pi_{\theta}^* = \arg\max_{\theta} \mathbb{E}\left[ R(\boldsymbol{s}, \boldsymbol{a}) \right] \\
+        &\text{s.t } D_{KL}\left[ \pi_{\theta}(\boldsymbol{a} | \boldsymbol{s}) \Big|\Big| P_{\text{prior}}(\boldsymbol{a} | \boldsymbol{s}) \right] \le C
+    \end{aligned}
+\end{equation}
+The objective can either be derived by introducing Lagrange multiplier $\beta$ or probabilistic inference. This can be simply represented via a graphical model \ref{fig:one-step-single agent}
+\begin{figure}[t]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[obs] (o) {$\mathcal{O}^i$};
+        \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
+        \node[latent, below=of a] (s) {$\boldsymbol{s}$};
+    
+        \edge {s} {a}
+        \edge {a} {o}
+        \path[->]  (s)  edge   [bend left=30] node {} (o);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \captionof{figure}{Graphical model of One-Step Single agent reinforcement learning with visible optimality variable.} 
+    \label{fig:one-step-single agent}
+    \end{minipage}
+\end{figure}
+Which in this case, we can arrived at the same objective. However, for multi-agent case, strictly speaking, having difference Lagrange multiplier for each of KL-Divergence term (agent and its opponent) is \emph{impossible} (currently) if we derived the objective from this innocent looking graphical model (see \ref{fig:sad-graphical-balance-q}): 
 
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
@@ -14,284 +67,66 @@ This is based on the perspective of agent $i$.
         \node[latent, below=of s] (a1) {$\boldsymbol{a}^{-i}$};
         \node[obs, below=of a1] (o1) {$\mathcal{O}^{-i}$};
         
-        
-        \path[->]  (o1)  edge   [bend left=45] node {} (a);
         \edge{o1} {a1}
         \edge {s} {a, a1}
         \edge {a} {o}
         \path[->]  (o1)  edge   [bend left=60] node {} (o);
         \path[->]  (a1)  edge   [bend left=45] node {} (o);
-        \path[->]  (a1)  edge   [bend left=30] node {} (a);
         \path[->]  (s)  edge   [bend left=30] node {} (o);
     \end{tikzpicture}
-    \label{ROMMEO-Graphical}
     \end{minipage}%
     \begin{minipage}[t]{0.5\linewidth}
-    Graphical model of One-Step ROMMEO \cite{tian2019regularized}. We can see that the optimality of the agent $\mathcal{O}^{i}$ is based on the optionally of other agents $\mathcal{O}^{-i}$. Furthermore, the action of opponent agents is assumed to be optimal.
+    \captionof{figure}{An attempts to define Balancing Soft-Q learning via graphical model. We can see that the optimality of the agent $\mathcal{O}^{i}$ is based on the optionally of other agents $\mathcal{O}^{-i}$. Furthermore, the action of opponent agents is assumed to be optimal.} 
+    \label{fig:sad-graphical-balance-q}
     \end{minipage}
 \end{figure}
-
-% \begin{figure}[!h]
- 
-% \end{figure}
-Assuming the opponent model is \emph{Optimal} i.e $P(\mathcal{O}^{-i} = 1) = 1$ As we would like to find the variational distribution $q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)$, which can be represented (factorized) as 
-
-\begin{equation}
-    q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1) = \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \cdot \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) \cdot P(\boldsymbol{s})
-\end{equation}
-This implies that ELBO can be found by minimizing the KL-Divergence between $q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)$ and $P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{i} = \mathcal{O}^{-i} = 1)$, where (The joint distribution factorization following \ref{ROMMEO-Graphical})
-
+Let's first define the joint probability of this graphical model 
 \begin{equation}
     \begin{aligned}
-        P(\boldsymbol{s}, \boldsymbol{a}, \boldsymbol{a}^{-i} | \mathcal{O}^{i} = \mathcal{O}^{-i} = 1) &= \frac{P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O}^{i} = 1,  \mathcal{O}^{-i} = 1)}{\int P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O}^{i} = 1,  \mathcal{O}^{-i} = 1) \ d\boldsymbol{s} \ d\boldsymbol{a}^i \ d\boldsymbol{a}^{-i}} \\ 
-        &\propto \begin{aligned}[t]
-            &P(\mathcal{O}^i = 1 | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \cdot P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \cdot \\
-            &P(\boldsymbol{s}) \cdot P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1) \cdot P(\mathcal{O}^{i})
-        \end{aligned}
+        P(\mathcal{O}^i = 1, \boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) = &P(\mathcal{O}^i = 1 | \boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \\
+        &P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) P(\boldsymbol{s}) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) P(\mathcal{O}^{-i} = 1)
     \end{aligned}
 \end{equation}
-
-In \cite{tian2019regularized}, the game is assumed to be fully cooperative game, meaning that we can define the optimality of agent $it$ to be (with respect to opponent being optimal)
-
-\begin{equation}
-    P(\mathcal{O}^i = 1 | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \propto \exp \left( \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \right)
-\end{equation}
-By finding the KL-Divergence between variational distribution and posterior, we have 
-
+Now define the variational distribution. 
 \begin{equation}
     \begin{aligned}
-        \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} &\Big[\log q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1) - \log P(\boldsymbol{s}, \boldsymbol{a}, \boldsymbol{a}^{-i} | \mathcal{O}^{i} = \mathcal{O}^{-i} = 1) \Big] \\
-        &= \begin{aligned}[t]
-                \mathbb{E}\Big[ \log \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) &+ \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) + \cancel{\log P(\boldsymbol{s})} \\
-                &-\log P(\mathcal{O}^i = 1 | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \\
-                &- \log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) - \cancel{\log P(\boldsymbol{s})} \\
-                &- \log P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1) - \log P(\mathcal{O}^{i}) \Big] 
-            \end{aligned} \\
-        &= \begin{aligned}[t]
-                &\mathbb{E}\Big[ \log \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) -  \log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \Big] \\ 
-                &+\mathbb{E}\Big[ \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) - \log P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1) \Big] \\
-                &-\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) -\log 1
-            \end{aligned}
-    \end{aligned} 
-\end{equation}
-This is equal to maximizing the following objective as defined in \cite{tian2019regularized}, with single step (Where the authors defined $P_{\text{prior}}$ to be uniform distribution over actions)
-\begin{equation}
-    \begin{aligned}
-        \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)}\bigg[R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) &- \frac{1}{\beta} D_{KL} \Big(\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \Big|\Big| P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \Big)  \\
-        & - \frac{1}{\beta} D_{KL} \Big( \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) \Big|\Big| P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1) \Big)\bigg]
+        q(\boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) = \pi_{\theta} (\boldsymbol{a}^i | \boldsymbol{s}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) P(\boldsymbol{s}) P(\mathcal{O}^{-i} = 1)
     \end{aligned}
 \end{equation}
-From this objective, we can now derived the closed form solution of $\pi_{\theta}$ and $\rho_{\phi}$. This would be a foundation for extending this framework into stochastic game. The derivation of $\pi_{\theta}$ and $\rho_{\phi}$ follows from \cite{levine2018reinforcement}, which we make it more explicit for multi-agent case. 
-\noindent
-Starting with defining the normalizing term, in which is a constant with respect to $\boldsymbol{a}^i$, calling it $N(\boldsymbol{s}, \boldsymbol{a}^{-i})$, where its value will be clear after the derivation.
-
+Let the optimality of the agent be defined, given that the opponent is optimal to be  
 \begin{equation}
+    P(\mathcal{O}^i = 1 | \boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) = \exp\Big( \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \Big)
+\end{equation}
+Now we can see where the variable $\beta$ is coming from. Let's proceed. With this, the ELBO can be found by minimizing KL-Divergence between variational distribution and joint probability:
+\begin{equation*}
     \begin{aligned}
         &\begin{aligned}[t]
-            \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} &\Big[ \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \log \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) + \log  P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \\
-            & - \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) + \log P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1) \\
-            &+ N(\boldsymbol{s}, \boldsymbol{a}^{-i}) - N(\boldsymbol{s}, \boldsymbol{a}^{-i}) \Big]
+            \mathbb{E}_{q(\boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)} \bigg[ &\log \pi_{\theta} (\boldsymbol{a}^i | \boldsymbol{s}) + \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) + \cancel{\log P(\boldsymbol{s})} + \cancel{\log P(\mathcal{O}^{-i} = 1)}  \\
+            &-\log \exp\Big( \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \Big) - \log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) - \cancel{\log  P(\boldsymbol{s})} \\
+            &- \log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) -\log \cancel{P(\mathcal{O}^{-i} = 1)} \bigg]
         \end{aligned} \\
         &= \begin{aligned}[t]
-            &\mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} [N(\boldsymbol{s}, \boldsymbol{a}^{-i})] \\
-            &-\begin{aligned}[t]
-                \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} \Big[&-\log \exp\left( \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\right) + \log \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \\
-                &-\log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) + \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) \\
-                &-\log P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)  + \log \exp \left(N(\boldsymbol{s}, \boldsymbol{a}^{-i})\right)\Big]
-            \end{aligned}   
-        \end{aligned} \\
-        &= \begin{aligned}[t]
-            &\mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} [N(\boldsymbol{s}, \boldsymbol{a}^{-i})] \\
-            &\begin{aligned}[t]
-                -\mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}^i, \boldsymbol{a}^{-i})}\Big[ \mathbb{E}_{a^i \sim \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{a}^{-i}, \boldsymbol{s})}&\Big[ \log \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{a}^{-i}, \boldsymbol{s}) - \Big[\log\exp\left(\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\right) \\
-                &+ \log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) - \log \exp \left(N(\boldsymbol{s}, \boldsymbol{a}^{-i})\right)\Big]\Big] \\
-                &+ \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) - P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)\Big]
-            \end{aligned}
-        \end{aligned} \\
-        &= \begin{aligned}[t]
-                &\mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} [N(\boldsymbol{s}, \boldsymbol{a}^{-i})] \\
-                &\begin{aligned}[t]
-                    -\mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}^i, \boldsymbol{a}^{-i})}\bigg[ &D_{KL}\left( \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \bigg|\bigg| \frac{\exp (\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}))}{\exp( N(\boldsymbol{s}, \boldsymbol{a}^{-i}))} P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \right) \\
-                    &+ \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) - P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)\bigg]
-                \end{aligned}
-            \end{aligned} \\
-    \end{aligned} 
-\end{equation}
-We can see that if we want to maximize this with respect to $\pi_{\theta}$, we only have to minimizes KL-Divergence, which we have to set 
-\begin{equation}
-    \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) = \frac{\exp (\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)}{\exp( N(\boldsymbol{s}, \boldsymbol{a}^{-i}))}
-\end{equation}
-The normalizing factor is trivial to find, which is equal to 
-\begin{equation}
-    N(\boldsymbol{s}, \boldsymbol{a}^{-i}) = \log \int_{\mathcal{A}^i} \exp (\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \ da^{i}
-\end{equation}
-For the optimal opponent model, we first find  $\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1)$ using the same technique/loss 
-
-\begin{equation}
-    \begin{aligned}
-        &\begin{aligned}[t]
-            &\mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} [N(\boldsymbol{s})] \\
-            &-\begin{aligned}[t]
-                \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} \Big[&-\log \exp\left( \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\right) + \log \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \\
-                &-\log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) + \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) \\
-                &-\log P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)  + \log \exp \left(N(\boldsymbol{s})\right)\Big]
-            \end{aligned}   
-        \end{aligned} \\
-        &= \begin{aligned}[t]
-            \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} \Big[ \mathbb{E}_{(\boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{a}^i, \boldsymbol{a}^{-i})} &\Big[ \log \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) + \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) \\
-            - &\Big[ \log\exp\left(\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\right) + \log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \\
-            & - \log \exp \left(N(\boldsymbol{s})\right) + \log P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1) \Big]\Big] \Big]
-        \end{aligned} \\
-        &= \begin{aligned}[t]
-            \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i} | \mathcal{O}^{-i} = 1)} \Bigg[ D_{KL}\Bigg( &\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) \Bigg|\Bigg| \\
-            &\frac{\exp\left(\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\right)P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)}{\exp (N(\boldsymbol{s}))} \Bigg)\Bigg]
+            \mathbb{E}_{q(\boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)} \bigg[ &- \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \log \pi_{\theta} (\boldsymbol{a}^i | \boldsymbol{s}) + \log \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}) \\
+            &-\log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) - \log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) \bigg]
         \end{aligned}
     \end{aligned}
-\end{equation}
-We can recover the normalizing factor $N(\boldsymbol{s})$ to be equal to 
+\end{equation*}
+This can be seen as maximizing of the following objective 
 \begin{equation}
-    \log \int_{\mathcal{A}^i} \int_{\mathcal{A}^{-i}} \exp\left(\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\right)P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1) \  d\boldsymbol{a}^{-i} \ d\boldsymbol{a}^i
+    \mathbb{E}_{q(\boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)} \bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \frac{1}{\beta} \log \frac{\pi_{\theta} (\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}  + \frac{1}{\beta} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1)} \bigg]
 \end{equation}
-Hence, we have the joint probability distribution to be equal to 
-\begin{equation}
-    \pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) = \frac{\exp\left(\beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\right)P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)}{\exp (N(\boldsymbol{s}))}
-\end{equation}
-Substitute agent's action, we can recover optimal opponent model, which is 
-\begin{equation}
-    \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) = \frac{\exp (N(\boldsymbol{s}, \boldsymbol{a}^{-i})) P(\boldsymbol{a}^{-i} |\boldsymbol{s}, \mathcal{O}^{-i} = 1)}{\exp (N(\boldsymbol{s}))}
-\end{equation}
-The extension to stochastic game version can be found in appendix \ref{ROMMEOFull}. This will include derivation of $Q$-function via message passing.
+Superficially, the objective looks striking similar to Balancing Soft-Q objective, however, the nature of $\beta$ for each KL-divergence are difference.  This leads to an opponent model that resembles the value viewed by the agent, since $\beta$ are the same for both agent's and opponent model. This leads to a main problem we are trying to solve: \textbf{How to inject opponent's characteristic into our graphical model without relying on Lagrange multiplier ?}
 
-\section{Balance Soft Q-Learning \cite{grau2018balancing}}
-In this work, the authors use $\beta$ variables to control the semantic of the game and agents' rationality. The game itself is based on centralized reward $\mathcal{R}_G$.  
-\begin{figure}[ht]
-    \begin{minipage}[t]{0.5\linewidth}
-    \centering
-    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
-        \node[obs] (o) {$\mathcal{R}_G$};
-        \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
-        \node[latent, below=of a] (s) {$\boldsymbol{s}$};
-        \node[latent, below=of s] (a1) {$\boldsymbol{a}^{-i}$};
-        
-        \node [obs, above right=1.3cm of a] (beta)  {$\beta_i$};
-        
-        \node [obs, above right=1.3cm of a1] (beta1)  {$\beta_{-i}$};
-    
-        \edge {s} {a, a1}
-        \edge {beta1} {a1}
-        \edge {beta} {a}
-        \edge {a} {o}
-        \path[->]  (a1)  edge   [bend left=45] node {} (o);
-        \path[->]  (s)  edge   [bend left=30] node {} (o);
-    \end{tikzpicture}
-    \label{Balancing-Graphical}
-    \end{minipage}%
-    \begin{minipage}[t]{0.5\linewidth}
-    Graphical model of One-Step of the algorithm defined in  \cite{grau2018balancing}. We can see that in this work, authors doesn't assume optimality of opponent model. Instead, they assume that the action of the opponent is known. Further more, the $\beta$-value is also known to agents and their opponent.
-    \end{minipage}
-\end{figure}
-We can define the variational distribution to be equal to 
-\begin{equation}
-     q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) = P(\boldsymbol{s}) \cdot P(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) \cdot P(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{op}})
-\end{equation}
-In which, we define the agent's policy and opponent's policy to be 
-\begin{equation}
-     P(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{N_{\text{pl}}(\boldsymbol{s})} \quad \quad P(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{N_{\text{op}}(\boldsymbol{s})}
-\end{equation}
-Similarly, the joint probability distribution that we want to estimate is defined to be 
-\begin{equation}
-    \begin{aligned}
-        P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O} = 1, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) = &P(\mathcal{R}_G | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\cdot P(\bold{s}) \cdot \\
-        &P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) \cdot P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{opp}}) \cdot \\
-        &P(\beta_i) \cdot P(\beta_{-i})
-    \end{aligned}
-\end{equation}
-In which, the priors for agent and opponent is defined to be (slightly abusing a notation)
-\begin{equation}
-    P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \beta_i = \beta_{\text{pl}}) = \frac{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{M_{\text{pl}}(\boldsymbol{s})} \quad \quad P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \beta_i = \beta_{\text{op}}) = \frac{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{M_{\text{op}}(\boldsymbol{s})}
-\end{equation}
-The normalizing factor is defined in the form of 
-\begin{equation}
-    \int P_{\xi}(x | y)^{\alpha} \ dy
-\end{equation}
-The game reward for agents is defined to be 
-\begin{equation}
-    P(\mathcal{R}_G | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) = \exp \left( \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \right)
-\end{equation}
-Doing the variational approximation, we have that 
-\begin{equation}
-    \begin{aligned}
-        &\begin{aligned}[t]
-            \mathbb{E}_{(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \sim q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}})}\Big[ &\log q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) \\
-            &- \log P(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}, \mathcal{O} = 1, \beta_i = \beta_{\text{pl}}, \beta_{-i} = \beta_{\text{op}}) \Big]
-        \end{aligned} \\
-        &= \begin{aligned}[t]
-            \mathbb{E}\Bigg[\cancel{\log P(\boldsymbol{s})} &+\log \left[\frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{N_{\text{pl}}(\boldsymbol{s})}\right] + \log \left[ \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{N_{\text{op}}(\boldsymbol{s})} \right] \\
-            &- \log\left[\frac{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})^{\frac{1}{\beta_{\text{pl}}}}}{M_{\text{pl}}(\boldsymbol{s})}\right] -\log\left[ \frac{P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s})^{\frac{1}{\beta_{\text{op}}}}}{M_{\text{op}}(\boldsymbol{s})}\right] \\
-            &- \log P(\mathcal{R}_G | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})-\cancel{\log P(\boldsymbol{s})}  \\
-            &- \cancelto{0}{\log P(\beta_i)} - \cancelto{0}{\log P(\beta_{-i})}\Bigg] 
-        \end{aligned}  \\
-        &=\begin{aligned}[t]
-            \mathbb{E}\Bigg[\frac{1}{\beta_{\text{pl}}}&\log \pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s}) - \log N_{\text{pl}}(\boldsymbol{s}) + \frac{1}{\beta_{\text{op}}}\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s}) - \log N_{\text{op}}(\boldsymbol{s}) \\
-            &- \frac{1}{\beta_{\text{pl}}}\log P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) + \log M_{\text{pl}}(\boldsymbol{s})  -\log \frac{1}{\beta_{\text{op}}}P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s}) + \log M_{\text{op}}(\boldsymbol{s}) - \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\Bigg] 
-        \end{aligned} \\
-        &=\begin{aligned}[t]
-            \mathbb{E}\Bigg[ - \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \frac{1}{\beta_{\text{pl}}}\left(\log \frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\right) + \frac{1}{\beta_{\text{op}}} \left(\log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s})}\right) + \cancelto{\text{Constant??}}{\log\left(\frac{M_{\text{pl}}(\boldsymbol{s})M_{\text{op}}(\boldsymbol{s})}{N_{\text{pl}}(\boldsymbol{s})N_{\text{op}}(\boldsymbol{s})}\right)} \Bigg]
-        \end{aligned}
-    \end{aligned}
-\end{equation}
-This is equivalent to maximizing the following objective \Phu{Normalizing Factors depend on the parameters SAD}
-\begin{equation}
-    \mathbb{E}\Bigg[ \mathcal{R}_{G}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_{\text{pl}}}\left(\log \frac{\pi_{\theta}(\boldsymbol{a}^i |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\right) - \frac{1}{\beta_{\text{op}}} \left(\log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} |\boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} |\boldsymbol{s})}\right)  \Bigg]
-\end{equation}
+\begin{tcolorbox}
+\textbf{Lesson 2: } Balancing Soft-Q can't be represented in centralized graphical model -- a graphical model that unifying every dependencies from opponent model to agent's policy -- due to difference characteristic of both agent's and opponent's. Also, it is really complex once the interactions grow larger.
+\end{tcolorbox}
 
-% \section{PR2 \cite{wen2019probabilistic}}
-% For PR2, the graphical model is similar to \cite{tian2019regularized}, therefore, the derivation is similar. 
+Furthermore, although Lagrange multiplier's method yields very interesting objective, we didn't see any connection between constrain on KL-Divergence to a behavior of the agent apart from rationality. This comes from the same reason KL-Divergence constraints is introduced in first place -- because we want to limit the rationality of agent alone.
 
-\section{ROMMEO \cite{tian2019regularized} x Balance Soft Q-Learning \cite{grau2018balancing}}
+Let's derive the optimal policy to see, why having difference Lagrange multiplier per each agent works.
 
-Now we can merge the idea of both model into one, whereby this will enable \cite{tian2019regularized} to be able to work within the zero-sum domain with known other agent's rationality and intention.
 
-\section{Dealing with Unknown $\beta_{-i}$}
-Now we would like to extend the merge of ROMMEO \cite{tian2019regularized} and Balance Soft Q-Learning \cite{grau2018balancing}, in which, the agent have some belief over the rationality and intention of other agent. This must be employed some inverse reinforcement learning in multi-agent domain, which is extensively studied.
 
-\begin{figure}[ht]
-    \begin{minipage}[t]{0.5\linewidth}
-    \centering
-    \begin{tikzpicture}[latent/.append style={minimum size=1.3cm}]
-        \node[obs] (o) {$\mathcal{O}^i$};
-        \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
-        \node[latent, below=of a] (s) {$\boldsymbol{s}$};
-        \node[latent, below left=1.3cm of s] (a1model) {$\boldsymbol{a}^{-i}_{\text{model}}$};
-        
-        \node[obs, right=2.3cm of a1model] (a1real) {$\boldsymbol{a}^{-i}_{\text{real}}$};
-        \node [obs, above right=1.3cm of a] (beta)  {$\beta_i$};
-        \node [latent, above right=1.5cm of a1real] (beta1)  {$\beta_{-i}$};
-        \node[obs, below=of a1model] (o1) {$\mathcal{O}^{-i}$};
-    
-        \edge {s} {a, a1model, a1real}
-        \edge {beta1} {a1model, a1real}
-        \edge {beta} {a}
-        \edge {a} {o}
-        \edge {o1} {a1model}
-        \path[->]  (a1model)  edge   [bend left=45] node {} (o);
-        \path[->]  (s)  edge   [bend left=30] node {} (o);
-        \path[->]  (o1)  edge   [bend left=60] node {} (o);
-        \path[->]  (a1model)  edge   [bend left=45] node {} (a);
-    \end{tikzpicture}
-    \label{Balancing-Graphical}
-    \end{minipage}%
-    \begin{minipage}[t]{0.5\linewidth}
-    We will model the belief over $\beta_{-i}$, which influences opponent's action, and we will use this value to construct perfect opponent model, such that agent can best response to. \Phu{It would be interesting if we assume that the real action of other agents based on our action (which isn't the case in one step game)}
-    \end{minipage}
-\end{figure}
 
-\blindtext
+\section{Single-Step ROMMEO \cite{tian2019regularized}}
 
-\section{Probabilistic Model For General Sum Game}
-Most of the models till now are all based on the centralized game rewards of all agents, while in \cite{grau2018balancing} the type of the game is based on the sign of $\beta_{-i}$, which reflects how the opponent agent itself react based on its perspective of the game reward.
-
-This carves the way for us by defining $\beta_{-i}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})$ to be varied according to all agents actions and state. \Phu{VERY VERY WEIRD INITIAL IDEA. This would be a disaster for defining the normalizing factor ?}, notably 
-\begin{equation}
-    \beta_{-i}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) = \frac{R_{-i}(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}{R_i(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}
-\end{equation}
