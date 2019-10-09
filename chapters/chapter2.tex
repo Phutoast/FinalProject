@@ -1,10 +1,14 @@
 We will start by formalizing difference graphical models representing our assumptions on agents and their interaction. This will lead to ELBO representing methods in difference literature mainly:  \cite{tian2019regularized} and \cite{grau2018balancing}. Let's start with a one-step game, and extending to a stochastic game can be shown later.
 
-\section{Conceptual Ideas}
+\section{Literature Review}
 \subsection{\cite{grau2018balancing} is \emph{almost} the answer}
 ROMMEO \cite{tian2019regularized} is based on the fact that the game is fully-cooperative, and therefore, isn't working with the other other side of game spectrum -- zero-sum game. Looking carefully, this is due to its disability to model the perfect opponent to be totally adversary. (We will explore this fact later in the section. \emph{\textbf{Spoiler:} We believe that the graphical model isn't facilitate this}). 
 
-Balancing Soft-Q \cite{grau2018balancing}, however, didn't rely on agent having a perfect opponent \emph{model}, instead, training a perfect opponent as another \emph{player}. Conceptually, the ideas between ROMMEO and Balancing Soft-Q are the same: training multi-agent game assuming perfect opponent. The biggest advantage of Balancing Soft-Q is due to the fact that its ability to represent both cooperative game and zero-sum game -- 2 ends of spectrum. Let's take a look at the Loss (There isn't such a thing as ELBO in Balancing Soft-Q but we can \emph{guess} its quantity first. This would be proven to be extremely confusing later on) for one step game: 
+Balancing Soft-Q \cite{grau2018balancing}, however, didn't rely on agent having a perfect opponent \emph{model}, instead, training a perfect opponent as another \emph{player}. Conceptually, the ideas between ROMMEO and Balancing Soft-Q are the same: training multi-agent game assuming perfect opponent. 
+\begin{tcolorbox}
+\textbf{Lesson 0: }  ROMMEO creates optimal opponent model within agent's scope, although, this can also be replaced with the real opponent, which is also strives to be optimal. The advantage of this is to make training decentralized. \Phu{Correct me if I am wrong}
+\end{tcolorbox}
+The biggest advantage of Balancing Soft-Q is due to the fact that its ability to represent both cooperative game and zero-sum game -- 2 ends of spectrum. Let's take a look at the Loss (There isn't such a thing as ELBO in Balancing Soft-Q but we can \emph{guess} its quantity first. This would be proven to be extremely confusing later on) for one step game: 
 
 \begin{equation}
     \mathbb{E}\Bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_i} \log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})} - \frac{1}{\beta_{-i}} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}  \Bigg]
@@ -28,7 +32,7 @@ Even with the success of \cite{grau2018balancing}, there are still a room for im
 
 \subsection{Conceptual problem with \cite{grau2018balancing}}
 
-The biggest problem with \cite{grau2018balancing} isn't with the method itself, but the steps it took to arrived at the objective. Firstly, lets see the objective for bounded rationality in the case of single agent:
+The biggest problem with \cite{grau2018balancing} isn't with the objective itself, but the steps it took to arrived at the objective. Firstly, lets see the objective for bounded rationality in the case of single agent:
 
 \begin{equation}
     \begin{aligned}
@@ -118,15 +122,76 @@ This can be seen as maximizing of the following objective
 Superficially, the objective looks striking similar to Balancing Soft-Q objective, however, the nature of $\beta$ for each KL-divergence are difference.  This leads to an opponent model that resembles the value viewed by the agent, since $\beta$ are the same for both agent's and opponent model. This leads to a main problem we are trying to solve: \textbf{How to inject opponent's characteristic into our graphical model without relying on Lagrange multiplier ?}
 
 \begin{tcolorbox}
-\textbf{Lesson 2: } Balancing Soft-Q can't be represented in centralized graphical model -- a graphical model that unifying every dependencies from opponent model to agent's policy -- due to difference characteristic of both agent's and opponent's. Also, it is really complex once the interactions grow larger.
+\textbf{Lesson 2: } Opponent Characteristic can't be represented in centralized graphical model -- a graphical model that unifying every dependencies from opponent model to agent's policy -- due to difference characteristic of both agent's and opponent's. Balancing Soft-Q works because it contains separate Lagrange multipliers.
 \end{tcolorbox}
 
-Furthermore, although Lagrange multiplier's method yields very interesting objective, we didn't see any connection between constrain on KL-Divergence to a behavior of the agent apart from rationality. This comes from the same reason KL-Divergence constraints is introduced in first place -- because we want to limit the rationality of agent alone.
+Furthermore, although Lagrange multiplier's method yields very interesting objective, we didn't see any connection between constrain on KL-Divergence to a behavior of the agent apart from its rationality. This conclusion comes from the same reason KL-Divergence constraints is introduced in first place -- because we want to limit the rationality of agent alone. 
 
-Let's derive the optimal policy to see, why having difference Lagrange multiplier per each agent works.
+\begin{tcolorbox}
+\textbf{Lesson 3: } Lagrange multiplier's method doesn't make a lot of senses (explanation needed) + not extensible, therefore we really need a graphical model to explain this.
+\end{tcolorbox}
+\emph{\textbf{Note}: Balancing Soft-Q still got other problems, which we explored later.}  
 
+\subsection{Deriving Optimal Policy for Balancing Soft-Q agent}
+Let's see how to derive the optimal policy from the objective. This will be the common pattern, when we derive others algorithms. Finally, this is based on \cite{levine2018reinforcement} message passing, however, considering only the base case. We would like to find the optimal opponent by maximising the following objective with respect to $\rho_{\phi}$ (We also define a normalizing term/message to be $N(\boldsymbol{s}, \boldsymbol{a}^i)$. The real definition will be clear afterward)
 
+\begin{equation*}
+    \begin{aligned}
+        \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i)}&\bigg[ \mathbb{E}_{q(\boldsymbol{a}^{-i} | \boldsymbol{s})} \bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_{-i}}\log \frac{\rho_{\phi}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}  \bigg] - \frac{1}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})} \bigg] \\
+        &= \begin{aligned}[t]
+            \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i)} \bigg[ \mathbb{E}_{q(\boldsymbol{a}^{-i} | \boldsymbol{s})} \bigg[ R&(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_{-i}}\log \rho_{\phi}(\boldsymbol{a}^i | \boldsymbol{s})  \\
+            &+\frac{1}{\beta_{-i}} \log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) - N(\boldsymbol{s}, \boldsymbol{a}^{i}) + N(\boldsymbol{s}, \boldsymbol{a}^{i}) \bigg] \\
+            &+\frac{1}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})} \bigg]
+        \end{aligned} \\
+        &= \begin{aligned}[t]
+            \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}[N(\boldsymbol{s}, \boldsymbol{a}^i)] - \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i)} \bigg[ \mathbb{E}_{q(\boldsymbol{a}^{-i} | \boldsymbol{s})} \bigg[ -R&(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \frac{1}{\beta_{-i}}\log \rho_{\phi}(\boldsymbol{a}^i | \boldsymbol{s})  \\
+            &-\frac{1}{\beta_{-i}} \log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})+ N(\boldsymbol{s}, \boldsymbol{a}^{i}) \bigg] \\
+            &-\frac{1}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\bigg]
+        \end{aligned} \\
+        &= \begin{aligned}[t]
+            \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}[N(\boldsymbol{s}, \boldsymbol{a}^i)] - \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i)} \bigg[ \mathbb{E}_{q(\boldsymbol{a}^{-i} | \boldsymbol{s})} \bigg[ -\beta_{-i} R&(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \log \rho_{\phi}(\boldsymbol{a}^i | \boldsymbol{s})  \\
+            &-\log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})+ N(\boldsymbol{s}, \boldsymbol{a}^{i}) \bigg] \\
+            &-\frac{\beta_{-i}}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\bigg]
+        \end{aligned}  \\
+        &= \begin{aligned}[t]
+            \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}[N(\boldsymbol{s}, \boldsymbol{a}^i)] - \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i)} \bigg[ \mathbb{E}_{q(\boldsymbol{a}^{-i} | \boldsymbol{s})} \bigg[ &\log \rho_{\phi}(\boldsymbol{a}^i | \boldsymbol{s}) \\
+            &-\bigg[ \beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})   +\log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) - N(\boldsymbol{s}, \boldsymbol{a}^{i}) \bigg] \bigg] \\
+            &-\frac{\beta_{-i}}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\bigg]
+        \end{aligned} \\
+        &= \begin{aligned}[t]
+            \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}[N(\boldsymbol{s}, \boldsymbol{a}^i)] - \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i)} \Bigg[ &D_{KL}\Bigg[ \rho_{\phi}(\boldsymbol{a}^i | \boldsymbol{s}) \Bigg|\Bigg| \frac{\exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}))P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{\exp N(\boldsymbol{s}, \boldsymbol{a}^{i})} \Bigg] \Bigg] \\  &-\frac{\beta_{-i}}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}\bigg]
+        \end{aligned} 
+    \end{aligned}
+\end{equation*}
+\textbf{Note: } We absolve the constant $\beta_{-i}$ inside the normalizing factor. The optimal opponent is then equal to 
+\begin{equation}
+    \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}) = \frac{\exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}))P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{\exp N(\boldsymbol{s}, \boldsymbol{a}^{i})}
+\end{equation}
+This also leads to a normalizing factor of 
+\begin{equation}
+    N(\boldsymbol{s}, \boldsymbol{a}^{i}) = \log \int_{\mathcal{A^{-i}}} \exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}))P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})
+\end{equation}
+We can interpret this as agent's Q-value function based on prior knowledge of opponent \cite{grau2018balancing}. After getting the optimal opponent that is solely based on $R(\boldsymbol{s}, \boldsymbol{a}, \boldsymbol{a}^{-i})$, now we can find the agent optimal policy by substitute this optimal opponent back, and optimize the agent's policy instead.
 
+\begin{equation*}
+    \begin{aligned}
+        &\mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}\bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})  - \frac{1}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}  - \frac{1}{\beta_{-i}}\log \frac{\exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}))\cancel{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}}{\exp N(\boldsymbol{s}, \boldsymbol{a}^{i}) \cancel{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})} } \bigg] \\
+        &= \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}\bigg[ \cancel{R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}  - \frac{1}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}  - \cancel{R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}))} + \underbrace{\frac{1}{\beta_{-i}} \log \exp N(\boldsymbol{s}, \boldsymbol{a}^{i})}_{R(\boldsymbol{s}, \boldsymbol{a}^i)} \bigg]
+    \end{aligned}
+\end{equation*}
 
-\section{Single-Step ROMMEO \cite{tian2019regularized}}
+$$
+\mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})}\bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i) - \frac{1}{\beta_{i}}\log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})} \bigg]
+$$
+
+\section{Unified View}
+\subsection{Single-Step Balancing Soft-Q \cite{grau2018balancing}}
+\subsection{Single-Step ROMMEO \cite{tian2019regularized}}
+\subsection{Single-Step PR2 \cite{wen2019probabilistic}}
+\subsection{Single-Step GR2 \cite{wen2019multi}}
+
+\section{Additional Features}
+\subsection{Belief Over Agent's Characteristic}
+\subsection{Extension to General Sum Game}
+
 
