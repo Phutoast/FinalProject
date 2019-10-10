@@ -2,19 +2,18 @@ We will start by formalizing difference graphical models representing our assump
 
 \section{Literature Review}
 \subsection{\cite{grau2018balancing} is \emph{almost} the answer}
-ROMMEO \cite{tian2019regularized} is based on the fact that the game is fully-cooperative, and therefore, isn't working with the other other side of game spectrum -- zero-sum game. Looking carefully, this is due to its disability to model the perfect opponent to be totally adversary. (We will explore this fact later in the section. \emph{\textbf{Spoiler:} We believe that the graphical model isn't facilitate this}). 
+ROMMEO \cite{tian2019regularized} is based on the fact that the game is fully-cooperative, and therefore, isn't working with the other side of the game spectrum -- zero-sum game. Looking carefully, this is due to its disability to model the perfect opponent to be an adversary. (We will explore this fact later in the section. \emph{\textbf{Spoiler:} We believe that a graphical model doesn't facilitate this}). 
 
-Balancing Soft-Q \cite{grau2018balancing}, however, didn't rely on agent having a perfect opponent \emph{model}, instead, training a perfect opponent as another \emph{player}. Conceptually, the ideas between ROMMEO and Balancing Soft-Q are the same: training multi-agent game assuming perfect opponent. 
+Balancing Soft-Q \cite{grau2018balancing}, on the other hand, doesn't rely on an agent having a perfect opponent \emph{model}, instead, trains a perfect opponent as another \emph{player}. Conceptually, the ideas between ROMMEO and Balancing Soft-Q are the same: training multi-agent game assuming a perfect opponent. 
 \begin{tcolorbox}
-\textbf{Lesson 0: }  ROMMEO creates optimal opponent model within agent's scope, although, this can also be replaced with the real opponent, which is also strives to be optimal. The advantage of this is to make training decentralized. \Phu{Correct me if I am wrong}
+\textbf{Lesson 0: } ROMMEO creates an optimal opponent model within an agent's scope, although, this can also be replaced with the real opponent, that also trains to be optimal. The advantage of this is to make training decentralized. \Phu{Correct me if I am wrong}
 \end{tcolorbox}
-The biggest advantage of Balancing Soft-Q is due to the fact that its ability to represent both cooperative game and zero-sum game -- 2 ends of spectrum. Let's take a look at the Loss (There isn't such a thing as ELBO in Balancing Soft-Q but we can \emph{guess} its quantity first. This would be proven to be extremely confusing later on) for one step game: 
+The biggest advantage of Balancing Soft-Q is due to its ability to represent both cooperative game and zero-sum game -- 2 ends of the spectrum. Let's take a look at the optimizing objective for a one-step game: 
 
 \begin{equation}
     \mathbb{E}\Bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_i} \log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})} - \frac{1}{\beta_{-i}} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}  \Bigg]
 \end{equation}
-We can then derive a optimal policy for both player and the opponent to be 
-
+We can then derive an optimal policy for both player and the opponent to be 
 \begin{equation}
     \begin{aligned}
         \pi_{\theta}^*(\boldsymbol{a}^i | \boldsymbol{s}) &= \frac{1}{N_{i}(\boldsymbol{s})} P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) \exp\left( \beta_i R(\boldsymbol{s}, \boldsymbol{a}^i) \right) \\
@@ -23,18 +22,20 @@ We can then derive a optimal policy for both player and the opponent to be
 \end{equation}
 Throughout the derivation, we will assume $\beta_i$ to be positive. 
 \Phu{Need Revision}
-And from this we can see that, the agent's policy or its \emph{perception} of the reward, which is based on the value of $\beta$. For instance, If $\beta_{-i}$ is negative, the opponent reward would be shifted to be negative of game reward, marginalized by agent's prior policy, hence creating a zero-sum scenario. Similarly, if $\beta_{-i}$ is small number (either negative or positive), the reward wouldn't matter, and therefore the policy of the opponent is near its prior. This as described in \cite{grau2018balancing} $\beta_{-i}$ indicates both the agent's rationality and its behavior (team or zero-sum).
+And from this, we can see that the agent's policy or its \emph{perception} of the reward, which is based on the value of $\beta$. For instance, If $\beta_{-i}$ is negative, the opponent reward would be shifted to be negative of game reward, marginalized by the agent's prior policy, hence creating a zero-sum scenario. Similarly, if $\beta_{-i}$ is a small number (either negative or positive), the reward wouldn't matter, and therefore the policy of the opponent is optimized to be near its prior. As described in \cite{grau2018balancing}, $\beta_{-i}$ indicates both the agent's rationality and its behaviour (team or zero-sum).
 
 \begin{tcolorbox}
-\textbf{Lesson 1: } $\beta$ is important, only one variable can tell us almost everything about the opponent, from its behavior toward others to rationality. We will call it a \emph{characteristic variable}. 
+\textbf{Lesson 1: } $\beta$ is important because it can tell us almost everything about agents in the game, from its behaviour toward others to rationality. We will call it a \emph{characteristic variable}. 
 \end{tcolorbox}
-Although there is a way to characterized the notion of non-optimal, we believe that its definition is vague in both ends of the game spectrum, since non-optimal in team game can be either: near to prior (being uniform in this case) or being zero-sum, or not even both and vice versa for zero-sum game. Furthermore, its definition involves too many notion, instead, we will assign the optimality of each action, some are more optimal than the others. 
+Although there is a way to characterized the notion of non-optimal, we believe that its definition is vague in both ends of the game spectrum, since non-optimal in team game can be either: near to prior (being uniform in this case) or being zero-sum, or not even both and similarly for zero-sum game. 
 
-Even with the success of \cite{grau2018balancing}, there are still a room for improvement and investigation, which we will discuss in the next section.
+% Furthermore, its definition involves too many notion, instead, we will assign the optimality of each action, some are more optimal than the others. 
+
+Even with the success of \cite{grau2018balancing}, there are still rooms for improvement and investigation, which we will discuss in the next section.
 
 \subsection{Conceptual problem with \cite{grau2018balancing}}
 
-The biggest problem with \cite{grau2018balancing} isn't with the objective itself, but the steps it took to arrived at the objective. Firstly, lets see the objective for bounded rationality in the case of single agent:
+The biggest problem with \cite{grau2018balancing} is with the steps it took to arrive at the objective. Firstly, let's see the optimizing objective for bounded rationality in the case of single-agent:
 
 \begin{equation}
     \begin{aligned}
@@ -42,8 +43,8 @@ The biggest problem with \cite{grau2018balancing} isn't with the objective itsel
         &\text{s.t } D_{KL}\left[ \pi_{\theta}(\boldsymbol{a} | \boldsymbol{s}) \Big|\Big| P_{\text{prior}}(\boldsymbol{a} | \boldsymbol{s}) \right] \le C
     \end{aligned}
 \end{equation}
-The objective can either be derived by introducing Lagrange multiplier $\beta$ or probabilistic inference. This can be simply represented via a graphical model \ref{fig:one-step-single agent}
-\begin{figure}[t]
+The objective can either be derived by introducing Lagrange multiplier $\beta$ or by probabilistic inference. For a probabilistic inference, please see \ref{fig:one-step-single agent}, for a graphical model. 
+\begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
     \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
@@ -61,7 +62,7 @@ The objective can either be derived by introducing Lagrange multiplier $\beta$ o
     \label{fig:one-step-single agent}
     \end{minipage}
 \end{figure}
-Which in this case, we can arrived at the same objective. However, for multi-agent case, strictly speaking, having difference Lagrange multiplier for each of KL-Divergence term (agent and its opponent) is \emph{impossible} (currently) if we derived the objective from this innocent looking graphical model (see \ref{fig:sad-graphical-balance-q}): 
+In this case, we can arrive at the same objective as a Lagrange multiplier method. However, for a multi-agent case, strictly speaking, having difference Lagrange multiplier for each of KL-Divergence term (the agent and the opponent) is \emph{impossible} (currently), if we derived the objective from this innocent looking graphical model (see \ref{fig:sad-graphical-balance-q}): 
 
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
@@ -82,11 +83,11 @@ Which in this case, we can arrived at the same objective. However, for multi-age
     \end{tikzpicture}
     \end{minipage}%
     \begin{minipage}[t]{0.5\linewidth}
-    \captionof{figure}{An attempts to define Balancing Soft-Q learning via graphical model. We can see that the optimality of the agent $\mathcal{O}^{i}$ is based on the optionally of other agents $\mathcal{O}^{-i}$. Furthermore, the action of opponent agents is assumed to be optimal.} 
+    \captionof{figure}{Attempt to define Balancing Soft-Q learning via a graphical model. We can see that the optimality of the agent $\mathcal{O}^{i}$ is based on the optionally of other agents $\mathcal{O}^{-i}$. Furthermore, the action of opponent agents is assumed to be optimal.} 
     \label{fig:sad-graphical-balance-q}
     \end{minipage}
 \end{figure}
-Let's first define the joint probability of this graphical model 
+Let's define the joint probability of this graphical model 
 \begin{equation}
     \begin{aligned}
         P(\mathcal{O}^i = 1, \boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) = &P(\mathcal{O}^i = 1 | \boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) \\
@@ -99,11 +100,11 @@ Now define the variational distribution.
         q(\boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) = \pi_{\theta} (\boldsymbol{a}^i | \boldsymbol{s}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1) P(\boldsymbol{s}) P(\mathcal{O}^{-i} = 1)
     \end{aligned}
 \end{equation}
-Let the optimality of the agent be defined, given that the opponent is optimal to be  
+Let the optimality of the agent be defined, given that the opponent is optimal, to be  
 \begin{equation}
     P(\mathcal{O}^i = 1 | \boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1) = \exp\Big( \beta R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \Big)
 \end{equation}
-Now we can see where the variable $\beta$ is coming from. Let's proceed. With this, the ELBO can be found by minimizing KL-Divergence between variational distribution and joint probability:
+Now we can see where the variable $\beta$ is coming from. With this, the ELBO can be found by minimizing KL-Divergence between a variational distribution and joint probability:
 \begin{equation*}
     \begin{aligned}
         &\begin{aligned}[t]
@@ -117,25 +118,25 @@ Now we can see where the variable $\beta$ is coming from. Let's proceed. With th
         \end{aligned}
     \end{aligned}
 \end{equation*}
-This can be seen as maximizing of the following objective 
+The optimizing objective is 
 \begin{equation}
     \mathbb{E}_{q(\boldsymbol{a}^i, \boldsymbol{s}, \boldsymbol{a}^{-i}, \mathcal{O}^{-i} = 1)} \bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \frac{1}{\beta} \log \frac{\pi_{\theta} (\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s})}  + \frac{1}{\beta} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \mathcal{O}^{-i} = 1)} \bigg]
 \end{equation}
-Superficially, the objective looks striking similar to Balancing Soft-Q objective, however, the nature of $\beta$ for each KL-divergence are difference.  This leads to an opponent model that resembles the value viewed by the agent, since $\beta$ are the same for both agent's and opponent model. This leads to a main problem we are trying to solve: \textbf{How to inject opponent's characteristic into our graphical model without relying on Lagrange multiplier ?}
+Superficially, the objective looks striking similar to Balancing Soft-Q objective, however, the nature of $\beta$ for each KL-divergence is different.  This leads to an opponent model that resembles the value viewed by the agent since $\beta$ are the same for both agents and opponent model. This leads to the main problem we are trying to solve: \textbf{How to inject the opponent's characteristic into our graphical model without relying on Lagrange multiplier ?}
 
 \begin{tcolorbox}
-\textbf{Lesson 2: } Opponent Characteristic can't be represented in centralized graphical model -- a graphical model that unifying every dependencies from opponent model to agent's policy -- due to difference characteristic of both agent's and opponent's. Balancing Soft-Q works because it contains separate Lagrange multipliers.
+\textbf{Lesson 2: } Opponent Characteristic can't be represented in centralized graphical model -- a graphical model that unifying every dependency from opponent model to agent's policy -- due to different characteristic of both agent's and opponent's. Balancing Soft-Q works because it contains separate Lagrange multipliers (and 2 stages of optimization)
 \end{tcolorbox}
 
-Furthermore, although Lagrange multiplier's method yields very interesting objective, we didn't see any connection between constrain on KL-Divergence to a behavior of the agent apart from its rationality. This conclusion comes from the same reason KL-Divergence constraints is introduced in first place -- because we want to limit the rationality of agent alone. 
+Furthermore, although Lagrange multiplier's method yields very interesting objective, we didn't see any connection between constraint on KL-Divergence to a behaviour of the agent apart from its bounded rationality. This conclusion comes from the same reason KL-Divergence constraints are introduced in the first place -- because we want to limit the rationality of agent alone. 
 
 \begin{tcolorbox}
-\textbf{Lesson 3: } Lagrange multiplier's method doesn't make a lot of senses (explanation needed) + not extensible, therefore we really need a graphical model to explain this.
+\textbf{Lesson 3: }Lagrange multiplier's method doesn't make a lot of senses (explanation needed) + not extensible, therefore we need a graphical model to explain this.
 \end{tcolorbox}
 \emph{\textbf{Note}: Balancing Soft-Q still got other problems, which we explored later.}  
 
 \subsection{Deriving Optimal Policy for Balancing Soft-Q}
-Let's see how to derive the optimal policy from the objective. This will be the common pattern, when we derive others algorithms. Finally, this is based on \cite{levine2018reinforcement} message passing, however, considering only the base case. We would like to find the optimal opponent by maximising the following objective with respect to $\rho_{\phi}$ (We also define a normalizing term/message to be $N(\boldsymbol{s}, \boldsymbol{a}^i)$. The real definition will be clear afterward)
+Let's see how to derive the optimal policy from the objective. This will be a common pattern when we derive other algorithms. Furthermore, this is based on \cite{levine2018reinforcement} message passing, however, considering only the base case. We would like to find the optimal opponent by maximising the following objective with respect to $\rho_{\phi}$ (We also define a normalizing term/message to be $N(\boldsymbol{s}, \boldsymbol{a}^i)$. The real definition will be clear afterwards)
 
 \begin{equation*}
     \begin{aligned}
@@ -174,7 +175,7 @@ This also leads to a normalizing factor of
 \begin{equation}
     N(\boldsymbol{s}, \boldsymbol{a}^{i}) = \frac{1}{\beta_{-i} }\log \int_{\mathcal{A}^{-i}} \exp(R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}))P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})
 \end{equation}
-We can interpret this as agent's Q-value function based on prior knowledge of opponent \cite{grau2018balancing}. After getting the optimal opponent that is solely based on $R(\boldsymbol{s}, \boldsymbol{a}, \boldsymbol{a}^{-i})$, now we can find the agent optimal policy by substitute this optimal opponent back, and optimize the agent's policy instead.
+We can interpret this as the game's Q-value function based on prior knowledge of opponent \cite{grau2018balancing} in the view of agent's. After getting the optimal opponent that is solely based on $R(\boldsymbol{s}, \boldsymbol{a}, \boldsymbol{a}^{-i})$, now we can find the agent optimal policy by substitute this optimal opponent back, and optimize the agent's policy instead.
 
 \begin{equation*}
     \begin{aligned}
@@ -197,19 +198,18 @@ In order to max the objective we have to set $\pi_{\theta}$ to be equal to
 This corresponds directly to \cite{grau2018balancing} optimal policy. However, if we can see, the term $R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})$ got cancelled due to the Lagrange multiplier on $\log \frac{\rho_{\phi}(\boldsymbol{a}^i | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}$. With this observation and our derivation of Balancing Soft-Q, we can conclude that: 
 
 \begin{tcolorbox}
-\textbf{Lesson 4: }\label{lesson:4} We need to have an \textbf{independent inference method for calculating opponent's model} (if we want to do it in decentralized version). \cite{grau2018balancing} works can be seen as non-decentralized version of ROMMEO (since we directly use \textit{opponent's optimal policy against agent's prior or simply ignore it} the agent's policy should be $\pi(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})$)
+\textbf{Lesson 4: }\label{lesson:4} We need to have an \textbf{independent inference method for calculating opponent's model}. \cite{grau2018balancing} works can be seen as non-decentralized version of ROMMEO (since we directly use \textit{opponent's optimal policy against agent's prior or simply ignore it} the agent's policy should be $\pi(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})$)
 \end{tcolorbox}
 
 \begin{tcolorbox}
-\textbf{Lesson 5: } There are 2 steps we have to make: first finding the extream case of the value function, then we can find a policy.  
+\textbf{Lesson 5: } There are 2 steps we have to make: first finding the extreme case of the value function, then we can find a policy.  
 \end{tcolorbox}
 
 \section{Unified View}
-\subsection{Attempts to split}
-Let's start with a graphical model. Since we are going to split the worlds, we will first find an optimal $\pi(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})$ Playing against an opponent, which may or may not be optimal. Noted that $\mathcal{O}^{-i}$ isn't necessary since locally, given the opponent policy, the most optimal thing is to maximizes its own reward.
-\textbf{BETTER with FACTORED Graph}
+\subsection{ROMMEO with Balancing Soft-Q}
+Since we are going to split the graphical model, we have to find an optimal $\pi(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})$, with the assumption of playing against an unknown opponent (prior of opponent). Furthermore, given the opponent's policy, the most optimal thing for an agent to do is just to maximizes its reward.
 
-\begin{figure}[t]
+\begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
     \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
@@ -278,7 +278,7 @@ Where $N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})$ can be interpreted as the max
 \end{equation}
 Since we found a true $\pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i})$ we know that the optimizing objective is left with only $N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})$, which we can use in finding optimal opponent's policy. But first, let's define the graphical model for opponent's policy.
 
-\begin{figure}[t]
+\begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
     \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
@@ -305,12 +305,13 @@ Since we found a true $\pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsym
 
 Surprisingly, the opponent's policy optimality can be defined to be 
 \begin{equation}
-    P(\mathcal{O}^{-i} = 1 | \boldsymbol{s}, \boldsymbol{a}^{-i}) = \exp(\beta_{-i} N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i}))
+    P(\mathcal{O}^{-i} = 1 | \boldsymbol{s}, \boldsymbol{a}^{-i}) = \exp\left(\frac{\beta_{-i}}{\beta_{i}} N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})\right)
 \end{equation}
 This can be justified in 2 ways 
 \begin{itemize}
-    \item This is based on \cite{grau2018balancing}, where it states that in action selection for the opponent model (in this case), "depends on the action of the our actor(other agent), which is unknown a priori". Strictly speaking, this is also based on the $\arg\max\text{ext}$ of value function (what we have left from maximizing agent's return from previous graphical model). 
-    \item Having $\beta_i$ implies that the characteristic of the opponent model is based on the soft-maximum of agent's return. (aka. best at what prior agent can do) If $\beta_{-i}$ is negative then the selection of the action will be the one that would make the agent's return smallest and vice versa. Furthermore, having small $\beta_{-i}$ leads to policy that should be near the opponent model's prior.
+    \item This is based on \cite{grau2018balancing}, where it states that inaction selection for the opponent model  "depends on the action of our actor, which is unknown a priori". Strictly speaking, this is also based on the $\arg\max\text{ext}$ of the value function (what we have left from maximizing agent's return from a previous graphical model is the $\max$ of the value function). 
+    \item Having $\beta_{-i}$ implies that the opponent model will have the characteristic, which is based on the soft-maximum of game's return given the prior over agent's behaviour (since we also "normalized by" $\frac{1}{\beta_i}$). 
+    The Normalizing term $\frac{1}{\beta_{\pm i}}$ becomes important with the case of PR2's\cite{wen2019probabilistic} opponent model $\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a})$ in zero sum game, since, without this normalizing term $N(\boldsymbol{s}, \boldsymbol{a}^{i})$ will be based on soft-maximum of oppoent's return, which isn't what we intended to be (since the most optimal for an agent is to reduce the return or maximizes game's reward).
 \end{itemize}
 With this, we can define the joint distribution to be 
 \begin{equation}
@@ -320,19 +321,21 @@ The variational distribution is
 \begin{equation}
     P(\boldsymbol{s}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})
 \end{equation}
+% Then the approximate variational inference becomes 
+
 Finally, we can set 
 \begin{equation}
-    \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}) = \frac{\exp(\beta_{-i} N(\boldsymbol{s}, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{\exp N(\boldsymbol{s})}
+    \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}) = \frac{\exp\left(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}\right)}{\exp N(\boldsymbol{s})}
 \end{equation}
 where 
 \begin{equation}
-    N(\boldsymbol{s}) = \log \int_{\mathcal{A}^{-i}} \exp(\beta_{-i} N(\boldsymbol{s}, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})
+    N(\boldsymbol{s}) = \log \int_{\mathcal{A}^{-i}} \exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) \quad \text{ and } \quad  R(\boldsymbol{s}, \boldsymbol{a}^{-i}) = \frac{1}{\beta_{i}}N(\boldsymbol{s}, \boldsymbol{a}^{-i})
 \end{equation}
 We can show that ROMMEO with the following objective 
 \begin{equation}
     \mathbb{E}\Bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_i} \log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})} - \frac{1}{\beta_{-i}} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}  \Bigg]
 \end{equation}
-Yields the same result. Thus, we have ROMMEO that works for both zero-sum game and team game, represented in a separates graphical model. 
+Yields almost the same result. Thus, we have ROMMEO that works for both zero-sum game and team game, represented in a separates graphical model. 
 % \subsection{ROMMEO with Balanced-Q}
 
 % \begin{equation}
