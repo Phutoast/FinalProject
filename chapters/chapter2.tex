@@ -214,9 +214,9 @@ Since we are going to split the graphical model, we have to find an optimal $\pi
     \centering
     \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
         \node[obs] (o) {$\mathcal{O}^i$};
-        \node[obs, below=of o] (a) {$\boldsymbol{a}^i$};
+        \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
         \node[latent, below=of a] (s) {$\boldsymbol{s}$};
-        \node[latent, right=of a] (a1) {$\boldsymbol{a}^{-i}$};
+        \node[obs, right=of a] (a1) {$\boldsymbol{a}^{-i}$};
         % \node[latent, right=2.3cm of o] (o1) {$\mathcal{O}^{-i}$};
         
         % above right=1.3cm of a
@@ -224,7 +224,7 @@ Since we are going to split the graphical model, we have to find an optimal $\pi
         \edge {s} {a, a1}
         \edge {a} {o}
         % \edge {o1} {o, a1}
-        % \edge {a1} {a}
+        \edge {a1} {a}
         \edge {a1} {o}
         \path[->]  (s)  edge   [bend left=30] node {} (o);
     \end{tikzpicture}
@@ -336,7 +336,100 @@ We can show that ROMMEO with the following objective
     \mathbb{E}\Bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_i} \log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})} - \frac{1}{\beta_{-i}} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}  \Bigg]
 \end{equation}
 Yields almost the same result. Thus, we have ROMMEO that works for both zero-sum game and team game, represented in a separates graphical model. 
-% \subsection{ROMMEO with Balanced-Q}
+
+\subsection{PR2 with Balanced-Q}
+Similarly, the graphical model is defined to be, however, now, we would like to find the model of the opponent first. 
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[obs] (o) {$\mathcal{O}^{-i}$};
+        \node[obs, below=of o] (a) {$\boldsymbol{a}^i$};
+        \node[latent, below=of a] (s) {$\boldsymbol{s}$};
+        \node[latent, right=of a] (a1) {$\boldsymbol{a}^{-i}$};
+        % \node[latent, right=2.3cm of o] (o1) {$\mathcal{O}^{-i}$};
+        
+        % above right=1.3cm of a
+        
+        \edge {s} {a, a1}
+        \edge {a} {o}
+        % \edge {o1} {o, a1}
+        \edge {a} {a1}
+        \edge {a1} {o}
+        \path[->]  (s)  edge   [bend left=30] node {} (o);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \captionof{figure}{Graphical model of splitted graphical model for opponent model's policy. } 
+    % \label{fig:}
+    \end{minipage}
+\end{figure}
+This leads to the following joint probability distribution:
+\begin{equation}
+    P(\boldsymbol{s})P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}) P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) P(\mathcal{O}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i}, \boldsymbol{a}^{-i})
+\end{equation}
+The variational distribution is then be 
+\begin{equation}
+    P(\boldsymbol{s}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}) P_{\text{prior}} (\boldsymbol{a}^i | \boldsymbol{s})
+\end{equation}
+Doing the variational inference yields. 
+\begin{equation}
+    \rho_{\phi} (\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i}) = \frac{\exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i})}{ \exp N^{-i}(\boldsymbol{s}, \boldsymbol{a}^{i})}
+\end{equation}
+where, we have that 
+\begin{equation}
+    N^{-i}(\boldsymbol{s}, \boldsymbol{a}^{i}) = \log \int_{\mathcal{A}^{-i}} \exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i})
+\end{equation}
+This is analogous to result presented in \cite{wen2019probabilistic}. Similarly, for the agent itself, the graphical model is defined to be 
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[obs] (o) {$\mathcal{O}^{i}$};
+        \node[latent, below=of o] (a1) {$\boldsymbol{a}^{i}$};
+        \node[latent, below=of a1] (s) {$\boldsymbol{s}$};
+        % \node[latent, right=2.3cm of o] (o1) {$\mathcal{O}^{-i}$};
+        
+        % above right=1.3cm of a
+        
+        \edge {s} {a1}
+        % \edge {a} {o}
+        % \edge {o1} {o, a1}
+        % \edge {a1} {a}
+        \edge {a1} {o}
+        \path[->]  (s)  edge   [bend left=30] node {} (o);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \captionof{figure}{Graphical model of splitted graphical model for agent's policy. } 
+    % \label{fig:}
+    \end{minipage}
+\end{figure}
+
+\noindent
+Where, we now define the agent's optimality to be 
+\begin{equation}
+    P(\mathcal{O}^i = 1 | \boldsymbol{s}, \boldsymbol{a}) = \exp\left( \frac{\beta_i}{\beta_{-i}} N^{-i}(\boldsymbol{s}, \boldsymbol{a}^{i}) \right) 
+\end{equation}
+With this leads to the following agent's policy 
+\begin{equation}
+    \pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s}) = \frac{\exp( \beta_i R(\boldsymbol{s}, \boldsymbol{a}^{i})) P_{\text{prior}}(\boldsymbol{a}^{i}  | \boldsymbol{s})}{\exp N(\boldsymbol{s})}
+\end{equation}
+Where $N(\boldsymbol{s})$ and $R(\boldsymbol{s}, \boldsymbol{a})$ is defined to be 
+\begin{equation}
+    N(\boldsymbol{s}) = \log \int_{\mathcal{A}^i} \exp( \beta_i R(\boldsymbol{s}, \boldsymbol{a}^{i})) P_{\text{prior}}(\boldsymbol{a}^{i}  | \boldsymbol{s}) \quad \text{ and } \quad R(\boldsymbol{s}, \boldsymbol{a}^i) = \frac{1}{\beta_{-i}} N(\boldsymbol{s}, \boldsymbol{a}^i)
+\end{equation}
+
+
+\section{Agent with learnt prior (mutual information maximization)}
+
+\section{Extension to N-Agents}
+
+\section{Belief Over $\beta$s}
+
+\section{General sum game -- learned Q-function}
+
+\section{Public Belief on Cooperative game}
 
 % \begin{equation}
 %     \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^{-i}, \boldsymbol{a}^{-i})}
