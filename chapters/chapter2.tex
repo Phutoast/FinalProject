@@ -206,259 +206,310 @@ This corresponds directly to \cite{grau2018balancing} optimal policy. However, i
 \end{tcolorbox}
 
 \section{Unified View}
-\subsection{ROMMEO with Balancing Soft-Q}
-Since we are going to split the graphical model, we have to find an optimal $\pi(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})$, with the assumption of playing against an unknown opponent (prior of opponent). Furthermore, given the opponent's policy, the most optimal thing for an agent to do is just to maximizes its reward.
+
+\noindent
+The reasoning is the following, which is repeatable.
+\begin{enumerate}
+    \item We assume we know the optimal opponent model $\rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)$, at first iteration it can be just a \textbf{prior} of the opponent of the agent.  
+    \item After we found the optimal agent model, we can now find the agent  $\pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{a}^{-i}_t, \boldsymbol{s}_t)$. This is analogous to the $\text{ext}_{\pi_{\theta}}$ operation in \cite{grau2018balancing}
+    \item We can use the result from the optimal agent model $\pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{a}^{-i}_t, \boldsymbol{s}_t)$ to find **better** optimal opponent model. (\textbf{Might need a proof of improvement}). This is analogous to $\arg\max_{\rho}$ operation
+    \item We are not sure its connection to the fictitious play in \cite{1591992}. 
+\end{enumerate}
+
+\subsection{Deriving Agent's Policy}
+Starting with finding the agent's policy: 
 
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
     \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
-        \node[obs] (o) {$\mathcal{O}^i$};
-        \node[latent, below=of o] (a) {$\boldsymbol{a}^i$};
-        \node[latent, below=of a] (s) {$\boldsymbol{s}$};
-        \node[obs, right=of a] (a1) {$\boldsymbol{a}^{-i}$};
-        % \node[latent, right=2.3cm of o] (o1) {$\mathcal{O}^{-i}$};
+        \node[obs] (ot) {$\mathcal{O}^{i}_t$};
+        \node[latent, below=of ot] (at) {$\boldsymbol{a}^{i}_t$};
+        \node[latent, below=of at] (st) {$\boldsymbol{s}_t$};
+        \node[obs, right=of at] (a1t) {$\boldsymbol{a}^{-i}_t$};
         
+        \node[latent, right=3.5cm of st] (st1) {$\boldsymbol{s}_{t+1}$};
+        \node[latent, above=of st1] (at1) {$\boldsymbol{a}^{i}_{t+1}$};
+        
+        \node[obs, above=of at1] (ot1) {$\mathcal{O}^{i}_{t+1}$};
+        \node[obs, right=of at1] (a1t1) {$\boldsymbol{a}^{-i}_{t+1}$};
+        \node[latent, right=3.5cm of st1] (st2) {$\boldsymbol{s}_{t+2}$};        
         % above right=1.3cm of a
+        \edge {at, a1t} {ot}
+        \edge {st, a1t} {st1}
+        \edge {st} {a1t}
         
-        \edge {s} {a, a1}
-        \edge {a} {o}
-        % \edge {o1} {o, a1}
-        \edge {a1} {a}
-        \edge {a1} {o}
-        \path[->]  (s)  edge   [bend left=30] node {} (o);
+        \edge{at1, a1t1} {ot1}
+        \edge{st1} {a1t1}
+        
+        \edge {st1, a1t1} {st2}
+        
+        \path[->]  (st)  edge   [bend left=30] node {} (ot);
+        \path[->]  (st1)  edge   [bend left=30] node {} (ot1);
+        \path[->]  (at)  edge   [bend right=20] node {} (st1);
+        
+        \path[->]  (at1)  edge   [bend right=20] node {} (st2);
     \end{tikzpicture}
     \end{minipage}%
     \begin{minipage}[t]{0.5\linewidth}
-    \captionof{figure}{Graphical model of splitted graphical model for agent's policy. } 
-    % \label{fig:}
+    \captionof{figure}{Graphical model. We want to approximate. We assume that we knows what the opponent should be. In this case, we know the opponent model} 
     \end{minipage}
 \end{figure}
-Start with finding the joint probability of the graphical model.
-\begin{equation}
-    P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i}) P(\boldsymbol{s}) P(\mathcal{O}^i = 1 | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})
-\end{equation}
-We can see that the variational distribution can be defined as: (assuming that the )
-\begin{equation}
-    P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) \pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i}) P(\boldsymbol{s})
-\end{equation}
-Then the approximate variational inference can be done by minimising the KL-Divergence, hence, we have the following objective 
-
+\noindent
+We can see that the joint probability is equal to 
 \begin{equation}
     \begin{aligned}
-        &\begin{aligned}
-            \mathbb{E}_{q(\boldsymbol{a}^{i}, \boldsymbol{a}^{-i}, \boldsymbol{s})}\bigg[&\cancel{\log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})} + \log \pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i}) + \log \cancel{P(\boldsymbol{s})} - \log P_{\text{prior}}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i}) \\
-            &- \cancel{\log P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})} - \cancel{\log P(\boldsymbol{s})} -\log P(\mathcal{O}^i = 1 | \boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) \bigg]
-        \end{aligned} \\ 
-        &= \mathbb{E}_{q(\boldsymbol{a}^{i}, \boldsymbol{a}^{-i}, \boldsymbol{s})}\bigg[ -\beta_i R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) + \log \frac{\pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{-i})} \bigg] \\ 
+        P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1} &P(\mathcal{O}^i_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) P_{\text{prior}}(\boldsymbol{a}^i_t) \\
+        &P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t})  \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
     \end{aligned}
 \end{equation}
-This is equal to maximizing the following objective 
+We will define the optimality of the agent to be equal to
 \begin{equation}
-    \mathbb{E}_{q(\boldsymbol{a}^{i}, \boldsymbol{a}^{-i}, \boldsymbol{s})}\bigg[\beta_i R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \log \frac{\pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{-i})} \bigg]
+    P(\mathcal{O}_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \propto \exp\left( \beta_i R_G(\boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \right)
 \end{equation}
-We can find the solution in a closed form by having 
-\begin{equation}
-    \begin{aligned}
-        &\mathbb{E}_{q(\boldsymbol{a}^{i}, \boldsymbol{a}^{-i}, \boldsymbol{s})}\bigg[\beta_i R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \log \frac{\pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i})}{P_{\text{prior}}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i})} + N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i}) - N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i}) \bigg] \\
-        & = \begin{aligned}[t]
-            \mathbb{E}_{q(\boldsymbol{a}^{i}, \boldsymbol{a}^{-i}, \boldsymbol{s})}&\bigg[ N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i}) \bigg] - \mathbb{E}_{q(\boldsymbol{a}^{i}, \boldsymbol{a}^{-i}, \boldsymbol{s})}\bigg[ \log \pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i}) \\
-            &- \bigg[ \log \exp\Big(\beta_i R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})\Big) - \log \exp N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i}) + \log P_{\text{prior}}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i})  \bigg] \bigg]
-        \end{aligned} \\
-        &= \mathbb{E}_{q(\boldsymbol{a}^{i}, \boldsymbol{a}^{-i}, \boldsymbol{s})}\left[ N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i}) \right] - \mathbb{E}_{q(\boldsymbol{a}^{-i}, \boldsymbol{s})}\left[ D_{KL}\left[ \pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i}) \Bigg|\Bigg| \frac{\exp(\beta_i R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i})}{ \exp N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})} \right]\right] 
-    \end{aligned}
-\end{equation}
-We can see that, we can easily see that if want to maximizes the equation, we can set 
-\begin{equation}
-    \pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i}) = \frac{\exp(\beta_i R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i})}{ \exp N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})}
-\end{equation}
-Where $N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})$ can be interpreted as the max expected return of the agent given the current state and opponent action based on agent's prior action.
-\begin{equation}
-    N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i}) = \log \int \exp(\beta_i R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{i} | \boldsymbol{s}, \boldsymbol{a}^{-i}) \ d\boldsymbol{a}^i
-\end{equation}
-Since we found a true $\pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s},\boldsymbol{a}^{-i})$ we know that the optimizing objective is left with only $N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})$, which we can use in finding optimal opponent's policy. But first, let's define the graphical model for opponent's policy.
-
-\begin{figure}[ht]
+It can be interpreted as a best response toward known opponent (aren't that what we want ? Now the performance of our agent is based on the quality of opponent model). Interestingly, we should consider the case where the opponent is totally difference from out model. Now we shall define the graphical model that we will used to approximate this using variational inference.
+\begin{figure}[H]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
     \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
-        \node[obs] (o) {$\mathcal{O}^{-i}$};
-        \node[latent, below=of o] (a1) {$\boldsymbol{a}^{-i}$};
-        \node[latent, below=of a1] (s) {$\boldsymbol{s}$};
-        % \node[latent, right=2.3cm of o] (o1) {$\mathcal{O}^{-i}$};
+        \node[latent] (st) {$\boldsymbol{s}_t$};
+        \node[latent, above=of st] (at) {$\boldsymbol{a}^{i}_t$};
+        \node[obs, right=of at] (a1t) {$\boldsymbol{a}^{-i}_t$};
         
+        \node[latent, right=3.5cm of st] (st1) {$\boldsymbol{s}_{t+1}$};
+        \node[latent, above=of st1] (at1) {$\boldsymbol{a}^{i}_{t+1}$};
+        
+        \node[obs, right=of at1] (a1t1) {$\boldsymbol{a}^{-i}_{t+1}$};
+        \node[latent, right=3.5cm of st1] (st2) {$\boldsymbol{s}_{t+2}$};        
         % above right=1.3cm of a
+        \edge {st, a1t} {st1}
+        \edge {st} {a1t, at}
+        \edge {a1t} {at}
+        \edge {a1t1} {at1}
         
-        \edge {s} {a1}
-        % \edge {a} {o}
-        % \edge {o1} {o, a1}
-        % \edge {a1} {a}
-        \edge {a1} {o}
-        \path[->]  (s)  edge   [bend left=30] node {} (o);
+        \edge{st1} {a1t1, at1}
+        \edge {st1, a1t1} {st2}
+        
+        \path[->]  (at)  edge   [bend right=20] node {} (st1);
+        \path[->]  (at1)  edge   [bend right=20] node {} (st2);
     \end{tikzpicture}
     \end{minipage}%
     \begin{minipage}[t]{0.5\linewidth}
-    \captionof{figure}{Graphical model of splitted graphical model for opponent's policy. } 
-    % \label{fig:}
-    \end{minipage}
-\end{figure}
-
-Surprisingly, the opponent's policy optimality can be defined to be 
-\begin{equation}
-    P(\mathcal{O}^{-i} = 1 | \boldsymbol{s}, \boldsymbol{a}^{-i}) = \exp\left(\frac{\beta_{-i}}{\beta_{i}} N^{i}(\boldsymbol{s}, \boldsymbol{a}^{-i})\right)
-\end{equation}
-This can be justified in 2 ways 
-\begin{itemize}
-    \item This is based on \cite{grau2018balancing}, where it states that inaction selection for the opponent model  "depends on the action of our actor, which is unknown a priori". Strictly speaking, this is also based on the $\arg\max\text{ext}$ of the value function (what we have left from maximizing agent's return from a previous graphical model is the $\max$ of the value function). 
-    \item Having $\beta_{-i}$ implies that the opponent model will have the characteristic, which is based on the soft-maximum of game's return given the prior over agent's behaviour (since we also "normalized by" $\frac{1}{\beta_i}$). 
-    The Normalizing term $\frac{1}{\beta_{\pm i}}$ becomes important with the case of PR2's\cite{wen2019probabilistic} opponent model $\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a})$ in zero sum game, since, without this normalizing term $N(\boldsymbol{s}, \boldsymbol{a}^{i})$ will be based on soft-maximum of oppoent's return, which isn't what we intended to be (since the most optimal for an agent is to reduce the return or maximizes game's reward).
-\end{itemize}
-With this, we can define the joint distribution to be 
-\begin{equation}
-    P(\boldsymbol{s}) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) P(\mathcal{O}^{-i} = 1 | \boldsymbol{s}, \boldsymbol{a}^{-i})
-\end{equation}
-The variational distribution is 
-\begin{equation}
-    P(\boldsymbol{s}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})
-\end{equation}
-% Then the approximate variational inference becomes 
-
-Finally, we can set 
-\begin{equation}
-    \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}) = \frac{\exp\left(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}\right)}{\exp N(\boldsymbol{s})}
-\end{equation}
-where 
-\begin{equation}
-    N(\boldsymbol{s}) = \log \int_{\mathcal{A}^{-i}} \exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}) \quad \text{ and } \quad  R(\boldsymbol{s}, \boldsymbol{a}^{-i}) = \frac{1}{\beta_{i}}N(\boldsymbol{s}, \boldsymbol{a}^{-i})
-\end{equation}
-We can show that ROMMEO with the following objective 
-\begin{equation}
-    \mathbb{E}\Bigg[ R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i}) - \frac{1}{\beta_i} \log \frac{\pi_{\theta}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})}{P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}, \boldsymbol{a}^{-i})} - \frac{1}{\beta_{-i}} \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s})}{P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s})}  \Bigg]
-\end{equation}
-Yields almost the same result. Thus, we have ROMMEO that works for both zero-sum game and team game, represented in a separates graphical model. 
-
-\subsection{PR2 with Balanced-Q}
-Similarly, the graphical model is defined to be, however, now, we would like to find the model of the opponent first. 
-\begin{figure}[ht]
-    \begin{minipage}[t]{0.5\linewidth}
-    \centering
-    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
-        \node[obs] (o) {$\mathcal{O}^{-i}$};
-        \node[obs, below=of o] (a) {$\boldsymbol{a}^i$};
-        \node[latent, below=of a] (s) {$\boldsymbol{s}$};
-        \node[latent, right=of a] (a1) {$\boldsymbol{a}^{-i}$};
-        % \node[latent, right=2.3cm of o] (o1) {$\mathcal{O}^{-i}$};
-        
-        % above right=1.3cm of a
-        
-        \edge {s} {a, a1}
-        \edge {a} {o}
-        % \edge {o1} {o, a1}
-        \edge {a} {a1}
-        \edge {a1} {o}
-        \path[->]  (s)  edge   [bend left=30] node {} (o);
-    \end{tikzpicture}
-    \end{minipage}%
-    \begin{minipage}[t]{0.5\linewidth}
-    \captionof{figure}{Graphical model of splitted graphical model for opponent model's policy. } 
-    % \label{fig:}
-    \end{minipage}
-\end{figure}
-This leads to the following joint probability distribution:
-\begin{equation}
-    P(\boldsymbol{s})P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}) P_{\text{prior}}(\boldsymbol{a}^i | \boldsymbol{s}) P(\mathcal{O}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i}, \boldsymbol{a}^{-i})
-\end{equation}
-The variational distribution is then be 
-\begin{equation}
-    P(\boldsymbol{s}) \rho_{\phi}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}) P_{\text{prior}} (\boldsymbol{a}^i | \boldsymbol{s})
-\end{equation}
-Doing the variational inference yields. 
-\begin{equation}
-    \rho_{\phi} (\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i}) = \frac{\exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i})}{ \exp N^{-i}(\boldsymbol{s}, \boldsymbol{a}^{i})}
-\end{equation}
-where, we have that 
-\begin{equation}
-    N^{-i}(\boldsymbol{s}, \boldsymbol{a}^{i}) = \log \int_{\mathcal{A}^{-i}} \exp(\beta_{-i} R(\boldsymbol{s}, \boldsymbol{a}^i, \boldsymbol{a}^{-i})) P_{\text{prior}}(\boldsymbol{a}^{-i} | \boldsymbol{s}, \boldsymbol{a}^{i})
-\end{equation}
-This is analogous to result presented in \cite{wen2019probabilistic}. Similarly, for the agent itself, the graphical model is defined to be 
-\begin{figure}[ht]
-    \begin{minipage}[t]{0.5\linewidth}
-    \centering
-    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
-        \node[obs] (o) {$\mathcal{O}^{i}$};
-        \node[latent, below=of o] (a1) {$\boldsymbol{a}^{i}$};
-        \node[latent, below=of a1] (s) {$\boldsymbol{s}$};
-        % \node[latent, right=2.3cm of o] (o1) {$\mathcal{O}^{-i}$};
-        
-        % above right=1.3cm of a
-        
-        \edge {s} {a1}
-        % \edge {a} {o}
-        % \edge {o1} {o, a1}
-        % \edge {a1} {a}
-        \edge {a1} {o}
-        \path[->]  (s)  edge   [bend left=30] node {} (o);
-    \end{tikzpicture}
-    \end{minipage}%
-    \begin{minipage}[t]{0.5\linewidth}
-    \captionof{figure}{Graphical model of splitted graphical model for agent's policy. } 
-    % \label{fig:}
+    \captionof{figure}{\label{fig:agent-optimal}Graphical model that we will fit $\pi_{\theta}$ to get the optimal agent policy.} 
     \end{minipage}
 \end{figure}
 
 \noindent
-Where, we now define the agent's optimality to be 
+The joint probability that we will use to approximate 
 \begin{equation}
-    P(\mathcal{O}^i = 1 | \boldsymbol{s}, \boldsymbol{a}) = \exp\left( \frac{\beta_i}{\beta_{-i}} N^{-i}(\boldsymbol{s}, \boldsymbol{a}^{i}) \right) 
+    \begin{aligned}
+        q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1}
+        P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+    \end{aligned}
 \end{equation}
-With this leads to the following agent's policy 
+(\emph{Note: } $\rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)$ represents our assumed opponent model.) Now let's do variational inference by finding ELBO, and then we optimize the ELBO and find the closed form.
 \begin{equation}
-    \pi_{\theta}(\boldsymbol{a}^{i} | \boldsymbol{s}) = \frac{\exp( \beta_i R(\boldsymbol{s}, \boldsymbol{a}^{i})) P_{\text{prior}}(\boldsymbol{a}^{i}  | \boldsymbol{s})}{\exp N(\boldsymbol{s})}
+    \label{equation:4}
+    \begin{aligned}
+        \log P(\mathcal{O}^i_{1:T} = 1) &= \log \int P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) \ d\boldsymbol{s}_{1:T} \ d\boldsymbol{a}^i_{1:T} \ d\boldsymbol{a}^{-i}_{1:T} \\ 
+        &= \log \int P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) \frac{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})} \ d\boldsymbol{s}_{1:T} \ d\boldsymbol{a}^i_{1:T} \ d\boldsymbol{a}^{-i}_{1:T} \\
+        &\ge \mathbb{E}_{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \log \frac{P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})} \Bigg] \\
+        &= \mathbb{E}_{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[\sum^{T}_{t=1} \ \beta_i R_G(\boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) - \log \frac{\pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)}{P_{\text{prior}}(\boldsymbol{a}^i_t)}\Bigg]
+    \end{aligned}
 \end{equation}
-Where $N(\boldsymbol{s})$ and $R(\boldsymbol{s}, \boldsymbol{a})$ is defined to be 
+We refer to section \ref{ELBO:agent} for more detailed proof of ELBO.
+Let's derive the closed form solution by following \cite{levine2018reinforcement}. Starting with the base case (at termination). We want to maximize the following objective: 
 \begin{equation}
-    N(\boldsymbol{s}) = \log \int_{\mathcal{A}^i} \exp( \beta_i R(\boldsymbol{s}, \boldsymbol{a}^{i})) P_{\text{prior}}(\boldsymbol{a}^{i}  | \boldsymbol{s}) \quad \text{ and } \quad R(\boldsymbol{s}, \boldsymbol{a}^i) = \frac{1}{\beta_{-i}} N(\boldsymbol{s}, \boldsymbol{a}^i)
+    \mathbb{E}_{q(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T})} \Bigg[\beta_i R_G(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T}) - \log \frac{\pi_{\theta}(\boldsymbol{a}^i_T | \boldsymbol{s}_T, \boldsymbol{a}^{-i}_T)}{P_{\text{prior}}(\boldsymbol{a}^i_T)}\Bigg]
+\end{equation}
+Let's introduce message $Q^{i}(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T)$. It will be clear why we introduce such a value and what value it is, later. 
+\begin{equation}
+    \mathbb{E}_{q(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T})} \Bigg[\beta_i R_G(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T}) - \log \frac{\pi_{\theta}(\boldsymbol{a}^i_T | \boldsymbol{s}_T, \boldsymbol{a}^{-i}_T)}{P_{\text{prior}}(\boldsymbol{a}^i_T)} - Q^{i}(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T) + Q^{i}(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T)\Bigg]
+\end{equation}
+With some algebraic manipulations, we arrived at the following form 
+\begin{equation}
+    \mathbb{E}_{q(\boldsymbol{s}_{T}, \boldsymbol{a}^{-i}_{T})} \Bigg[ -D_{KL} \Bigg( \pi_{\theta}(\boldsymbol{a}^i_T | \boldsymbol{s}_T, \boldsymbol{a}_T^{-i}) \Bigg|\Bigg| \frac{\exp(\beta_i R_G(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T})) P_{\text{prior}}(\boldsymbol{a}^i_T)}{\exp(N(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T))} \Bigg) + Q^{i}(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T) \Bigg]
+\end{equation}
+If we want to maximize the following objective, we have to set KL-Divergence to be zero meaning that we set $\pi_{\theta}$ to be equal to 
+\begin{equation}
+    \pi_{\theta}(\boldsymbol{a}^i_T | \boldsymbol{s}_T, \boldsymbol{a}_T^{-i}) = \frac{\exp(\beta_i R_G(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T})) P_{\text{prior}}(\boldsymbol{a}^i_T)}{\exp(Q^{i}(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T))}
+\end{equation}
+Where we set the normalizing term to be equal to 
+\begin{equation}
+    Q^{i}(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T) = \log \int \exp(\beta_i R_G(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T})) P_{\text{prior}}(\boldsymbol{a}^i_T) \ d \boldsymbol{a}^i_T
+\end{equation}
+After maximizing, we are left with $N(\boldsymbol{s}_T, \boldsymbol{a}^{-i}_T)$, in which we carry this term to the step before. Now, for arbitrary time-step $t$, we can now derive the closed form solution of $\pi_{\theta}$. Getting the objective (introducing $Q^{i}(\boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)$ is hidden but the steps are the same):
+\begin{equation}
+    \begin{aligned}
+        \mathbb{E}_{q(\boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t})} \Bigg[\underbrace{\beta_i R_G(\boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) + \gamma\mathbb{E}_{P(\boldsymbol{s}_{t+1}, \boldsymbol{a}^{-i}_{t+1} | \boldsymbol{a}^{i}_{t})}\Big[ Q^{i}(\boldsymbol{s}_{t+1}, \boldsymbol{a}^{-i}_{t+1}) \Big]}_{Q^i(\boldsymbol{s}_t, \boldsymbol{a}^i_t, \boldsymbol{a}^{-i}_t)} - \log \frac{\pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)}{P_{\text{prior}}(\boldsymbol{a}^i_t)} \Bigg]
+    \end{aligned}
+\end{equation}
+Noted that our choice for opponent's policy is embedded, within 
+\begin{equation}
+    P(\boldsymbol{s}_{t+1}, \boldsymbol{a}^{-i}_{t+1} | \boldsymbol{a}^{i}_{t}) = P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}^i_t, \boldsymbol{a}^{-i}_t) \rho_{\phi}(\boldsymbol{a}^{-i}_{t+1} | \boldsymbol{s}_{t+1})
+\end{equation}
+Following the same procedure, as above, we can set $\pi_{\theta}$ to be equal to 
+\begin{equation}
+    \pi_{\theta}(\boldsymbol{a}^i_T | \boldsymbol{s}_T, \boldsymbol{a}_T^{-i}) = \frac{\exp(Q(\boldsymbol{s}_t, \boldsymbol{a}^i_t, \boldsymbol{a}^{-i}_t)) P_{\text{prior}}(\boldsymbol{a}^i_T)}{\exp(Q^{i}(\boldsymbol{s}_t, \boldsymbol{a}^{-i}_t))}
+\end{equation}
+Where, 
+\begin{equation}
+    \begin{aligned}
+        &Q^i(\boldsymbol{s}_t, \boldsymbol{a}^i_t, \boldsymbol{a}^{-i}_t) = \beta_i R_G(\boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) + \gamma \mathbb{E}_{P(\boldsymbol{s}_{t+1}, \boldsymbol{a}^{-i}_{t+1})}\Big[ Q^{i} (\boldsymbol{s}_{t+1}, \boldsymbol{a}^{-i}_{t+1}) \Big] \\
+        & Q^{i}(\boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) = \log \int \exp(Q(\boldsymbol{s}_t, \boldsymbol{a}^i_t, \boldsymbol{a}^{-i}_t)) P_{\text{prior}}(\boldsymbol{a}^i_T) \ d \boldsymbol{a}^i_t
+    \end{aligned}
 \end{equation}
 
+\subsection{Deriving Opponent's Policy}
+After we can get a hold of the agent's policy, we can now find the opponent model. Let's show the graphical model that we want to approximate. 
 
-\section{Agent with learnt prior (mutual information maximization)}
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[obs] (o1t) {$\mathcal{O}^{-i}_t$};
+        \node[latent, below=of o1t] (a1t) {$\boldsymbol{a}^{-i}_t$};
+        \node[latent, right=of a1t] (at) {$\boldsymbol{a}^{i}_t$};
+        \node[latent, below=of a1t] (st) {$\boldsymbol{s}_t$};
+        
+        \node[latent, right=3.5cm of st] (st1) {$\boldsymbol{s}_{t+1}$};
+        
+        \node[latent, above=of st1] (a1t1) {$\boldsymbol{a}^{-i}_{t+1}$};
+        \node[obs, above=of a1t1] (o1t1) {$\mathcal{O}^{-i}_{t+1}$};
+        \node[latent, right=of a1t1] (at1) {$\boldsymbol{a}^{i}_{t+1}$};
+        \node[latent, right=3.5cm of st1] (st2) {$\boldsymbol{s}_{t+2}$}; 
+        
+        % above right=1.3cm of a
+        \edge {a1t} {o1t}
+        \edge {a1t} {at}
+        \edge {a1t1} {at1}
+        \edge {st, at} {st1}
+        \edge {st} {at}
+        \edge {st1} {at1}
+        \edge {st1, at1} {st2}
+        \edge {a1t1} {o1t1}
+        
+        
+        \path[->]  (st)  edge   [bend left=30] node {} (o1t);
+        \path[->]  (st1)  edge   [bend left=30] node {} (ot1);
+        \path[->]  (a1t)  edge   [bend right=20] node {} (st1);
+        \path[->]  (a1t1)  edge   [bend right=20] node {} (st2);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \captionof{figure}{Graphical model. Now we know that agent's policy, we would like to find a better opponent model.} 
+    \end{minipage}
+\end{figure}
 
-\section{Extension to N-Agents}
+\noindent
+The joint probability is defined to be 
+\begin{equation}
+    \begin{aligned}
+        P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1} &P(\mathcal{O}^{-i}_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) P_{\text{prior}}(\boldsymbol{a}^{-i}_t) \\
+        &P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \pi_{\theta}(\boldsymbol{a}^{i}_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)
+    \end{aligned}
+\end{equation}
+Since, we already know what our agent's policy is. The optimally of the opponent model shall be equal to expectation of reward received by opponent, given agent's policy. 
+\begin{equation}
+    \begin{aligned}
+        P(\mathcal{O}^{-i}_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) = \exp\left(R^{-i}(\boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)\right)
+    \end{aligned}
+\end{equation}
+The definition of $R^{-i}(\boldsymbol{s}_t, \boldsymbol{a}_t^{-i})$ stills be ambiguous, however, the first definition posts more promising approach that is because we define the joint probability $P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})$ to be related to $\pi_{\theta}(\boldsymbol{a}^{i}_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)$. Unless, we include the prior of agent's policy $P_{\text{prior}}$ within the graphical model. (Noted that in \cite{grau2018balancing} they has used the second equation, since they assume that the opponent doesn't know the true policy, hence using the prior.)
+\begin{equation}
+    \begin{aligned}
+        \int \beta_{-i}R_G(\boldsymbol{s}_t, \boldsymbol{a}_t, \boldsymbol{a}^{-i}_t) \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{a}^{-i}_t, \boldsymbol{s}_t) \ d\boldsymbol{a}^i_t \quad \text{ or } \quad
+        \int \beta_{-i}R_G(\boldsymbol{s}_t, \boldsymbol{a}_t, \boldsymbol{a}^{-i}_t) P_{\text{prior}}(\boldsymbol{a}^i_t) \ d\boldsymbol{a}^i_t 
+    \end{aligned}
+\end{equation}
+Now, the graphical model that we want to fit is almost the same in agent's case. However, now we know the agent, but not opponent model (noted that we might absolve the agent's policy within the enviornment dynamic)
+\begin{figure}[H]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[latent] (st) {$\boldsymbol{s}_t$};
+        \node[obs, above=of st] (at) {$\boldsymbol{a}^{i}_t$};
+        \node[latent, right=of at] (a1t) {$\boldsymbol{a}^{-i}_t$};
+        
+        \node[latent, right=3.5cm of st] (st1) {$\boldsymbol{s}_{t+1}$};
+        \node[obs, above=of st1] (at1) {$\boldsymbol{a}^{i}_{t+1}$};
+        
+        \node[latent, right=of at1] (a1t1) {$\boldsymbol{a}^{-i}_{t+1}$};
+        \node[latent, right=3.5cm of st1] (st2) {$\boldsymbol{s}_{t+2}$};        
+        % above right=1.3cm of a
+        \edge {st, a1t} {st1}
+        \edge {st} {a1t, at}
+        \edge {a1t} {at}
+        \edge {a1t1} {at1}
+        
+        \edge{st1} {a1t1, at1}
+        \edge {st1, a1t1} {st2}
+        
+        \path[->]  (at)  edge   [bend right=20] node {} (st1);
+        \path[->]  (at1)  edge   [bend right=20] node {} (st2);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \captionof{figure}{Graphical model that we will fit $\rho_{\phi}$ to get the optimal opponent policy, given that we know the agent's policy.} 
+    \end{minipage}
+\end{figure}
+\noindent
+The joint probability is then defined to be 
+\begin{equation}
+     q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1} P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+\end{equation}
+Similar to agent's case, we now do the variational inference by finding and optimizing ELBO.
+\begin{equation}
+    \label{equation:18}
+    \begin{aligned}
+        \log P(\mathcal{O}^{-i}_{1:T} = 1) &= \log \int P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) \ d\boldsymbol{s}_{1:T} \ d\boldsymbol{a}^i_{1:T} \ d\boldsymbol{a}^{-i}_{1:T} \\ 
+        &= \log \int P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) \frac{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})} \ d\boldsymbol{s}_{1:T} \ d\boldsymbol{a}^i_{1:T} \ d\boldsymbol{a}^{-i}_{1:T} \\
+        &\ge \mathbb{E}_{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \log \frac{P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})} \Bigg] \\
+        &= \mathbb{E}_{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[\sum^{T}_{t=1}  R^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) - \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)}{P_{\text{prior}}(\boldsymbol{a}^{-i}_t)}\Bigg]
+    \end{aligned}
+\end{equation}
+We refer to section \ref{ELBO:opponent} for more detailed proof of ELBO.
+We now repeat the process that find the closed form of opponent's model. Starting of by introducing a normalizing/message term $V^{-i}(\boldsymbol{s}_T)$ at the base case. 
+\begin{equation}
+    \mathbb{E}_{q'(\boldsymbol{s}_{T}, \boldsymbol{a}^i_{T}, \boldsymbol{a}^{-i}_{T})}\Bigg[\sum^{T}_{t=1}  R^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) - \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)}{P_{\text{prior}}(\boldsymbol{a}^{-i}_t)} - V^{-i}(\boldsymbol{s}_T) + V^{-i}(\boldsymbol{s}_T)\Bigg]
+\end{equation}
+With some algebraic manipulation, we got (we can ignore the agent's policy since it doesn't contribute into anything)
+\begin{equation}
+    \mathbb{E}_{q'(\boldsymbol{s}_{T})} \Bigg[ -D_{KL}\Bigg( \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t) \Bigg|\Bigg| \frac{\exp\left(R^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t})\right)P_{\text{prior}}(\boldsymbol{a}^{-i}_t)}{\exp V^{-i}(\boldsymbol{s}_T)} \Bigg) + V^{-i}(\boldsymbol{s}_T) \Bigg]
+\end{equation}
+Now we can comfortably set the opponent's model to be equal to 
+\begin{equation}
+    \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t) = \frac{\exp\left(R^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t})\right)P_{\text{prior}}(\boldsymbol{a}^{-i}_t)}{\exp V^{-i}(\boldsymbol{s}_T)}
+\end{equation}
+With the normalizing term equal to 
+\begin{equation}
+    V^{-i}(\boldsymbol{s}_T) = \log \int \exp\left(R^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t})\right)P_{\text{prior}}(\boldsymbol{a}^{-i}_t) \ d \boldsymbol{a}^{-i}
+\end{equation}
+Let's now define opponent model for arbitrary time-step $t$. Given the message passed down from step $t+1$. 
+\begin{equation}
+    \begin{aligned}
+        \mathbb{E}_{q'(\boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t})} \Bigg[\underbrace{R^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) + \gamma\mathbb{E}_{P(\boldsymbol{s}_{t+1}| \boldsymbol{a}^{-i}_{t})}\Big[ V^{-i}(\boldsymbol{s}_{t+1}) \Big]}_{Q^{-i}(\boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)} - \log \frac{\rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)}{P_{\text{prior}}(\boldsymbol{a}^{-i}_t)} \Bigg]
+    \end{aligned}
+\end{equation}
+Using same method, we also introduce $V^{-i}(\boldsymbol{s}_{t})$ as normalizing terms. Noted that the agent's policy is hidden within the $P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_t)$, which is might as well equal to 
+\begin{equation}
+    P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_t) = P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}^i_t, \boldsymbol{a}^{-i}_t) \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) \rho_{\theta}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+\end{equation}
+So, now the final opponent model is equal to 
+\begin{equation}
+    \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t) = \frac{\exp\left( Q^{-i}(\boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) \right)P_{\text{prior}}(\boldsymbol{a}^{-i}_t)}{\exp V^{-i}(\boldsymbol{s}_{t})}
+\end{equation}
+Now the rest can be defined as 
+\begin{equation}
+    \begin{aligned}
+        Q^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_t) &= R^{-i}(\boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) + \gamma\mathbb{E}_{P(\boldsymbol{s}_{t+1}| \boldsymbol{a}^{-i}_{t})}\Big[ V^{-i}(\boldsymbol{s}_{t+1}) \Big] \\
+        V^{-i}(\boldsymbol{s}_{t}) &= \log \int \exp\left( Q^{-i}(\boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) \right)P_{\text{prior}}(\boldsymbol{a}^{-i}_t) \ d\boldsymbol{a}^{-i}_t
+    \end{aligned}
+\end{equation}
 
-\section{Belief Over $\beta$s}
+\noindent
+\textbf{Claim (1): } $\pi(\boldsymbol{a}^{i} | \boldsymbol{a}^{-i}, \boldsymbol{s})$ isn't \emph{robust}. We defined to term \emph{robust} to be the ability to adapt to difference/unseen opponent model, due to the definition of $Q(\boldsymbol{s}, \boldsymbol{a}^{i}, \boldsymbol{a}^{-i})$, relies on the transition given by opponent models.
 
-\section{General sum game -- learned Q-function}
-
-\section{Public Belief on Cooperative game}
-
-% \begin{equation}
-%     \mathbb{E}_{q(\boldsymbol{s}, \boldsymbol{a}^{-i}, \boldsymbol{a}^{-i})}
-% \end{equation}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-% \section{Unified View}
-% \subsection{Single-Step Balancing Soft-Q \cite{grau2018balancing} with ROMMEO \cite{tian2019regularized}}
-% \subsection{Single-Step PR2 \cite{wen2019probabilistic}}
-% \subsection{Single-Step GR2 \cite{wen2019multi}}
-
-% \section{Additional Features}
-% \subsection{Belief Over Agent's Characteristic}
-% \subsection{Extension to General Sum Game}
+\section{Convergence Proof of ROMMEO Balancing Q}
 
 

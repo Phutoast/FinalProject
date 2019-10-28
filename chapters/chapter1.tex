@@ -1,15 +1,341 @@
-\section{Markov Decision Process}
+% \section{Markov Decision Process}
 
-\section{Bellman Equation}
+% \section{Bellman Equation}
 
-\section{Model-Free Reinforcement Learning}
-\subsection{Q-Learning}
-\subsection{Policy Gradient}
-\subsection{Soft-Q Learning}
+% \section{Model-Free Reinforcement Learning}
+% \subsection{Q-Learning}
+% \subsection{Policy Gradient}
+% \subsection{Soft-Q Learning}
 
-\section{Stochastic Game}
+% \section{Stochastic Game}
 
 \section{Expectation Maximization and Variational Inference}
-\subsection{Expectation Maximization}
-\subsection{Variational Inference}
-\subsection{VAE}
+
+ELBO or Evidence Lower Bound Objective is one of the most interesting and fruitful objective functions. Its applications span in the from probabilistic generative models \cite{kingma2013auto} to reinforcement learning \cite{levine2018reinforcement}. This section will provides common "pattern" for deriving ELBO, which ultimately leads to Expectation Maximization algorithm, variational inference and variational auto-encoder \cite{kingma2013auto}  
+
+%\Phu{Cite EM Cite VI add more examples}
+
+Suppose we would like to maximize the probability of generating data point $\boldsymbol{X}$ given the parameter $\boldsymbol{\theta}$. We can assume there exists a latent variable $\boldsymbol{z}$ that generates this data point. Writing it as (assuming $q(\boldsymbol{z})$ is an arbitrary distribution over $\boldsymbol{z}$)
+
+\begin{equation}
+    \begin{aligned}
+         \log P(\boldsymbol{X} | \boldsymbol{\theta}) &= \int P(\boldsymbol{X}, \boldsymbol{z} | \boldsymbol{\theta}) \ d\boldsymbol{z} \\
+         &= \log \int P(\boldsymbol{X}, \boldsymbol{z}) \frac{q(\boldsymbol{z})}{q(\boldsymbol{z})} \ d \boldsymbol{z} \\
+         &= \log \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})} \left[ \frac{P(\boldsymbol{X}, \boldsymbol{z} | \boldsymbol{\theta})}{q(\boldsymbol{z})} \right] \\
+         &\ge \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})} \left[ \log\frac{P(\boldsymbol{X}, \boldsymbol{z} | \boldsymbol{\theta})}{q(\boldsymbol{z})} \right]
+    \end{aligned}
+\end{equation}
+The inequality came from Jensen's inequality, hence we arrived at ELBO. The difference between ELBO and $\log P(\boldsymbol{X} |\boldsymbol{\theta})$ is equal to 
+
+\begin{equation}
+    \begin{aligned}
+        \log P(\boldsymbol{X} |\boldsymbol{\theta}) - &\mathbb{E}_{\boldsymbol{z} \sim p(\boldsymbol{z})} \left[ \log\frac{P(\boldsymbol{X}, \boldsymbol{z} | \boldsymbol{\theta})}{q(\boldsymbol{z})} \right] \\
+        &= \log P(\boldsymbol{X} |\boldsymbol{\theta}) - \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})}\big[ \log P(\boldsymbol{X}, \boldsymbol{z} | \boldsymbol{\theta}) \big] + \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})} \big[ \log q(\boldsymbol{z}) \big]  \\ 
+        &= \cancel{\log P(\boldsymbol{X} |\boldsymbol{\theta})} - \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})}\big[ \log P( \boldsymbol{z} |\boldsymbol{X} , \boldsymbol{\theta}) \big] - \cancel{\mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})}\big[ \log P( \boldsymbol{X} | \boldsymbol{\theta}) \big]} + \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})} \big[ \log q(\boldsymbol{z}) \big] \\ 
+        &=  \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})} \big[ \log q(\boldsymbol{z}) \big] - \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})} \big[ \log P( \boldsymbol{z} |\boldsymbol{X} , \boldsymbol{\theta}) \big] \\
+        &= D_{KL} \left( q(\boldsymbol{z}) || P( \boldsymbol{z} |\boldsymbol{X} , \boldsymbol{\theta}) \right)
+    \end{aligned}
+\end{equation}
+This leads to first optimization step of EM algorithm (E-Step), where the goals of this algorithm is maximizes $\log$ probability. We would like to minimizing the "gap" between ELBO and $P(\boldsymbol{x} | \boldsymbol{\theta})$, therefore in E-Step, we set: 
+
+$$
+q(\boldsymbol{z}) \leftarrow P( \boldsymbol{z} |\boldsymbol{X} , \boldsymbol{\theta})
+$$
+
+So now, we have that ELBO is equal to $P(\boldsymbol{x} | \boldsymbol{\theta})$, which we now proceeded to maximizing ELBO based on $\theta$, which is equal to optimizing the following objective. 
+
+\begin{equation}
+    \arg\max_{\boldsymbol{\theta}} \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z})}\big[\log P(\boldsymbol{X}, \boldsymbol{z} | \theta)\big]
+\end{equation}
+We call this step, M-Step. The limitation of EM algorithm lies within in E-Step, suppose, we can't even compute $P( \boldsymbol{z} |\boldsymbol{X} , \boldsymbol{\theta})$ then we have to minimizing the KL distance with respect to parameterized $\phi$ of $q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})$, instead: 
+
+\begin{equation}
+    D_{KL}(q(\boldsymbol{z}| \boldsymbol{X}, \boldsymbol{\phi}) || P( \boldsymbol{z} |\boldsymbol{X} , \boldsymbol{\theta}) )
+\end{equation}
+Which can be shown to be equal to minimizing ELBO for both parameters $\boldsymbol{\phi}, \boldsymbol{\theta}$
+\begin{equation}
+    \begin{aligned}
+        D_{KL}(q(\boldsymbol{z}| \boldsymbol{X}, \boldsymbol{\phi}) || P( \boldsymbol{z} |\boldsymbol{X} , \boldsymbol{\theta}) ) &= \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})} \left[ \log \frac{q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})}{P(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\theta})} \right] \quad \text{ where } P(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\theta}) = \frac{P(\boldsymbol{X} | \boldsymbol{z}, \boldsymbol{\theta}) P(\boldsymbol{z})}{P(\boldsymbol{X} | \boldsymbol{\theta})} \\ 
+        &= \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})} \left[ \log \frac{q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi}) P(\boldsymbol{X} | \boldsymbol{\theta})}{P(\boldsymbol{X} | \boldsymbol{z}, \boldsymbol{\theta}) P(\boldsymbol{z})} \right] \\ 
+        &= \underbrace{\mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})} \left[ \log \frac{q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})}{P(\boldsymbol{X} | \boldsymbol{z}, \boldsymbol{\theta}) P(\boldsymbol{z})} \right]}_{\text{ELBO}} + \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})} \left[ \log P(\boldsymbol{X} | \boldsymbol{\theta}) \right]  \\ 
+        &= -\mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})} \left[ \log P(\boldsymbol{X} | \boldsymbol{z}, \boldsymbol{\theta}) \right] + \mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})} \left[ \log \frac{q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})}{P(\boldsymbol{z})} \right] + \text{const} \\ 
+        &= -\mathbb{E}_{\boldsymbol{z} \sim q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})} \left[ \log P(\boldsymbol{X} | \boldsymbol{z}, \boldsymbol{\theta}) \right] + D_{KL}(q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi}) || P(\boldsymbol{z})) + \text{const}
+    \end{aligned}
+\end{equation}
+Now we can also arrived at the ELBO objective. We can interpreted optimizing ELBO with respect to $\phi, \theta$ as EM algorithm where optimizing with respect to $\phi$ is an E-Step and optimizing with respect to $\theta$ is an M-Step. This is also used as optimizing objective in Variational Auto Encoder \cite{kingma2013auto}, where we denote $q(\boldsymbol{z} | \boldsymbol{X}, \boldsymbol{\phi})$ as an encoder and $P(\boldsymbol{X} | \boldsymbol{z}, \boldsymbol{\theta})$ as a decoder
+
+
+
+
+\section{Reinforcement Learning as Probabilistic Inference}
+
+In the survey \cite{levine2018reinforcement}, the authors provided probabilistic interpretation of reinforcement learning, however, they assume the prior over actions to be uniform. Similarly \cite{grau2018soft} briefly provide and derive objective with explicit prior over actions. In this section, we will go in depth on how to derived such an objective.
+
+We start with assuming a hidden variables $\boldsymbol{a}_{1:T}$ and $\boldsymbol{s}_{1:T}$, where the observed variable to be the optimality $\mathcal{O}_{1:T}$. Given by the following graphical models.
+
+\begin{figure}[!h]
+  \tikz{
+     \node[obs] (o1) {$\mathcal{O}_1$};
+     \node[latent, below=of o1] (a1) {$\bold{a}_1$};
+     \node[latent, below=of a1] (s1) {$\bold{s}_1$};
+     
+     \node[obs, right=of o1] (o2) {$\mathcal{O}_2$};
+     \node[latent, right=of a1] (a2) {$\bold{a}_2$};
+     \node[latent, right=of s1] (s2) {$\bold{s}_2$};
+     
+     \node[latent, right=of s2] (s3) {$\bold{s}_3$};
+     \node[latent, right=of s3] (st) {$\bold{s}_T$};
+     \node at ($(s3)!.5!(st)$) {\ldots};
+     
+     \path[->]  (s1)  edge   [bend left=30] node {} (o1);
+     \edge {a1} {o1}  
+     
+     \path[->]  (s2)  edge   [bend left=30] node {} (o2);
+     \edge {s1, a1} {s2}
+     \edge {a2} {o2}
+     
+     \edge {s2, a2} {s3}
+    %  \node[latent,above=of o, xshift=-1cm,fill] (y) {$y$}; 
+    %  \node[latent,above=of o,xshift=1cm] (z) {$z$};
+    %  \edge {y,z} {o}  
+ }
+\end{figure}
+
+Where we defined the optimality $\mathcal{O}_{1:T}$ to be (Assuming $r$ to always be positive)
+\begin{equation}
+    P(\mathcal{O}_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}_{t}) = \frac{\exp\left(\beta \cdot r(\boldsymbol{s}_{t}, \boldsymbol{a}_{t})\right)}{\int \exp(\beta \cdot r(\boldsymbol{s}_{t}, \boldsymbol{a}_{t})) \ d\boldsymbol{s}_{t} d\boldsymbol{a}_{t}}
+\end{equation}
+And we can see that 
+\begin{equation}
+    P(\mathcal{O}_{1:T} | \boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \propto \exp \left( \beta \sum^T_{t=1} r(s_t, a_t) \right)
+\end{equation}
+Since each optimality variables are conditional independent for each time step. 
+
+We would like to find approximated posterior distribution $q$, which we defined it by probabilistic graphical model as
+\begin{figure}[!h]
+  \tikz{
+     \node[latent] (a1) {$\bold{a}_1$};
+     \node[latent, below=of a1] (s1) {$\bold{s}_1$};
+     
+     \node[latent, right=of a1] (a2) {$\bold{a}_2$};
+     \node[latent, right=of s1] (s2) {$\bold{s}_2$};
+     
+     \node[latent, right=of s2] (s3) {$\bold{s}_3$};
+     \node[latent, right=of s3] (st) {$\bold{s}_T$};
+     \node at ($(s3)!.5!(st)$) {\ldots};
+     
+     \edge {s1} {a1}  
+     \edge {s1, a1} {s2}
+     \edge {s2} {a2}
+     
+     \edge {s2, a2} {s3}
+    %  \node[latent,above=of o, xshift=-1cm,fill] (y) {$y$}; 
+    %  \node[latent,above=of o,xshift=1cm] (z) {$z$};
+    %  \edge {y,z} {o}  
+ }
+\end{figure}
+
+The joint probability distribution of $q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})$ to be 
+\begin{equation}
+    q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) = P(\boldsymbol{s}_1)\prod^T_{t=1} P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}_t) \pi_{\theta}(\boldsymbol{a}_t | \boldsymbol{s}_t)
+\end{equation}
+Now we can minimize the KL-Divergence to perform approximate variational inference.
+\begin{equation}
+        D_{KL} \Big[ q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \Big\lvert\Big\rvert P(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T} | \mathcal{O}_{1:T} = 1) \Big] = D_{KL} \left[ q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \Bigg\lvert\Bigg\rvert \frac{P(\mathcal{O}_{1:T} | \boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) P_{\text{prior}} (\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) }{P(\mathcal{O}_{1:T})} \right]
+\end{equation}
+The $P_{\text{prior}}$ is defined to be 
+\begin{equation}
+    P_{\text{prior}}(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) = P(\boldsymbol{s}_1)\prod^T_{t=1} P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}_t) \pi_{\text{prior}}(\boldsymbol{a}_t | \boldsymbol{s}_t)
+\end{equation}
+Which the evaluation of KL-Divergence yields optimizing the following objective
+\begin{equation}
+    \begin{aligned}
+        \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} &\left[ \log q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \right] -  \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[ \log \frac{P(\mathcal{O}_{1:T} | \boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) P_{\text{prior}} (\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) }{P(\mathcal{O}_{1:T})} \right] \\ 
+        &= \ \begin{aligned}[t]
+           &\mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[ \log \left[ P(\boldsymbol{s}_1) \prod^T_{t=1} P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}_t) \pi_{\theta}(\boldsymbol{a}_t | \boldsymbol{s}_t) \right] \right] \\
+            &- \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \big[ \log P(\mathcal{O}_{1:T} | \boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \big] \\ 
+            &- \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[ \log \left[ P(\boldsymbol{s}_1) \prod^T_{t=1} P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}_t) \pi_{\text{prior}}(\boldsymbol{a}_t | \boldsymbol{s}_t) \right] \right] 
+        \end{aligned} \\
+        &= \begin{aligned}[t]
+            &\mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[ \log P(\boldsymbol{s}_1) + \sum^T_{t=1} \log P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}_t) + \log \pi_{\theta}(\boldsymbol{a}_t | \boldsymbol{s}_t) \right] \\
+            &- \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[ \lambda \sum^T_{t=1} r(\boldsymbol{s}_t, \boldsymbol{a}_t) \right] \\
+            &- \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[ \log P(\boldsymbol{s}_1) + \sum^T_{t=1} \log P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_t, \boldsymbol{a}_t) + \log \pi_{\text{prior}}(\boldsymbol{a}_t | \boldsymbol{s}_t) \right]
+        \end{aligned} \\ 
+        &= \begin{aligned}[t]
+            &-\mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[\lambda \sum^T_{t=1}  r(\boldsymbol{s}_t, \boldsymbol{a}_t) \right] \\
+            &+ \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[ \sum^T_{t=1} \log \pi_{\theta}(\boldsymbol{a}_t | \boldsymbol{s}_t) - \log \pi_{\text{prior}}(\boldsymbol{a}_t | \boldsymbol{s}_t) \right]
+        \end{aligned}
+    \end{aligned}
+\end{equation}
+
+The object we have maximizes becomes:
+\begin{equation}
+    \lambda \mathbb{E}_{(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T}) \sim q(\boldsymbol{s}_{1:T}, \boldsymbol{a}_{1:T})} \left[\sum^T_{t=1}  r(\boldsymbol{s}_t, \boldsymbol{a}_t) \right] - \sum^T_{t=1} D_{KL}\Big[ \pi_{\theta} (\boldsymbol{a}_t | \boldsymbol{s}_t) \Big|\Big| \pi_{\text{prior}} (\boldsymbol{a}_t | \boldsymbol{s}_t) \Big]
+\end{equation}
+Noted that if the $\pi_{\text{prior}}$ is uniform distribution, then the objective becomes maximum entropy reinforcement learning. Let's get the policy of agent in closed form.
+
+
+We will uses the same method of calculating backward messages and dynamic programming as \cite{levine2018reinforcement}. We start with the last time step $T$. We would like to optimize the following objective, as base case
+
+\begin{equation}
+    \mathbb{E}_{(\bold{s}_T, a_T) \sim q(\bold{s}_T, \bold{a}_T)} [\lambda  r(\bold{s}_T, \bold{a}_T)] - D_{KL} [\pi(\bold{a}_T | \bold{s}_T) || \pi_{\text{prior}}(\bold{a}_T | \bold{s}_T)]
+\end{equation}
+Expand the equation and introduce normalizing constant $\lambda V(\bold{s}_T)$ 
+
+\begin{equation}
+    \begin{aligned}
+        \begin{aligned}
+            \mathbb{E}_{(\bold{s}_T, a_T) \sim q(\bold{s}_T, a_T)} \Big[ \lambda r(\bold{s}_T, a_T) - \log \pi(\bold{a}_T|\bold{s}_T) &+ \log \pi_{\text{prior}} (\bold{a}_T, \bold{s}_T) \\
+            &+ V(\bold{s}_T) - V(\bold{s}_T)\Big]
+        \end{aligned} \\
+    \end{aligned}
+\end{equation}
+Which is equivalent to 
+\begin{equation}
+    \mathbb{E}_{(\bold{s}_T) \sim q(\bold{s}_T)}[V(\bold{s}_T)] - D_{KL} \left[ \pi(\bold{a}_T | \bold{s}_t) \bigg|\bigg|  \frac{\exp(\lambda r(\bold{s}_T, \bold{a}_T))}{\exp( V(\bold{s}_T))} \pi_{\text{prior}}(\bold{a}_T | \bold{s}_T) \right]
+\end{equation}
+So if we want to maximizes this we want to minimizes $D_{KL}$ therefore the policy is equal to 
+
+\begin{equation}
+\pi(\bold{a}_T | \bold{s}_t) = \exp(\lambda r(\bold{s}_T, \bold{a}_T) - V(\bold{s}_T) ) \pi_{\text{prior}}(\bold{a}_T | \bold{s}_T)
+\end{equation}
+where 
+$$
+V(\bold{s}_T) = \log \int_{\mathcal{A}} \exp(\lambda r(\bold{s}_T, \bold{a}_T)) \pi_{\text{prior}}(\bold{a}_T | \bold{s}_T) d \bold{a}_T
+$$
+When we have $D_{KL}$ equal to zero, we are left with a backward message  $$\mathbb{E}_{(\bold{s}_T) \sim q(\bold{s}_T)}[V(\bold{s}_T)]$$
+For the recursive case, we are now considered the following objective 
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}_{(\bold{s}_t, \bold{a}_t) \sim q(\bold{s}_t, \bold{a}_t)} [\lambda  r(\bold{s}_t, \bold{a}_t)] &- D_{KL} [\pi(\bold{a}_t | \bold{s}_t) || \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t)] \\ 
+    &+ \mathbb{E}_{(\bold{s}_t, a_t) \sim q(\bold{s}_t, \bold{a}_t)} [\gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)}[ V(\bold{s}_{t+1})]]
+\end{aligned}
+\end{equation}
+Group them 
+\begin{equation}
+\mathbb{E}_{(\bold{s}_t, a_t) \sim q(\bold{s}_t, \bold{a}_t)} [\underbrace{\lambda  r(\bold{s}_t, \bold{a}_t) + \gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)}[ V(\bold{s}_{t+1})]}_{Q(\bold{s}_t, \bold{a}_t)} - \log \pi(\bold{a}_t | \bold{s}_t) + \log \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) ]
+\end{equation}
+Now add the normalizing factor $V(\bold{s}_t)$, so we have 
+\begin{equation}
+\mathbb{E}_{(\bold{s}_t, a_t) \sim q(\bold{s}_t, \bold{a}_t)} [Q(\bold{s}_t, \bold{a}_t) - \log \pi(\bold{a}_t | \bold{s}_t) + \log \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) + V(\bold{s}_t) - V(\bold{s}_t) ]
+\end{equation}
+This is equivalent to 
+\begin{equation}
+\mathbb{E}_{(\bold{s}_t, \bold{a}_t) \sim q(\bold{s}_t, \bold{a}_t)} [ V(\bold{s}_t)] - D_{KL}\left[ \pi(\bold{a}_t | \bold{s}_t) \bigg|\bigg| \frac{\exp(Q(\bold{s}_t, \bold{a}_t))}{\exp(V(\bold{s}_t))} \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) \right]
+\end{equation}
+Therefore the policy is equal to 
+\begin{equation}
+    \pi(\bold{a}_t | \bold{s}_t) = \exp(Q(\bold{s}_t, \bold{a}_t) - V(\bold{s}_t)) \pi_{\text{prior}} (\bold{a}_t | \bold{s}_t)
+\end{equation}
+where 
+\begin{equation}
+    \label{equation:single-bellman}
+    \begin{aligned}
+        &V(\bold{s}_t) = \log \int_{\mathcal{A}} \exp(Q(\bold{s}_t, \bold{a}_t)) \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) d\bold{a}_t \\
+        &Q(\bold{s}_t, \bold{a}_t) = \lambda r(\bold{s}_t, \bold{a}_t) + \gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)}[ V(\bold{s}_{t+1})]
+    \end{aligned}
+\end{equation}
+
+\subsection{Contraction Mapping}
+In \cite{haarnoja2017reinforcement}, the authors showed that the bellman equation in \ref{equation:single-bellman} is a contraction map, by Banach fixed point theorem, we can show that iterative applying this mapping leads to a fixed point. The infinity norm is defined to be to be 
+\begin{equation}
+|| Q_1 - Q_2 ||_{\infty} = \max_{\bold{s}_t, \bold{a}_t} | Q_1(\bold{s}_t, \bold{a}_t) - Q_2(\bold{s}_t, \bold{a}_t) |
+\end{equation}
+And soft-bellman operator to be. 
+\begin{equation}
+    \mathcal{T} Q(\bold{s}_t, \bold{a}_t) = \lambda r(\bold{s}_t, \bold{a}_t) + \gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)} \left[ \log \int_{\mathcal{A}} \exp Q(\bold{s}_{t+1}, \bold{a}' ) \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) \ d\bold{a}' \right]
+\end{equation}
+We would like to proof that 
+$$
+|| \mathcal{T} Q_1 - \mathcal{T} Q_2 ||_{\infty} \le \gamma || Q_1 - Q_2 ||_{\infty}
+$$
+Start with plugging  in the equalities 
+\begin{equation}
+    \begin{aligned}
+        || \mathcal{T} Q_1 - \mathcal{T} Q_2 ||_{\infty}=&\begin{aligned}
+             \max_{\bold{s}_t, \bold{a}_t} \bigg|  &\lambda r(\bold{s}_t, \bold{a}_t) + \gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)} \left[ \log \int_{\mathcal{A}} \exp Q_1(\bold{s}_{t+1}, \bold{a}' ) \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) \ d\bold{a}' \right] \\ 
+            &\lambda r(\bold{s}_t, \bold{a}_t) + \gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)} \left[ \log \int_{\mathcal{A}} \exp Q_2(\bold{s}_{t+1}, \bold{a}' ) \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) \ d\bold{a}' \right] \bigg|
+        \end{aligned} \\[10pt]
+        =&\begin{aligned}
+            \gamma \max_{\bold{s}_t, \bold{a}_t} \bigg| &\int \log \int_{\mathcal{A}} \exp Q_1(\bold{s}_{t+1}, \bold{a}' ) \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) \ d\bold{a}' p(\bold{s}_{t+1} | s_t, a_t) \ d\bold{s}_{t+1}  \\
+            &-\int\log \int_{\mathcal{A}} \exp Q_2(\bold{s}_{t+1}, \bold{a}' ) \pi_{\text{prior}}(\bold{a}_t | \bold{s}_t) \ d\bold{a}' p(\bold{s}_{t+1} | s_t, a_t) \ d\bold{s}_{t+1}  \bigg|
+        \end{aligned} \\[10pt]
+        =& \begin{aligned}
+            \gamma \max_{\bold{s}_t, \bold{a}_t} \bigg| &\int\bigg\{ \log \int_{\mathcal{A}} \exp Q_1(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+            &-\log \int_{\mathcal{A}} \exp Q_2(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \bigg\} p(\bold{s}_{t+1} | s_t, a_t) \ d\bold{s}_{t+1}\bigg|
+        \end{aligned} \\[10pt]
+        =& \gamma\max_{\bold{s}_t, \bold{a}_t} \Big| \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}, \bold{a})} \Big[ V_1(\bold{s}_{t+1}) - V_2(\bold{s}_{t+1}) \Big]  \Big| \\
+        \ge & \gamma\max_{\bold{s}_t, \bold{a}_t}  \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}, \bold{a})} \Big[\Big| V_1(\bold{s}_{t+1}) - V_2(\bold{s}_{t+1})  \Big|\Big] 
+    \end{aligned}
+\end{equation}
+Now we have to consider the difference between $V_1(\bold{s}_{t+1})$ and $V_2(\bold{s}_{t+1})$. Define $\varepsilon = || Q_1 - Q_2 ||_{\infty}$. We would like to show that 
+$$
+\Big| V_1(\bold{s}_{t+1}) - V_2(\bold{s}_{t+1})  \Big| \le \varepsilon
+$$
+There are 2 cases we have to consider 
+\paragraph{Case 1} $V_1(\bold{s}_{t+1}) - V_2(\bold{s}_{t+1}) \le \varepsilon$ We know that ($\varepsilon$ is a constant that represents longest distance possible for all $\bold{s}_t, \bold{a}_t$)
+\begin{equation}
+    \begin{aligned}
+        \log \int_{\mathcal{A}} \exp Q_1(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' &\le \log \int_{\mathcal{A}} \exp \big(Q_2(\bold{s}_t, \bold{a}') + \varepsilon \big) \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= \log \int_{\mathcal{A}} \exp \varepsilon \cdot \exp Q_2(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= \varepsilon + \log \int_{\mathcal{A}} \exp Q_2(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}'
+    \end{aligned}
+\end{equation}
+or we have 
+\begin{equation}
+\log \int_{\mathcal{A}} \exp Q_1(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' - \log \int_{\mathcal{A}} \exp Q_2(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \le \varepsilon
+\end{equation}
+\paragraph{Case 2} $V_1(\bold{s}_{t+1}) - V_2(\bold{s}_{t+1}) \ge -\varepsilon$, using similar trick as Case 1
+\begin{equation}
+    \begin{aligned}
+        \log \int_{\mathcal{A}} \exp Q_1(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' &\ge \log \int_{\mathcal{A}} \exp \big(Q_2(\bold{s}_t, \bold{a}') - \varepsilon \big) \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= \log \int_{\mathcal{A}} \exp -\varepsilon \cdot \exp Q_2(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= -\varepsilon + \log \int_{\mathcal{A}} \exp Q_2(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}'
+    \end{aligned}
+\end{equation}
+or we have 
+\begin{equation}
+    \log \int_{\mathcal{A}} \exp Q_1(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' - \log \int_{\mathcal{A}} \exp Q_2(\bold{s}_t, \bold{a}') \pi_{\text{prior}} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \ge \varepsilon
+\end{equation}
+This finished the proof that $
+\Big| V_1(\bold{s}_{t+1}) - V_2(\bold{s}_{t+1})  \Big| \le \varepsilon$
+So now (continue the inequality)
+\begin{equation}
+    \begin{aligned}
+        \ge & \gamma\max_{\bold{s}_t, \bold{a}_t}  \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}, \bold{a})} \Big[\Big| V_1(\bold{s}_{t+1}) - V_2(\bold{s}_{t+1})  \Big|\Big]  \\
+        \ge & \gamma\max_{\bold{s}_t, \bold{a}_t}  \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}, \bold{a})} \Big[\max_{\bold{s}_t, \bold{a}_t}\Big| Q_1(\bold{s}_t, \bold{a}_t) - Q_2(\bold{s}_t, \bold{a}_t) \Big|\Big] \\
+        = & \gamma  || Q_1 - Q_2 ||_{\infty}
+    \end{aligned}
+\end{equation}
+This concludes the proof of contraction map.
+
+
+\subsection{Training}
+Most of the training scheme comes from \cite{haarnoja2017reinforcement} We will defined soft-Q iteration to be the detailed proof of convergence of this will be in appendix. 
+$$
+\begin{aligned}
+    &Q_{\text{soft}}(\bold{s}_t, \bold{a}_t) \leftarrow \lambda r(\bold{s}_t, \bold{a}_t) + \gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)}[ V(\bold{s}_{t+1})], \ \ \forall \bold{s}_t, \bold{a}_t \\
+    &V_{\text{soft}}(\bold{s}_t) \leftarrow \log \int_{\mathcal{A}} \exp(Q_{\text{soft}}(\bold{s}_t, \bold{a}')) \pi_{\text{prior}}(\bold{a}' | \bold{s}_t) d\bold{a}'
+\end{aligned}
+$$
+Given the formulation above, we can calculate $V_{\text{soft}}$ by calculate the importance sampling
+
+$$
+V^{\theta}_{\text{soft}} (\bold{s}_t) = \log \mathbb{E}_{\bold{a}' \sim q_{\bold{a}'}}\left[ \frac{\exp(Q^{\theta}_{\text{soft}}(\bold{s}_t, \bold{a}')) \pi_{\text{prior}} (\bold{a}'| \bold{s}_t) }{q_{\bold{a}'}(\bold{a}')} \right]
+$$
+Or if we are aware of the prior 
+$$
+V^{\theta}_{\text{soft}} (\bold{s}_t) = \log \mathbb{E}_{\bold{a}' \sim \pi(\bold{a}_t | \bold{s}_t)} [\exp(Q^{\theta}_{\text{soft}} (\bold{s}_t, \bold{a}'))]
+$$
+Training Q-function can be done by minimizing mean-square error between target-Q and the current Q.
+$$
+J_{Q} = \mathbb{E}_{\bold{s}_t \sim q_{\bold{s}_t}, \bold{a}_t \sim q_{\bold{a}_t}} \left[ \frac{1}{2} \left( \hat{Q}^{\bar{\theta}}_{\text{soft}} (\bold{s}_t, \bold{a}_t) - Q^{\theta}_{\text{soft}} (\bold{s}_t, \bold{a}_t) \right)^2 \right]
+$$
+where 
+$$
+\hat{Q}^{\bar{\theta}}_{\text{soft}} (\bold{s}_t, \bold{a}_t) = \lambda r(\bold{s}_t, \bold{a}_t) + \gamma \mathbb{E}_{\bold{s}_{t+1} \sim p(\bold{s}_{t+1} | \bold{s}_t, \bold{a}_t)}\left[V^{\bar{\theta}}_{\text{soft}}(\bold{s}_{t+1})\right]
+$$
+To get the policy $\pi(\bold{a}_t | \bold{s}_t)$, we represent it as $\bold{a}_t = f^{\phi}(\xi ; \bold{s}_t)$, where $\xi \sim \mathcal{N}(0, I)$, we can optimize the following objective.
+$$
+J_{\pi}(\phi; \bold{s}_t) = D_{KL} \left( \pi^{\phi}(\cdot | \bold{s}_t) \bigg|\bigg| \exp(Q^{\theta}_{\text{soft}}(\bold{s}_t, \cdot) - V^{\theta}_{\text{soft}}) \pi_{\text{prior}}( \cdot | \bold{s}_t ) \right)
+$$
