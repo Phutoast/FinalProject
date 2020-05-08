@@ -1,0 +1,31 @@
+
+\begin{figure}[!t]
+    \centering
+    \begin{chart}%\grid
+        \reqhalfcourse 35,60:{}{Chapter 3}{}
+        \reqhalfcourse 45,50:{}{Chapter 4}{}
+        \reqhalfcourse 65,40:{}{Chapter 5}{}
+        % \newcommand{\background}{green!15}
+        \reqhalfcoursec 15,50:{}{Chapter 6}{}{black!10}
+        \reqhalfcourse 35,40:{}{Chapter 7}{}
+        
+        \reqhalfcourse 42,25:{}{Chapter 8}{}
+        \reqhalfcoursec 28,25:{}{Chapter 9}{}{black!10}
+        
+        \prereq 35,60,15,50:
+        \prereqc 35,60,28,25;50:
+        \prereq 35,60,45,50:
+        \prereq 45,50,35,40:
+        \prereq 45,50,65,40:
+        \prereq 45,50,42,25:
+        \coreqc 65,40,42,25;-30:
+        \coreq 15,50,28,25:
+        \coreq 35,40,28,25:
+        
+        \begin{pgfonlayer}{courses}
+            \draw[dashed] ([shift={(-1mm,-1mm)}]x28y25.south west) rectangle ([shift={(1mm,1mm)}]x42y25.north east);
+            % \node [text,align=center] [below=higher] {Higher-Level Reasoning};
+        \end{pgfonlayer}
+    \end{chart}
+    \caption{The chapter dependencies, where chapter 8 and 9 are similar in the concept and motivation, and the dashed line represents, recommend but not required reading (there are some references to chapters before). Chapter 6 and Chapter 9 are an extension to a cooperative game hence the same colour, while the others deal with the training aspect of possible general sum game.}
+\end{figure}

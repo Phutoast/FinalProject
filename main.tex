@@ -12,6 +12,9 @@
 \usepackage{tcolorbox}
 \usepackage{caption}
 \usepackage{float}
+\usepackage{changepage}
+\usepackage{hyperref}
+
 
 \tcolorboxenvironment{definition}{
   sharp corners,
@@ -28,16 +31,19 @@
 \usetikzlibrary{shadows}
 \usetikzlibrary{positioning}
 
+\usepackage{prerex}
+\usetikzlibrary{fit}
+
 \usepackage[english]{babel}
 \usepackage{blindtext}
 
-\newtheorem{theorem}{THEOREM}
-\newtheorem{lemma}[theorem]{LEMMA}
-\newtheorem{corollary}[theorem]{COROLLARY}
-\newtheorem{proposition}[theorem]{PROPOSITION}
-\newtheorem{remark}[theorem]{REMARK}
-\newtheorem{definition}[theorem]{DEFINITION}
-\newtheorem{fact}[theorem]{FACT}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{fact}[theorem]{Fact}
 
 \newtheorem{problem}[theorem]{PROBLEM}
 \newtheorem{exercise}[theorem]{EXERCISE}
@@ -49,6 +55,29 @@ PROOF:
 $\Box$ \end{quotation}}
 
 \newcommand{\Phu}[1]{{\bf \color{red} [[Phu: #1]]}}
+% \newcommand{\Phu}[1]{{}}
+
+
+\newcommand{\dby}{\ \mathrm{d}}
+\newcommand{\kl}{D_{\mathrm{KL}}}
+\newcommand{\argmax}[1]{\underset{#1}{\arg\max \ }}
+\newcommand{\argmin}[1]{\underset{#1}{\arg\min \ }}
+\newcommand{\const}{\text{const.}}
+\newcommand{\optim}{\mathcal{O}}
+\newcommand{\prior}{\text{prior}}
+\newcommand{\bracka}[1]{\left( #1 \right)}
+\newcommand{\brackb}[1]{\left[ #1 \right]}
+\newcommand{\brackc}[1]{\left\{ #1 \right\}}
+\newcommand{\contractop}{\mathcal{T}}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+\newcommand{\red}[1]{{\color{red} #1}}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\pri}{\operatorname{pri}}
+\newcommand{\pub}{\operatorname{pub}}
+
+\newcommand{\grammar}[1]{{\color{blue} #1}}
+\newcommand{\factcheck}[1]{{\color{magenta} #1}}
 
 \newcommand{\nats}{\mbox{\( \mathbb N \)}}
 \newcommand{\rat}{\mbox{\(\mathbb Q\)}}
@@ -59,72 +88,75 @@ $\Box$ \end{quotation}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\title{{\vspace{-14em} \includegraphics[scale=0.4]{ucl_logo.png}}\\
-{{\Huge Probabilistic Multi-Agent Reinforcement Learning}}\\
+\title{{{\Huge Multiagent Learning with Bayesian inference}}\\
 % {\large Optional Subtitle}\\
 }
-\date{Submission date: Day Month Year}
+\date{Submission date: Day May 2020}
 \author{Phu Sakulwongtana\thanks{
 {\bf Disclaimer:}
 This report is submitted as part requirement for the BSc Computer Science at UCL. It is
 substantially the result of my own work except where explicitly indicated in the text.
-\emph{Either:} The report may be freely copied and distributed provided the source is explicitly acknowledged
-\newline  %% \\ messes it up
-\emph{Or:}\newline
-The report will be distributed to the internal and external examiners, but thereafter may not be copied or distributed except with permission from the author.}
+% \emph{Either:} 
+The report may be freely copied and distributed provided the source is explicitly acknowledged
+% \newline  %% \\ messes it up
+% \emph{Or:}\newline
+% The report will be distributed to the internal and external examiners, but thereafter may not be copied or distributed except with permission from the author.
+}
 \\ \\
 BSc Computer Science\\ \\
 Jun Wang, Philip Treleaven}
 
+\newenvironment{outline} {\renewcommand\abstractname{}\begin{abstract}} {\end{abstract}}
+
+\newenvironment{miniabstract} {\begin{adjustwidth}{1cm}{}} {\end{adjustwidth}}
 
 
 \begin{document}
  
 \onehalfspacing
 \maketitle
+
 \begin{abstract}
-\input{abstract.tex}
+\input{non_content/abstract}
 \end{abstract}
 
 \tableofcontents
+
+\input{non_content/chapter_outline}
+
 \setcounter{page}{1}
 
-\chapter{Notation and Reviews}
-\input{chapters/chapter1.tex}
+\chapter{Introduction}
+\input{chapters/chapter01/main}
+
+\chapter{Background}
 
 \chapter{Unified View of Probabilistic Multi-agent Reinforcement Learning}
-\input{chapters/chapter2.tex}
 
-% \input{chapters/chapter2Old.tex}
+\chapter{Solving Inconsistencies}
 
-% \chapter{Experiments}
+\chapter{EM-Algorithm For Multi-Agent Reinforcement Learning}
 
-\chapter{Extensions/Future Work (If have time)}
-\input{chapters/chapter3.tex}
+\chapter{Hierarchy and Communication in Multi-Agent Reinforcement Learning}
+
+\chapter{Imitation Learning and Context Aware Multi-Agent Reinforcement Learning}
+
+\chapter{Generalized Recursive Reasoning: revisited}
+
+\chapter{Probabilistic perspective on Public Belief MDP}
 
 \chapter{Conclusion}
-\begin{itemize}
-    \item Pure Nash Strategy from VIREL
-    \item Graph Neural Network 
-    \item Unified View. 
-    \item Modeling Belief 
-\end{itemize}
 
 \appendix
 
-% \bibliographystyle{alpha}
+% \bibliographystyle{apalike}
 \bibliographystyle{plain}
 \bibliography{bibilography}
 
-% \chapter{Overview of ELBO, EM and Variational Inference}
-% \input{appendix/appendix1.tex}
+\chapter{Other Proofs}
+\input{appendix/appendix_1.tex}
 
-% \chapter{Soft-Q Learning Objective from Probabilistic Interpretation of Reinforcement Learning}
-% \input{appendix/appendix2.tex}
-
-\chapter{Deriving ELBO}
-
-% \chapter{ROMMEO\cite{tian2019regularized}}\label{ROMMEOFull}
-% \input{appendix/appendix3.tex}
+% \chapter{Reinforcement Learning}
+% \input{appendix/appendix_2.tex}
 
 \end{document}

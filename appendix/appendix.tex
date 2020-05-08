@@ -1,0 +1,75 @@
+\label{ELBO:agent}
+\subsection{For Agent's policy}
+Recall that the ELBO derived from Jensen's inequality is equal to 
+\begin{equation}
+    \mathbb{E}_{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \log \frac{P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})} \Bigg]
+\end{equation}
+where the joint probabilities are equal to 
+\begin{equation}
+    \begin{aligned}
+        &\begin{aligned}[t]
+            P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1} &P(\mathcal{O}^i_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) P_{\text{prior}}(\boldsymbol{a}^i_t) \\
+            &P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t})  \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+        \end{aligned}\\
+        &q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1}
+        P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+    \end{aligned}
+\end{equation}
+where by their log probability are equal to 
+\begin{equation}
+    \begin{aligned}
+        &\begin{aligned}[t]
+            \log P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = \log P(\boldsymbol{s}_1) + \sum^T_{t=1} &\log P(\mathcal{O}^i_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) +  \log P_{\text{prior}}(\boldsymbol{a}^i_t) \\
+            &+ \log P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t})  +\log\rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+        \end{aligned} \\
+        &\begin{aligned}[t]
+            \log q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = \log P(\boldsymbol{s}_1) + \sum^T_{t=1}
+            \log P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) + \log \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) + \log \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+        \end{aligned}
+    \end{aligned}
+\end{equation}
+We alos know that the ELBO is equal to 
+\begin{equation}
+    \mathbb{E}_{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \log P(\mathcal{O}^i_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) - \log q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) \Bigg]
+\end{equation}
+This reduces to 
+\begin{equation}
+    \mathbb{E}_{q(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \sum^T_{t=1} \log P(\mathcal{O}^i_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) + \log \frac{P_{\text{prior}}(\boldsymbol{a}^i_t)}{\pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)} \Bigg]
+\end{equation}
+Finally, we arrived at the form as described in Equation \ref{equation:4}.
+
+\label{ELBO:opponent}
+\subsection{For Opponent's model}
+Similarly, the ELBO is in the form of 
+\begin{equation}
+    \mathbb{E}_{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \log \frac{P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})} \Bigg]    
+\end{equation}
+The joint probabilities are equal to 
+\begin{equation}
+    \begin{aligned}
+        &\begin{aligned}[t]
+            P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1} &P(\mathcal{O}^{-i}_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) P_{\text{prior}}(\boldsymbol{a}^{-i}_t) \\
+            &P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \pi_{\theta}(\boldsymbol{a}^{i}_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)
+        \end{aligned}\\
+        &q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = P(\boldsymbol{s}_1) \prod^T_{t=1} P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+    \end{aligned}
+\end{equation}
+The log probabilities are equal to 
+\begin{equation}
+    \begin{aligned}
+        &\begin{aligned}[t]
+            \log P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = \log P(\boldsymbol{s}_1) + \sum^T_{t=1} &\log P(\mathcal{O}^{-i}_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) + \log P_{\text{prior}}(\boldsymbol{a}^{-i}_t) \\
+            &\log P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) +  \log \pi_{\theta}(\boldsymbol{a}^{i}_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t)
+        \end{aligned}\\
+        &\log q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) = \log P(\boldsymbol{s}_1) + \sum^T_{t=1} \log P(\boldsymbol{s}_{t+1} | \boldsymbol{s}_{t}, \boldsymbol{a}^i_{t}, \boldsymbol{a}^{-i}_{t}) + \log \pi_{\theta}(\boldsymbol{a}^i_t | \boldsymbol{s}_t, \boldsymbol{a}^{-i}_t) + \log \rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)
+    \end{aligned}
+\end{equation}
+With this, since the ELBO is equal to 
+\begin{equation}
+    \mathbb{E}_{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \log P(\mathcal{O}^{-i}_{1:T} = 1, \boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) - \log q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T}) \Bigg]
+\end{equation}
+Which is equal to 
+\begin{equation}
+    \mathbb{E}_{q'(\boldsymbol{s}_{1:T}, \boldsymbol{a}^i_{1:T}, \boldsymbol{a}^{-i}_{1:T})}\Bigg[ \sum^T_{t=1} \log P(\mathcal{O}^{-i}_{t} = 1 | \boldsymbol{s}_{t}, \boldsymbol{a}^{-i}_{t}) + \log \frac{P_{\text{prior}}(\boldsymbol{a}^{-i}_t)}{\rho_{\phi}(\boldsymbol{a}^{-i}_t | \boldsymbol{s}_t)}  \Bigg]
+\end{equation}
+And this reduces to ELBO as in the Equation \ref{equation:18}

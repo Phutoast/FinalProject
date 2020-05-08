@@ -1,0 +1,21 @@
+\section{Structure}
+We will arrange the thesis as follows
+\begin{itemize}
+    \item \textbf{Chapter 2 (Background)}: We will go through the tools necessary to develop the algorithms and formulation of the problem in multi-agent reinforcement learning, which would includes 
+    \begin{itemize}
+        \item Variational inference techniques, and SVGD \cite{liu2016stein}, which will be used in developing and implementing most of the algorithms.
+        \item Single agent reinforcement learning: MDP formulation, value iteration, and its contraction proof + improvement theorem, control as inferences frameworks, soft-Q learning, soft-Actor critic, VIREL and there analysis. Furthermore, we will includes recent works on information theoretic inspired reinforcement learning, and bounded rationality. 
+        \item Extensions to control as inference frameworks: hierarchical reinforcement learning, representing belief in POMDP, multi-view and inverse-reinforcement learning. 
+        \item Multi-agent reinforcement learning (MARL) algorithms review: we will go through DEC-POMDP \cite{bernstein2002complexity} formulation of MARL problem. And, we will presents developed algorithms, which we will use as baseline or would like to frame them to probabilistic inference framework, including: MADDPG \cite{lowe2017multi}, COMA \cite{foerster2018counterfactual}, QMIX \cite{rashid2018qmix}, MAVEN \cite{mahajan2019maven}, and BAD \cite{foerster2018bayesian}
+        \item Multi-agent with probabilistic inference framework (MAPI): Go through core derivations of ROMMEO \cite{tian2019regularized}, PR2 \cite{wen2019probabilistic}, and GR2  \cite{wen2019multi}, with some theoretical guarantee presented.
+        \item We will turn to mutli-agent with KL-constrain (MAKL), which is balancing-$Q$ \cite{grau2018balancing}, providing a full derivation of the algorithm, which would reveal its mechanism that allows turning between zero-sum and cooperative games, with theoretical guarantee. 
+    \end{itemize}
+    \item \textbf{Chapter 3 (Unified view)}: We will compare the properties of MAKL and MAPI, and reveals the incompatibility between both framework. We will then proposed a new algorithm, which is directly inspired by algorithms from both classes. After this, we will show some theoretical guarantee, and proposed implementable algorithms.
+    \item \textbf{Chapter 4 (Experiments)}: After developed algorithms in previous chapter, we will prove its effectiveness, empirically againts some of state of the art algorithms, and algorithms from MAPI and MAKL family. This will also includes ablation study on opponent models, and how they are trained.
+    \item \textbf{Chapter 5 (Extensions)}: Now, after showing that the algorithm proposed is working both theoretically and empirically, we will propose extensions, which borrows ideas from single agent reinforcement learning algorithms
+    % , such as hierarchical control, state-belief in POMDP, and reverse-reinforcement learning. And on the way, we will try to map some of the algorithms proposed before to our proposed frameworks.
+    \item \textbf{Chapter 6 (Experiments)}: We will conduct an experiments that prove the effectiveness of the extension to multi-agent reinforcement learning.
+    % \item \textbf{Chapter 7 (Beyond MEMARL) EXPERIMENTAL}: After showing the effectiveness of control-as-inference in multi-agent learning problem, we will took a step back and show some concerns, that has been raised recently, regarding to this framework as whole As we will look, their effect on multi-agent learning algorithms.
+    \item \textbf{Chapter 8 (Future works)}: We will provide future directions in development of multi-agent reinforcement learning problems and some un-answered questions that are worthed to be investigate in future projects. 
+\end{itemize}
+In the appendix, we will mostly provided a full derivation, for completeness, that are left in main manuscript. We belief that some of the techniques can be useful, thus worth to stated in full form.
