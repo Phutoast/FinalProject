@@ -1,0 +1,30 @@
+\subsection{Policy Guarantee Improvement}
+\label{appx:chap2-rl-policy-improve} 
+We start with the definition of improved policy:
+\begin{equation*}
+    \pi'(a | s) = \begin{cases}
+        1 &\text{ if } a = \argmax{a \in A} Q^\pi(s, a) \\
+        0 &\text{ otherwise }
+    \end{cases}
+\end{equation*}
+We have the following sequence of substitutions
+\begin{equation*}
+    \begin{aligned}
+        V^{\pi}(s) &\le Q^{\pi}(s, \pi'(s)) \\
+        &= r(s, \pi'(s)) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V^\pi(s')}  \\
+        &\le r(s, \pi'(s)) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{Q^{\pi}(s', \pi'(s'))}  \\
+        &\vdots \\
+        &\le r(s, \pi'(s)) + \gamma  r(s', \pi'(s')) + \gamma^2  r(s'', \pi'(s'')) + \cdots \\
+        &= V^{\pi'}(s)
+    \end{aligned}
+\end{equation*}
+Please note that this improved policy is deterministic, therefore, we can simply substitute the output into the action value function.
+
+\subsection{Expected Bellman Operator is a Contraction Mapping}
+\label{appx:chap2-rl-expected-bell-contract}
+
+\subsection{Optimal value Bellman Operator is a Contraction Mapping}
+\label{appx:chap2-rl-optimal-val-bellman-contract}
+
+\subsection{Optimal action value Bellman Operator is Contraction Mapping}
+\label{appx:chap2-rl-optimal-q-bellman-contract}

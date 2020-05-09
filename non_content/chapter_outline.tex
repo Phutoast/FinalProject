@@ -1,16 +1,14 @@
-
 \begin{figure}[!t]
     \centering
     \begin{chart}%\grid
-        \reqhalfcourse 35,60:{}{Chapter 3}{}
-        \reqhalfcourse 45,50:{}{Chapter 4}{}
-        \reqhalfcourse 65,40:{}{Chapter 5}{}
-        % \newcommand{\background}{green!15}
-        \reqhalfcoursec 15,50:{}{Chapter 6}{}{black!10}
-        \reqhalfcourse 35,40:{}{Chapter 7}{}
+        \reqhalfcourse 35,60:{}{\hyperref[chapter:chap3]{Chapter 3}}{}
+        \reqhalfcourse 45,50:{}{\hyperref[chapter:chap4]{Chapter 4}}{}
+        \reqhalfcoursec 65,40:{}{\hyperref[chapter:chap5]{Chapter 5}}{}{red!10}
+        \reqhalfcoursec 15,50:{}{\hyperref[chapter:chap6]{Chapter 6}}{}{black!10}
+        \reqhalfcourse 35,40:{}{\hyperref[chapter:chap7]{Chapter 7}}{}
         
-        \reqhalfcourse 42,25:{}{Chapter 8}{}
-        \reqhalfcoursec 28,25:{}{Chapter 9}{}{black!10}
+        \reqhalfcourse 42,25:{}{\hyperref[chapter:chap8]{Chapter 8}}{}
+        \reqhalfcoursec 28,25:{}{\hyperref[chapter:chap9]{Chapter 9}}{}{black!10}
         
         \prereq 35,60,15,50:
         \prereqc 35,60,28,25;50:
@@ -27,5 +25,6 @@
             % \node [text,align=center] [below=higher] {Higher-Level Reasoning};
         \end{pgfonlayer}
     \end{chart}
-    \caption{The chapter dependencies, where chapter 8 and 9 are similar in the concept and motivation, and the dashed line represents, recommend but not required reading (there are some references to chapters before). Chapter 6 and Chapter 9 are an extension to a cooperative game hence the same colour, while the others deal with the training aspect of possible general sum game.}
+    \caption{The chapter dependencies, where chapter \ref{chapter:chap8} and \ref{chapter:chap9} are similar in the concept and motivation, and the dashed line represents, recommend but not required reading (there are some references to chapters before). Chapter \ref{chapter:chap6} and chapter \ref{chapter:chap9} are an extension to a cooperative game, while chapter \ref{chapter:chap5} deals with the imitation learning, hence the different colours.}
+    \label{fig:chap0-chap-dependencies}
 \end{figure}

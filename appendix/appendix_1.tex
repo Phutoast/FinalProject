@@ -1,73 +1,11 @@
 \section {Probabilistic Machine Learning}
-\subsection{ELBO from KL-divergence}
-\label{appendix-1:elbo-kl}
-We will start with the initial equation that we get and then expanded from that 
-\begin{equation*}
-    \begin{aligned}
-        -\int q_{\phi} (\theta) \log\left( \frac{q_{\phi} (\theta)}{P(\theta | X, Y)} \right) \dby \theta &= \int q_{\phi} (\theta) \log\left( \frac{P(\theta | X, Y)}{q_{\phi} (\theta)} \right) \dby \theta \\ 
-        &= \int q_{\phi} (\theta) \log\left( \frac{P(Y | X, \theta) P(\theta)}{P(Y|X)q_{\phi} (\theta)} \right) \dby \theta \\
-        &= \int q_{\phi} (\theta) \log \left( \frac{P(\theta)}{q_{\phi} (\theta)} \right) + q_{\phi} (\theta) \log P(Y | X, \theta) - q_{\phi} (\theta) \log P(Y| X) \dby \theta \\
-        &= \int q_{\phi} (\theta) \log\left( P(\theta | X, Y) \right) \dby \theta - \int q_{\phi} (\theta) \log\left( \frac{q_{\phi} (\theta)}{P(\theta)} \right) \dby \theta  - \const \\
-        &= \mathbb{E}_{q_{\phi} (\theta)} \left[ P(Y | X, \theta) \right] - \kl \left(q_{\phi} (\theta) \Big\| P(\theta) \right) - \const \\
-    \end{aligned}
-\end{equation*}
-
-
-\subsection{ELBO from Jensen's inequality}
-\label{appendix-1:elbo-jensen}
-We will start with the log-likelihood 
-\begin{equation}
-    l(X, Y) = \log \left( \int P(Y,  \theta | X) \dby \theta \right)
-\end{equation}
-Now we will introduce the variational distribution $q_{\phi}(\theta)$ that we would like to estimate
-\begin{equation*}
-    \begin{aligned}
-        l(X, Y) &= \log \left( \int P(Y,  \theta | X) \dby \theta \right) \\
-        &= \log \left( \int P(Y,  \theta | X) \frac{q_{\phi}(\theta)}{q_{\phi}(\theta)} \dby \theta \right) \\
-        &\ge \int  q_{\phi}(\theta) \log\left(\frac{P(Y,  \theta | X)}{q_{\phi}(\theta)}\right) \dby \theta
-    \end{aligned}
-\end{equation*}
-Since log function is concave, we can use Jensen's inequality to derived the lower bounded on the log-likelihood.
-
-
-\subsection{Gap between ELBO and log-likelihood}
-\label{appendix-1:elbo-gap}
-We will show that the sum between the ELBO and KL-divergence between $P(\theta | X, Y)$ and $q_{\phi}(\theta)$ is indeed equal to the log-likelihood.
-\begin{equation*}
-    \int q_{\phi}(\theta) \log\left(\frac{P(Y, \theta | X)}{q_{\phi}(\theta)}\right) \dby \theta + \int q_{\phi} (\theta) \log\left( \frac{q_{\phi} (\theta)}{P(\theta | X, Y)} \right) \dby \theta
-\end{equation*}
-Starting by expanding the integral and algebraic manipulation, we can see that this is equal to \begin{equation*}
-    \begin{aligned}
-        \int q_{\phi}(\theta) &\log\left(\frac{P(Y, \theta | X)}{q_{\phi}(\theta)}\right) +  q_{\phi} (\theta) \log\left( \frac{q_{\phi} (\theta)}{P(\theta | X, Y)} \right) \dby \theta   \\ 
-        &= \int q_{\phi}(\theta) \log\left( \frac{P(Y, \theta | X)}{P(\theta | X, Y)} \right) \dby \theta = \int q_{\phi}(\theta) \log\left( P(Y | X) \right) \dby \theta \\
-        &= \log\left( P(Y | X) \right) \int q_{\phi}(\theta) \dby \theta = \log\left( P(Y | X) \right) \cdot 1
-    \end{aligned}
-\end{equation*}
 
 \section{Reinforcement Learning}
 
 \subsection{Policy Improvement Theorem}
 \label{appendix-2:policy-im}
 
-We start with the definition of improved policy:
-\begin{equation*}
-    \pi'(a | s) = \begin{cases}
-        1 &\text{ if } a = \argmax{a \in A} Q^\pi(s, a) \\
-        0 &\text{ otherwise }
-    \end{cases}
-\end{equation*}
-We have the following sequence of substitutions
-\begin{equation*}
-    \begin{aligned}
-        V^{\pi}(s) &\le Q^{\pi}(s, \pi'(s)) \\
-        &= r(s, \pi'(s)) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V^\pi(s')}  \\
-        &\le r(s, \pi'(s)) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{Q^{\pi}(s', \pi'(s'))}  \\
-        &\vdots \\
-        &\le r(s, \pi'(s)) + \gamma  r(s', \pi'(s')) + \gamma^2  r(s'', \pi'(s'')) + \cdots \\
-        &= V^{\pi'}(s)
-    \end{aligned}
-\end{equation*}
-Please note that this improved policy is deterministic, therefore, we can simply substitute the output into the action value function.
+
 
 \subsection{Construct Matrices for Reinforcement Learning}
 \label{appendix-2:metrics-rl}

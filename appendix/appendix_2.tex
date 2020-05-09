@@ -1,0 +1,69 @@
+%  We can expand the equality in equation \ref{eqn:Q-and-V} for the value function as follows:
+% \begin{equation}
+
+% \end{equation}
+% We call this equation expected Bellman equation along with the following expected Bellman operator $\contractop^{\pi} : \mathbb{R}^{|S|} \rightarrow \mathbb{R}^{|S|}$ defined as:
+% \begin{equation}
+%     \label{eqn:exp-bellman-operator}
+%     \contractop^{\pi} V(s) = \mathbb{E}_{a \sim \pi(a | s)} \brackb{r(s, a) + \gamma \mathbb{E}_{s' \sim \contractop(s' | s, a)}\brackb{V(s')}} 
+% \end{equation}
+% Normally we have to find $V(s)$ such that $\contractop^\pi V(s) = V(s)$, which involves matrix inversion (see appendix \ref{appendix-2:metrics-rl} for more details). However, turn out this expected Bellman operator is an contraction mapping on $\infty$-norm i.e 
+% \begin{equation*}
+%     \| \contractop^\pi V_1(s) - \contractop^\pi V_2(s) \|_\infty \le \alpha \|V_1(s) - V_2(s)\|_\infty
+% \end{equation*}
+% For some $0 \le \alpha < 1$ (See appendix \ref{appendix-2:expect-bellman-contract} for proof). And by the following theorem (We will also present the proof of this theorem in appendix \ref{appendix-2:fixed-point}) 
+% \begin{theorem}{(Banach fixed-point theorem)}
+%     Given the complete (every Cauchy sequence converges to a point in that space) metric space $(X, d(\cdot, \cdot))$ and the contraction mapping $\contractop : X \rightarrow X$, the sequence $(\contractop^{(n)} x)^{\infty}_{n=1}$ converges to a fixed point $x^*$ where $\contractop x^* = x^*$, for all points $x \in X$. 
+% \end{theorem}
+% Repeatedly apply the Bellman operator will lead us to a solution of $V^{\pi}$.  In conclusion, Policy iteration is an algorithm that solves the MDP by involving the alternation between the following 2 steps
+% \begin{enumerate}
+%     \item \textbf{Policy Evaluation}: Starting with randomized value function and Repeatedly applying Bellman operator defined in equation \ref{eqn:exp-bellman-operator} until converge to get true value function $V^{\pi}(s)$.
+%     \item \textbf{Policy Improvement}: Update the policy by choosing the best action from action value function (we can calculate this by the equation \ref{eqn:Q-and-V}) following the equation \ref{eqn:greedy-Q}
+% \end{enumerate}
+% Since the value function always increases in every state, this algorithm is guaranteed to reach the optimal value function and policy. 
+
+% \subsubsection{Value Iteration}
+% Now, it is quite computational ineffective to evaluates the policy every times to update the policy. Can we just update the value function once and then uses the policy improvement to come-up with the next value function. We will define optimal value Bellman update operator as:
+% \begin{equation}
+%     \label{eqn:optimal-bellman-operator}
+%     \contractop^*_V V(s) = \max_{a \in A}\Big(r(s, a) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V(s')} \Big)
+% \end{equation}
+% In this case, we update the the value function toward the action that yields highest value given only one update. It is clear that $V^*(s)$ is the fixed point of this operator. This is, indeed, a contraction mapping, thus repeatedly updating the value function by optimal value Bellman operator will give us optimal value function. The prove will be appendix \ref{appendix-2:optimal-val-bellman-contract}. Finally, given the optimal value function, one can calculate the optimal action value function, and optimal policy. 
+
+% \subsubsection{Q Iteration}
+% \label{sec:Q-iteration}
+
+% Now, instead of using value function as in value iteration, it is always desirable for us to estimate optimal action value function $Q^*(s, a)$, simply because the agent can greedily choose the action $a$ that maximizes this optimal action value function, see equation \ref{eqn:greedy-Q}. One can define the optimal action value Bellman operator as 
+% \begin{equation}
+%     \contractop^*_Q Q(s, a) = r(s, a) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{\max_{a\in A} Q(s', a)} 
+% \end{equation}
+% Similarly, it is clear that the optimal action value function is fixed point of this operator, while we can proof (in appendix \ref{appendix-2:optimal-q-bellman-contract}) that this operator is indeed a contraction mapping.
+
+% \subsubsection{SARSA}
+% All the algorithms presented till now are all model based algorithm, whereby we need a transition function $\mathcal{T}(s'|s, a)$ in order to solve MDP. This sometimes being intractable or unknown. From now on for the rest of the thesis, we will only consider the algorithm that doesn't require the knowledge of the environment, known as model-free. In model-free algorithm, we aim to estimate $Q^*(s, a)$ instead. That is because choosing action will be very easy if we get hold of $Q^*(s, a)$ simply choosing the action that maximizes the function given the state. Analogous to model based algorithm above, we want to update our current knowledge of $Q(s, a)$ and then do policy improvement on it following policy iteration, which we will call this SARSA. Before we move on, we would like to consider the general update rule at iteration $k$, which is 
+% \begin{equation}
+%     \label{eqn:train-q-val}
+%     Q^{(k)}(s, a) \leftarrow Q^{(k)}(s, a) + \alpha\brackb{\text{target value} - Q^{(k)}(s, a)}
+% \end{equation}
+% from now on, we will only consider about the target value. In addition, the experience collected will be of the form $(s_{t}, a_{t}, r_{t}, s'_{t}, a'_{t})$. SARSA depends on the concept called bootstrap, where by after we collect the experience, the target action value at iteration $k$ is
+% \begin{equation}
+%     r(s_t, a_t) + \gamma Q^{(k)}(s_{t+1}, a_{t+1})
+% \end{equation}
+% The follows the connection between value function and action value function, but ignoring the effect of expectation on policy and transition function. This will give an biased estimate of the action value function, although being low in variance. The bias estimate can be mitigated by including samples in $N$ later times, for instance 
+% \begin{equation}
+%     q^{(N+1)}_k = r(s_t, a_t) + \sum^N_{n=1} \gamma^n r(s_{t+n}, a_{t+n}) + \gamma^{N+1} Q^{(k)}(s_{t+N+1}, a_{t+N+1})
+% \end{equation}
+% With this, we can even do weighted sum on the N-steps estimation given hyperparameter $\lambda$ as follows
+% \begin{equation}
+%     (1-\lambda)\sum^\infty_{n=1} \lambda^{n-1} q^{(n)}_k
+% \end{equation}
+% which we will call forward view of SARSA($\lambda$). For an online implementation and other variances (eligibility traces), we refer to chapter 12 of \cite{sutton2018reinforcement}. 
+
+% \subsubsection{Q Learning}
+
+% For Q-learning, we simply aim to approximate optimal action value function. This can be done off-policy (meaning that any experience tuple sample from any policy will be sufficient). Similar to SARSA, which is based on policy evaluation, we based the algorithm on Q Iteration (Section \ref{sec:Q-iteration}) in which we can update the current estimate by setting the target value as:
+% \begin{equation}
+%     r(s_t, a_t) + \gamma \max_{a'} Q^{(k)}(s_{t+1}, a')
+% \end{equation}
+
+% \Phu{There is Michael Jordan's Paper on the convergence of this + Study the convergence of these stuff}

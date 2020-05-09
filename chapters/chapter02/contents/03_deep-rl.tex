@@ -1,0 +1,23 @@
+
+% \subsection{Deep Reinforcement Learning}
+
+% Now, it is always the case that the state action value is too big for us to represent exact value function or action value function. We will now present the way that we can approximate these values with other method for control, notably policy gradient.
+
+% \subsubsection{Deep Q learning \cite{mnih2015human}}
+% Deep Q learning is based on traditional Q learning, whereby instead of update the Q function by adding the difference between target value and predicted value (see equation \ref{eqn:train-q-val}), the authors aimed to minimized mean square error of the action value function $Q_\theta(s, a)$ parameters by $\theta$. Furthermore, the training relies on experience replay $\mathcal{D}$, which stores the past experiences in the tuple (this works because Q learning is off-policy), and target action value function $Q_{\theta'}(s, a)$, which is the network some time before the current iteration, added to increase stability in training i.e
+% \begin{equation}
+%     \mathcal{L}(\theta) = \mathbb{E}_{(s, a, r, s')^n_{i=1} \sim B(\mathcal{D})}\brackb{ \frac{1}{n}\sum^n_{i=1} \bracka{Q_{\theta}(s_i, a_i) - r(s_i, a_i) - \max_{a'} Q_{\theta'}(s'_i, a'_i)}^2 }
+% \end{equation}
+% where $\mathcal{B}$ being mini-batch sampler. Furthermore, due to high number of state space, the author uses $\varepsilon$-greedy policy to help the agent collecting the experience (better exploration) so that it gets more diverse set of training data. The policy is defined as 
+% \begin{equation}
+%     \pi(a | s) = \begin{cases}
+%         \argmax{a'} Q(s, a') &\text{ if } b < \varepsilon \\
+%         a' \sim \text{Uniform}(a_0, a_1, \dots, a_{|A|}) &\text{ otherwise } \\
+%     \end{cases} \\
+% \end{equation}
+% where $b \sim \mathcal{U}[0, 1]$. The authors have shown that given the following training scheme (with some minor tricks), the agent can achieve super-human performance on Arcade Learning Environment \cite{bellemare2013arcade}. Note that there are some game that the agent doen't learn at all. The infamous Montezuma's revenge is one instance of this. This is due to the fact that the agent has to learn to reason on very long time steps in order to solve the game. This is solved via exploration and hierarchical reinforcement learning, which we will explore more in later sections.
+
+% There are other techniques that improves the training stability or increases its performance notable, double-q learning \cite{van2016deep}, which tackles the over-optimism prediction, Prioritized DQN \cite{schaul2015prioritized}, which allows the experience replay to sample higher quality experience tuple, Dueling DQN \cite{wang2015dueling}, which increase the capacity of the estimation of action value function by combining approximate value function and approximate advantage function, Distributional DQN \cite{bellemare2017distributional}, which estimates the distribution over the action value function \cite{osband2018randomized}, Noisy Net \cite{fortunato2017noisy}, which injects the noise into the output of neural network layers, aiming to improves explorations, and combination of them all - rainbow DQN \cite{hessel2018rainbow}.
+
+% \subsubsection{Policy Gradient}
+
