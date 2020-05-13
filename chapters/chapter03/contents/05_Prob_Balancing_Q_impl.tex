@@ -1,0 +1,156 @@
+\label{sec:chap3-prob-balancing-q}
+
+\subsection{Graphical Model Representations}
+Now, we would like to represent the graphical model of Balancing Q-learning. Now, we can simply consider the variational distribution can be:
+\begin{equation}
+    \cfrac{\pi_\theta(a^i_t | s_t,)^{\frac{1}{\beta^i}}}{\int  \pi_\theta(a^i_t | s_t)^{\frac{1}{\beta^i}}\dby a^i_t} \qquad \frac{\rho_\phi(a^{-i}_t | s_t)^{\frac{1}{\beta^{-i}}}}{\int  \rho_\phi(a^{-i}_t | s_t)^{\frac{1}{\beta^{-i}}}\dby a^i_t} 
+\end{equation}
+This might satisfies the need however, it doesn't give any other information and/or insight into Balancing Q-learning ability to works with both cooperative and competitive game. Now, let's show the graphical model. We will follows the insight from solving agent's policy, which requires us to consider its intermediate opponent model. Let's starting with the graphical model representation of the opponent model problem. We will consider the case, which the opponent assume an optimal agent's policy and update toward it. The graphical model is depicted in figure \ref{fig:chap3-balancing-Q-opponent}.
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[obs] (o1t) {$\mathcal{O}^{-i}_t$};
+        \node[latent, below=of o1t] (a1t) {$a^{-i}_t$};
+        \node[latent, below=of a1t] (st) {$s_t$};
+        \node[latent, below=of st] (at) {$a^{i}_t$};
+        \node[latent, below=of at] (ot) {$\mathcal{O}^{i}_t$};
+        
+        \edge {a1t} {o1t}
+        \edge {st} {at, a1t}
+        \edge {ot} {at}
+        \path[->]  (ot)  edge   [bend left=60] node {} (o1t);
+        \path[->]  (at)  edge   [bend left=30] node {} (a1t);
+        \path[->]  (at)  edge   [bend left=60] node {} (o1t);
+        \path[->]  (st)  edge   [bend left=30] node {} (o1t);
+        
+        \node[obs, right=3cm of o1t] (o1t1) {$\mathcal{O}^{-i}_{t+1}$};
+        \node[latent, below=of o1t1] (a1t1) {$a^{-i}_{t+1}$};
+        \node[latent, below=of a1t1] (st1) {$s_{t+1}$};
+        \node[latent, below=of st1] (at1) {$a^{i}_{t+1}$};
+        \node[latent, below=of at1] (ot1) {$\mathcal{O}^{i}_{t+1}$};
+        
+        \edge {a1t1} {o1t1}
+        \edge {st1} {at1, a1t1}
+        \edge {ot1} {at1}
+        \path[->]  (ot1)  edge   [bend right=60] node {} (o1t1);
+        \path[->]  (at1)  edge   [bend right=30] node {} (a1t1);
+        \path[->]  (at1)  edge   [bend right=60] node {} (o1t1);
+        \path[->]  (st1)  edge   [bend right=30] node {} (o1t1);
+        
+        \path[->]  (st)  edge   [] node {} (st1);
+        \path[->]  (at)  edge   [] node {} (st1);
+        \path[->]  (a1t)  edge   [] node {} (st1);
+        
+        \node[latent, right=5cm of st1] (stn) {$s_{t+n}$};
+        \path[->]  (st1)  edge [] node {} (stn);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \caption{Graphical model that we want to approximate. For Balancing Q-learning, this is resemblance of PR2 graphical model. }
+    \label{fig:chap3-balancing-Q-opponent}
+    \end{minipage}
+\end{figure}
+This gives the following joint probability. The difference between PR2 and Balancing Q-learning is that we assume to have the knowledge of optimal action:
+\begin{equation}
+\begin{aligned}
+    P(s_{1:T}, &a^i_{1:T}, a^{-i}_{1:T}, \optim^i_{1:T} = 1, \optim^{-i}_{1:T} = 1) \\
+    &= P(s_0) \prod^T_{t=0} \pi_\theta(a^i_t | s_t, \optim^{i}_{t} = 1) P_{\prior}(a^{-i}_t | s_t, a^i_t) P(s_{t+1} | s_t, a^i_t, a^{-i}_t) P(\optim^{-i}_t = 1 | s_t, a^i_t, a^{-i}_t) P(\mathcal{O}^{-i}_t = 1)
+\end{aligned}
+\end{equation}
+The variational joint probability is depicted as the following, the graphical model is very similar to figure \ref{fig:chap3-variational-ROMMEO} with difference condition on actions: 
+\begin{equation}
+    q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) = P(s_0) \prod^T_{t=0} \pi_\theta(a^i_t | s_t, \optim^{i}_{t} = 1) \rho_{\phi}(a^{-i}_t | s_t, a^i_t) P(s_{t+1} | s_t, a^i_t, a^{-i}_t)P(\optim^{-i}_t = 1)
+\end{equation}
+Given this, the optimality random variable is $P(\optim_t^{-i} = 1 | s_t, a^i_t, a^{-i}_t, \optim^{i}_t = 1)$ is defined as follows:
+\begin{equation}
+P(\optim_t^{-i} = 1 | s_t, a^i_t, a^{-i}_t, \optim^{i}_t = 1) \propto \exp \bracka{ \beta^{-i} r(s_t, a^i_t, a^{-i}_t)  }
+\end{equation}
+Now, we can see that the ELBO is simply:
+\begin{equation}
+    \mathbb{E}\brackb{\sum^T_{t=0} \beta^{-i} r(s_t, a^i_t, a^{-i}_t) - \log \frac{\rho_{\phi}(a^{-i}_t | s_t, a^i_t)}{ P_{\prior}(a^{-i}_t | s_t, a^i_t)}}
+    % - \log \frac{\pi_{\theta}(a^{i}_t | s_t, \optim^{i}_{t} = 1)}{ P_{\prior}(a^{-i}_t | s_t, \optim^{i}_{t} = 1)}
+\end{equation}
+We can solve only for the opponent model, since we assume we have knowledge of agent's optimal policy. With the same working as ROMMEO and Balancing Q-learning, we arrived at the following policy definition:
+\begin{equation}
+\begin{aligned}
+\label{eqn:chap3-prob-opponent}
+    &\rho_{\phi}(a^{-i}_t | s_t, a^i_t) = \frac{\exp(Q(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t)}{\exp(Q(s_t, a^{i}_t))} \\
+    \text{ where }&Q(s_t, a^{i}_t) = \log \int \exp(Q(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t) \dby a^{-i}_t \\
+    % &Q(s_t, a^i_t, a^{-i}_t) = \beta^{-i} R(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}, a^{i}_{t+1}\sim\pi_\theta}\brackb{Q(s_{t+1}, a^{i}_{t+1})}
+\end{aligned}
+\end{equation}
+Now, please note that the definition of $Q(s_t, a^i_t, a^{-i}_t)$ isn't entirely correct because we are missing the regularization of the policy. We will left the action value as it be for now, once we have derived the agent's policy, let's re-calculate the action value function for more accurate value. Now, for policy, we have the following graphical model representation represented in figure \ref{fig:chap3-balancing-Q-agent}.
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[obs] (ot) {$\mathcal{O}^{i}_t$};
+        \node[latent, below=of ot] (at) {$a^{i}_t$};
+        \node[latent, below=of at] (st) {$s_t$};
+        \node[latent, below right=of ot] (o1t) {$\mathcal{O}^{-i}_t$};
+        % \node[latent, below=of st] (a1t) {$a^{-i}_t$};
+
+        \edge {st} {at}
+        \edge {at, o1t} {ot}
+        % \path[->]  (a1t)  edge   [bend left=45] node {} (ot);
+        % \path[->]  (a1t)  edge   [bend left=30] node {} (at);
+        \path[->]  (st)  edge   [bend left=30] node {} (ot);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \caption{Graphical model that we want to approximate. This follows the VIREL \cite{fellows2019virel} type of graphical model rather than traditional probabilistic as inference framework.}
+    \label{fig:chap3-balancing-Q-agent}
+    \end{minipage}
+\end{figure}
+Given this, we define the optimality of an agent to be:
+\begin{equation}
+    P(\optim^{i}_t = 1 | s_t, a^{-i}_t, \optim^{-i}_t = 1) = \exp \bracka{ \frac{\beta^{i}}{\beta^{-i}} Q(s_t, a^{i}_t))  }
+\end{equation}
+Note that now, we assume the optimality of the opponent model via the use of soft-max of action value function this works when we are aware that the opponent will \correctquote{maximize} its action value function, and the fraction represents a conversion to agent's reward term. The variational probability is simply 
+\begin{equation}
+    q(s_t, a^{i}_t) = P(s_t) \pi_\theta(a^{i}_t | s_t)
+\end{equation}
+Therefore, the optimal opponent model is equal to 
+\begin{equation}
+\begin{aligned}
+\label{eqn:chap3-prob-agent}
+    &\pi_\theta(a^{i}_t | s_t) = \frac{\exp \bracka{ \cfrac{\beta^{i}}{\beta^{-i}} Q(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t)}{\exp\bracka{V^{i}(s_t)}} \\
+    \text{ where }& V^{i}(s_t) = \log \int \exp \bracka{ \cfrac{\beta^{i}}{\beta^{-i}} Q(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t) \dby a^{-i}_t
+\end{aligned}
+\end{equation}
+Now, let's consider the relationship between the $V^{i}(s_t)$, $Q(s_t, a_t^{i})$ and $Q(s_t, a^i_t, a^{-i}_t)$:
+\begin{equation}
+\label{eqn:chap3-prob-balance-val}
+    V^{i}(s_t) = \mathbb{E}_{\pi, \rho}\brackb{\frac{\beta^{i}}{\beta^{-i}} Q(s_t, a^i_t, a^{-i}_t) - \frac{\beta^{i}}{\beta^{-i}}\log\frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior( a^{-i}_t| s_t, a^i_t)} - \log \frac{\pi_\theta(a^{i}_t | s_t)}{P_\prior(a^{i}_t | s_t)}}
+\end{equation}
+Given this, we can consider the corrected Q value as defined in following Bellman equation:
+\begin{equation}
+    Q(s_t, a^i_t, a^{-i}_t) = \beta^{-i} R(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}}\brackb{\frac{\beta^{-i}}{\beta^i}V^{i}(s_{t+1})}    
+\end{equation}
+which we can used for the the calculation of opponent model. Now, we can see that by the use of the ratio between $\beta^{-i}$ and $\beta^{i}$, we can switch between the agent's action value function and opponent's action value function. Furthermore, from the use of extreamal operator in Bellman equation \cite{grau2018balancing} of Balancing Q-learning denotes similar notion to friend-or-foe learning \cite{littman2001friend}, which we can say that the Balancing Q-learning is the \correctquote{soft} version of friend-or-foe learning. The distinction between friend or foe is needed for the optimization of the agent.
+
+\subsection{Implementation}
+Now, we shall consider the implementation of the probabilistic Balancing Q-learning. Note that the current version of Balancing Q-learning based on discrete action, which we can find exact expected value. However, Balancing Q-learning can be implement in soft Actor-Critic like algorithm. The extension is trivial, while we are going to present similar algorithm, which is derived from the section before. This would require a total of 4 neural networks: $\pi_\theta(a^i_t | s_t, a^{-i}_t)$, $\rho_\phi(a^{-i}_t | s_t)$, $Q_\chi(s_t, a^i_t, a^{-i}_t)$ and $V_\psi(s_t)$. Let's consider the value function first. We will follows the definition of the value function that we have defined in equation \ref{eqn:chap3-prob-balance-val}, leading the following loss function:
+\begin{equation}
+    \mathcal{L}_V(\phi) = \mathbb{E}_{s_t} \brackb{\frac{1}{2}\bracka{V_{t}(s_t) - \mathbb{E}_{\pi_\theta, \rho_\phi}\brackb{\frac{\beta^{i}}{\beta^{-i}} Q_\chi(s_t, a^i_t, a^{-i}_t) - \frac{\beta^{i}}{\beta^{-i}}\log\frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior( a^{-i}_t| s_t, a^i_t)} - \log \frac{\pi_\theta(a^{i}_t | s_t)}{P_\prior(a^{i}_t | s_t)}} }^2}
+\end{equation}
+Now, we can use the Bellman equation of the action value function as the target for training:
+\begin{equation}
+    \mathcal{L}_Q(\chi) = \mathbb{E}_{s_t, a^{i}_t, a^{-i}_t, r_t, s_{t+1} \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{Q_\chi(s_t, a^{i}_t, a^{-i}_t) - \beta^{-i} r_t - \frac{\gamma\beta^{-i}}{\beta^i}V_\psi(s_{t+1})     }^2}
+\end{equation}
+Given the action value function, we can try to train the opponent model, which is in the form of $\rho_\phi(a^{-i}_t | s_t, a^i_t) = f^{-i}_\phi(\xi ; s_t, a^i_t)$ where the noise $\xi \sim \mathcal{N}(0, I)$. Given the function, we would like to minimizing the KL-divergence between the network's output and the closed form solution in equation \ref{eqn:chap3-prob-opponent} i.e minimizing the following objective 
+\begin{equation}
+    \mathcal{L}_\rho(\phi) = \kl\bracka{\rho_{\phi}(a^{-i}_t | s_t, a^i_t) \Bigg\| \frac{\exp(Q(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t)}{\exp(Q(s_t, a^{i}_t))}}
+\end{equation}
+Now before we consider agent's objective, we will have to estimate the value $Q(s_t, a^{i}_t)$, which we are going to use Monte-Carlo estimate with importance sampling 
+\begin{equation}
+    Q^i(s_t, a^{i}_t) = \frac{\beta^{i}}{\beta^{-i}}\log \mathbb{E}_{a^{-i}_t \sim q}\brackb{\frac{\exp\bracka{Q(s_t, a^{i}_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{q(a^{-i}_t)}}
+\end{equation}
+Given our estimation, we can now optimize the agent's policy $f^{i}_\theta(\xi ; s_t)$ by KL-divergence minimization based on equation \ref{eqn:chap3-prob-agent} as follows:
+\begin{equation}
+    \mathcal{L}_\pi(\theta) = \kl\bracka{\pi_\theta(a^{i}_t | s_t) \left\| \frac{\exp \bracka{Q^i(s_t, a^{i}_t)} P_\prior(a^i_t | s_t)}{\exp\bracka{V_\psi(s_t)}} \right.}
+\end{equation}
+This conclude the implementation of probabilistic Balancing Q-learning.
+
+\Phu{TODO add ALGORITHM list and Gradient calculation}

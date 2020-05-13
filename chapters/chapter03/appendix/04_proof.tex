@@ -1,0 +1,72 @@
+\subsection{Balancing-Q Opponent Model derivation}
+\label{appx:chap4-balancing-q-oppo-model}
+We start with the opponent model:
+
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{P(s_T) P(a_T, a^{-i}_T | s_T)}\left[ R(s_T, a_T, a^{-i}_T) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_{\operatorname{prior}}(a^i_T|s_T)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_T|s_T)}{P_{\operatorname{prior}}(a^{-i}_T|s_T, a^i_T)} \right]    \\
+    =& \mathbb{E}_{P(s_T, a^{i}_T )} \Bigg[{\underbrace{\mathbb{E}_{\rho(a^{-i} | s_T, a^i_T)}\Bigg[R(s_T, a_T, a^{-i}_T) - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i} | s_T, a^i_T)}{P_{\operatorname{prior}}(a^{-i}_T|s_T, a^i_T)}\Bigg]}_{\circled{1}}- \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_{\operatorname{prior}}(a^i_T|s_T)}\Bigg]} \\
+\end{aligned}
+\end{equation*}
+We will consider the quality $\circled{1}$, which is equivalent to KL-divergence as we introduce the normalizing factor $Q^{-i}(s_T, a^{i}_T)$ and move $\beta^{-i}$ to the reward:
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{\rho(a^{-i} | s_T, a^i_T)}\Bigg[R(s_T, a_T, a^{-i}_T) - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i}_T | s_T, a^i_T)}{P_{\operatorname{prior}}(a^{-i}_T|s_T, a^i_T)}\Bigg] \\
+    =&\mathbb{E}_{\rho(a^{-i}_T | s_T, a^i_T)}\Bigg[\beta^{-i} R(s_T, a_T, a^{-i}_T) - \log \frac{\rho(a^{-i}_T | s_T, a^i_T)}{P_{\operatorname{prior}}(a^{-i}_T|s_T, a^i_T)} - Q^{-i}(s_T, a^{i}_T) + Q^{-i}(s_T, a^{i}_T)\Bigg] \\
+    =&\mathbb{E}_{\rho(a^{-i} | s_T, a^i_T)}\brackb{\log\frac{ \exp\bracka{\beta^{-i} R(s_T, a_T, a^{-i}_T)} P_{\prior}(a^{-i}_T|s_T, a^i_T)}{\rho(a^{-i}_T | s_T, a^i_T) \exp\bracka{Q^{-i}(s, a^{i}}}} + \mathbb{E}_{\rho(a^{-i}_T | s_T, a^i_T)}\brackb{Q^{-i}(s_T, a^{i}_T)} \\
+    =& -\kl\bracka{ \rho(a^{-i}_T | s_T, a^i_T) \Bigg\|\frac{ \exp\bracka{\beta^{-i} R(s_T, a_T, a^{-i}_T)} P_{\prior}(a^{-i}_T|s_T, a^i_T)}{\exp\bracka{Q^{-i}(s_T, a^{i}_T)}} } + Q^{-i}(s_T, a^{i}_T)
+\end{aligned}
+\end{equation*}
+We can simply minimizing the KL-divergence error to get the policy.
+
+\subsection{Balancing-Q agent's objective and optimal value}
+\label{appx:chap4-balancing-q-agent-objective-optim}
+Let's plug this into the original objective to find the optimal policy 
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{P(s_T, a_T, a^{-i}_T)}\left[ R(s_T, a_T, a^{-i}_T) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_{\operatorname{prior}}(a^i_T|s_T)} - \frac{1}{\beta^{-i}}\log \frac{ \exp\bracka{\beta^{-i} R(s_T, a_T, a^{-i}_T)} \cancel{P_{\prior}(a^{-i}_T|s_T, a^i_T)}}{\cancel{P_{\operatorname{prior}}(a^{-i}_T|s_T, a^i_T)}\exp\bracka{Q^{-i}(s_T, a^{i}_T)}} \right]    \\
+    =& \mathbb{E}_{P(s_T, a_T, a^{-i}_T)}\brackb{ \frac{1}{\beta^{-i}} Q^{-i}(s_T, a^{i}_T) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_{\operatorname{prior}}(a^i_T|s_T)}}\\
+     =& \mathbb{E}_{P(s_T, a_T, a^{-i}_T)}\bigg[ \underbrace{\frac{\beta^i}{\beta^{-i}} Q^{-i}(s_T, a^{i}_T)}_{Q^i(s_T, a^{i}_T)} - \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_{\operatorname{prior}}(a^i_T|s_T)}\bigg]\\
+\end{aligned}
+\end{equation*} 
+Using the same method, we can we get the final agent's policy by minimizing the KL-divergence 
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{P(s_T, a_T)}\brackb{Q^i(s_T, a^{i}_T) - \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_{\operatorname{prior}}(a^i_T|s_T)}} \\
+    =& \mathbb{E}_{P(s_T, a_T)}\brackb{Q^i(s_T, a^{i}_T) - \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_{\operatorname{prior}}(a^i_T|s_T)} + V^i(s_T)  - V^i(s_T)} \\
+    =& \mathbb{E}_{P(s_T, a_T)}\brackb{ \log\frac{ \exp\bracka{Q^i(s_T, a^{i}_T)}P_{\operatorname{prior}}(a^i_T|s_T)} {\pi_{\theta}(a^i_T|s_T)\exp\bracka{V^i(s_T)}}} + \mathbb{E}_{P(s_T)}\brackb{ V^i(s_T)} \\
+    =& -\kl\bracka{\pi_{\theta}(a^i_T|s_T) \Bigg\| \frac{ \exp\bracka{Q^i(s_T, a^{i}_T)}P_{\operatorname{prior}}(a^i_T|s_T)} {\exp\bracka{V^i(s_T)}} }  + \mathbb{E}_{P(s_T)}\brackb{ V^i(s_T)}
+\end{aligned}
+\end{equation*}
+This can be maximize by setting agent policy to appropriate value.
+
+\subsection{Recursive Definition of action value function for Balancing-Q}
+\label{appx:chap4-balancing-q-recrusive-Q}
+Now consider the Bellman equation and its expansion:
+\begin{equation*}
+\begin{aligned}
+Q^{-i, \pi, \rho}(s_t, a^i_t, a^{-i}_t) &= \begin{aligned}[t]
+        &r(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}\sim\rho} \bigg[ - \frac{1}{\beta^{i}}\log \frac{\pi(a^i_{t+1} | s_{t+1})}{P_{\prior}(a^i_{t+1} | s_{t+1}) } \\
+        & - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}{P_{\prior}(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}  + Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \bigg]
+    \end{aligned} \\ 
+    &\ge \begin{aligned}[t]
+        &r(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}\sim\red{\tilde{\rho}}} \bigg[ - \frac{1}{\beta^{i}}\log \frac{\pi(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}{P_{\prior}(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1}) } \\
+        & - \frac{1}{\beta^{-i}}\log \frac{\red{\tilde{\rho}}(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}{P_{\prior}(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}  + Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \bigg]
+    \end{aligned} \\ 
+    &= \begin{aligned}[t]
+        &r(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}, a^i_{t+1}, a^{-i}_{t+1} \sim \red{\tilde{\rho}}} \bigg[ - \frac{1}{\beta^{i}}\log \frac{\pi(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}{P_{\prior}(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1}) } \\
+        & - \frac{1}{\beta^{-i}}\log \frac{\red{\tilde{\rho}}(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}{P_{\prior}(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}  +  r(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) + \\
+        &\gamma \mathbb{E}_{s_{t+2}, a^i_{t+2}, a^{-i}_{t+2} \sim \rho} \bigg[ - \frac{1}{\beta^{i}}\log \frac{\pi(a^i_{t+2} | s_{t+2})}{P_{\prior}(a^i_{t+2} | s_{t+2}) } \\
+        & - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i}_{t+2} | s_{t+2}, a^i_{t+2})}{P_{\prior}(a^{-i}_{t+2} | s_{t+2}, a^i_{t+2})}  + Q^{-i, \pi, \rho}(s_{t+2}, a^i_{t+2}, a^{-i}_{t+2}) \bigg]\bigg]
+    \end{aligned} \\ 
+    &\ge \begin{aligned}[t]
+        &r(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}, a^i_{t+1}, a^{-i}_{t+1} \sim \red{\tilde{\rho}}} \bigg[ - \frac{1}{\beta^{i}}\log \frac{\pi(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}{P_{\prior}(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1}) } \\
+        & - \frac{1}{\beta^{-i}}\log \frac{\red{\tilde{\rho}}(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}{P_{\prior}(a^{-i}_{t+1} | s_{t+1}, a^i_{t+1})}  +  r(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) + \\
+        &\gamma \mathbb{E}_{s_{t+2}, a^i_{t+2}, a^{-i}_{t+2} \sim \red{\tilde{\rho}}} \bigg[ - \frac{1}{\beta^{i}}\log \frac{\pi(a^i_{t+2} | s_{t+2})}{P_{\prior}(a^i_{t+2} | s_{t+2}) } \\
+        & - \frac{1}{\beta^{-i}}\log \frac{\red{\tilde{\rho}}(a^{-i}_{t+2} | s_{t+2}, a^i_{t+2})}{P_{\prior}(a^{-i}_{t+2} | s_{t+2}, a^i_{t+2})}  + Q^{-i, \pi, \rho}(s_{t+2}, a^i_{t+2}, a^{-i}_{t+2}) \bigg]\bigg]
+    \end{aligned} \\ 
+    &\vdots \\
+    & \ge Q^{\pi, \red{\tilde{\rho}}}(s_t, a^i_t, a^{-i}_t)
+\end{aligned}
+\end{equation*}
+This proves the inequality. Note that similar pattern can be done when $\beta^{-i} > 0$. 

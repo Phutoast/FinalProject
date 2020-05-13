@@ -1,0 +1,62 @@
+\section{Solution to Single agent Soft-Hierarchical Reinforcement Learning}
+\label{appx:chap4-soft-single-HRL}
+Consider the last time step of the optimization problem: 
+\begin{equation*}
+    \mathbb{E}_{s_T, z_{T}, b_T, z_{T-1}}\brackb{\beta r(s_T, a_T) - \log \frac{\pi_{\theta}(a_T | s_T, z_T)}{P_\prior(a_T | s_T, z_T)}  - \log \frac{\pi^H_{\phi}(z_T | s_T, z_{T-1}, b_T)}{P_\prior^H(z_T | s_T, z_{T-1}, b_T)} - \log \frac{\pi^T_{\phi}(b_T | s_T, z_{T-1}) }{P_\prior^T(b_T | s_T, z_{T-1})}}
+\end{equation*}
+We can solve the lower-level policy first (similar to multi-agent where we optimize the conditional polity first i.e $\pi(a^i | a^{-i}, s)$). We have the following equation 
+\begin{equation}
+\begin{aligned}
+\label{eqn:first-low-level-policy}
+    &\pi_{\theta}(a_T | s_T, z_T) = \frac{P_\prior(a_T | s_T, z_T)\exp\bracka{Q(s_T, a_T, z_T)}}{\exp V(s_T, z_T)} \\
+    \text{ where }&Q(s_T, a_T, z_T) = \beta r(s_T, a_T) \\
+    &V(s_T, z_T) = \log \int P_\prior(a_T | s_T, z_T)\exp\bracka{Q(s_T, a_T, z_T)} \dby a_T
+\end{aligned} 
+\end{equation}
+This leads to the objective, which we can split between the case where agent still uses $z_{T-1}$ and the case where we still have to generate $z_T$ from the state. 
+\begin{equation}
+\begin{aligned}
+    b_T&\brackb{V(s_T, z_T) - \log \frac{\pi^H_\phi(z_T | s_T)}{P_\prior(z_T | s_T)}- \log \frac{\pi^T_{\phi}(b_T | s_T, z_{T-1}) }{P_\prior^T(b_T | s_T, z_{T-1})}} \\
+    &+(1-b_T)\brackb{V(s_T, z_{T-1}) - \log \frac{\pi^T_{\phi}(1-b_T | s_T, z_{T-1}) }{P_\prior^T(1-b_T | s_T, z_{T-1})} }
+\end{aligned}
+\end{equation}
+We can now consider $\pi^H_\phi(z_T | s_T)$, which leads to the following equation:
+\begin{equation}
+\begin{aligned}
+    &\pi^H(z_T | s_T) = \frac{\frac{1}{m}\exp\bracka{V(s_T, z_T)}}{\exp\bracka{V(s_T)}}
+    \\
+    \text{ where }
+    &V(s_T) =  \frac{1}{m}\log \int \exp\bracka{V(s_T, z_T)} \dby z_T
+\end{aligned} 
+\end{equation}
+Plugging the optimal master policy into the objective, we have the following objective left:
+\begin{equation}
+\begin{aligned}
+    b_T&\brackb{V(s_T) - \log \frac{\pi^T_{\phi}(b_T | s_T, z_{T-1}) }{P_\prior^T(b_T | s_T, z_{T-1})}} \\
+    &+(1-b_T)\brackb{V(s_T, z_{T-1}) - \log \frac{\pi^T_{\phi}(1-b_T | s_T, z_{T-1}) }{P_\prior^T(1-b_T | s_T, z_{T-1})} }
+\end{aligned}
+\end{equation}
+We are left with the termination policy by maximizing the objective:
+\begin{equation}
+    b_T\brackb{V(s_T)} + +(1-b_T)\brackb{V(s_T, z_{T-1})} - \log \frac{\pi^T_{\phi}(b_T | s_T, z_{T-1}) }{P_\prior^T(b_T | s_T, z_{T-1})}
+\end{equation}
+We have the following optimal policy for the termination policy, which is:
+\begin{equation}
+\begin{aligned}
+    &\pi^T(b_T | s_T, z_{T-1}) = \frac{P_\prior^T(b_T | s_T, z_{T-1})\exp{U(s_T, z_{T-1}, b_T)}}{\exp U(s_T, z_{T-1})} \\
+    \text{ where }& U(s_T, z_{T-1}, b_T) = b_T \brackb{V^H(s_T)} + (1-b_T)V(s_T, z_{T-1}) \\
+    & U(s_T, z_{T-1}) = \log \int P_\prior^T(b_T | s_T, z_{T-1})\exp\bracka{b_T \brackb{V^H(s_T)} + (1-b_T)V(s_T, z_{T-1})} \dby b_T
+\end{aligned}
+\end{equation}
+Now, we left with $U(s_T, z_{T-1})$ as the message, which we can use it to consider the arbitrary time step, which is:
+\begin{equation*}
+\begin{aligned}
+    \mathbb{E}_{s_t, z_t, b_t, z_{t-1}}\Bigg[&\beta r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{U(s_{t+1}, z_t)} - \log \frac{\pi_{\theta}(a_t | s_t, z_t)}{P_\prior(a_t | s_t, z_t)}  \\
+    &- \log \frac{\pi^H_{\phi}(z_t | s_t, z_{t-1}, b_t)}{P_\prior^H(z_t | s_t, z_{t-1}, b_t)} - \log \frac{\pi^T_{\phi}(b_t | s_t, z_{t-1}) }{P_\prior^T(b_t | s_t, z_{t-1})}\Bigg]
+\end{aligned}
+\end{equation*}
+Now, we have the Bellman equation as:
+\begin{equation}
+    Q(s_t, a_t, z_t) = \beta r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{U(s_{t+1}, z_t)}
+\end{equation}
+Repeating the procedure, we reach the final solution as shown. 

@@ -1,0 +1,11 @@
+\label{sec:chap4-gen-extension}
+Let's consider the $Q(s_t, a^{i}_t)$ from our probabilistic Balancing Q-learning discussed in section \ref{sec:chap3-prob-balancing-q}. As we have mentioned, the value of the agent is based on the fraction between agent's $\beta^i$ and opponent's $\beta^{-i}$ as we shown in the original Balancing Q-learning that this is enough for us to convert opponent's value function to the agent's value function. However, this wouldn't be the case for a general sum game. Nonetheless, the $\beta$ still being very important since we can use its sign to convey whether our opponent is a friend or foe. We shall use it to our advantage. Note that it still not the case that we can \correctquote{switch side}, since we will treat $\beta$s to be hyper-parameters. Now, let's consider the opponent model's policy, we shall assume similar case to section \ref{sec:chap3-prob-balancing-q}, but instead, we are going to consider the case where the opponent's reward isn't the same as the agent i.e 
+\begin{equation}
+\begin{aligned}
+\label{eqn:chap3-prob-opponent}
+    &\rho_{\phi}(a^{-i}_t | s_t, a^i_t) = \frac{\exp(Q^{-i}(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t)}{\exp(Q^{-i}(s_t, a^{i}_t))} \\
+    \text{ where }&Q^{-i}(s_t, a^{i}_t) = \log \int \exp(Q^{-i}(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t) \dby a^{-i}_t \\
+    &Q^{-i}(s_t, a^i_t, a^{-i}_t) = r^{-i}(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}, a^{i}_{t+1}\sim\pi_\theta}\brackb{Q^{-i}(s_{t+1}, a^{i}_{t+1})}
+\end{aligned}
+\end{equation}
+Now for the agent, we should consider the value of $Q^{i}(s_t, a^{i}_t)$, which should be the soft-max given the opponent model's action of $Q^{i}(s_t, a^{i}_t, a^{-i}_t)$

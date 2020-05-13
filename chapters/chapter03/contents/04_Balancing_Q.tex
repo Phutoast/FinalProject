@@ -1,0 +1,228 @@
+\label{sec:chap3-balancing-Q}
+
+\subsection{Policies Derivation}
+\label{sec:chap3-balancing-Q-derivation}
+Instead of having a ELBO that we want to maximize, we initially have the following loss function from \cite{grau2018balancing}:
+\begin{equation}
+    \mathbb{E}_q\left[ \sum^T_{t=0} \gamma^t \bracka{r(s_t, a_t, a^{-i}_t) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a_t|s_t)}{P_\prior(a^i_t|s_t)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_t|s_t)}{P_\prior(a^{-i}_t|s_t)}} \right]
+\end{equation}
+However, as noted in section before that by using our familiar method, we should consider the conditional opponent model $\rho_\phi(a^{-i}_t | s_t, a^i_t)$ in order to arrive at the final optimal policy. In \cite{grau2018balancing} the authors doesn't explicitly show us the method of solving, we, therefore, are going to proposed one of the ways, the derivation can be done. Note that the loss function above assume no opponent model. However, to turn closer to MAPI approach, we shall consider similar formulation as PR2 \cite{wen2019probabilistic} case i.e 
+\begin{equation}
+    \mathbb{E}_q\left[ \sum^T_{t=0} \gamma^t \bracka{r(s_t, a_t, a^{-i}_t) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a_t|s_t)}{P_\prior(a^i_t|s_t)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior(a^{-i}_t | s_t, a^i_t)}} \right]
+\end{equation}
+Now, it is an objective that is optimized within the agent and doesn't required any opponent. We will see that this leads to the same final optimal policy fir the agent. Starting with the final time step we have:
+\begin{equation}
+    \mathbb{E}_{P(s_T) P(a_T, a^{-i}_T | s_T)}\left[ r(s_t, a_t, a^{-i}_t) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_\prior(a^i_T|s_T)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_T|s_T, a^i_T)}{P_\prior(a^{-i}_T|s_T, a^i_T)} \right]
+\end{equation}
+Using the rearrangement and minimizing KL-divergence, we can show that
+\begin{equation}
+\begin{aligned}
+    &\rho(a^{-i}_T | s_T, a^i_T) = \frac{ \exp\bracka{\beta^{-i} r(s_t, a_t, a^{-i}_t)} P_{\prior}(a^{-i}_T|s_T, a^i_T)}{\exp\bracka{Q^{-i}(s_T, a^{i}_T)}}\\
+    \text{where }& Q^{-i}(s_T, a^{i}_T) = \log \int \exp\bracka{\beta^{-i} r(s_t, a_t, a^{-i}_t)} P_{\prior}(a^{-i}_T|s_T, a^i_T) \dby a^{-i}
+\end{aligned}
+\end{equation}
+see appendix \ref{appx:chap4-balancing-q-oppo-model} for full derivation. Now consider the message left by plugging the agent's policy back\footnote{we want to make sure that we got correct action value since we have multiple $\beta$s finding the right value can be confusing.}, which leads to the following agent's objective:
+\begin{equation}
+    \mathbb{E}_{P(s_T, a_T, a^{-i}_T)}\bigg[ \underbrace{\frac{\beta^i}{\beta^{-i}} Q^{-i}(s_T, a^{i}_T)}_{Q^i(s_T, a^{i}_T)} - \log\frac{\pi_{\theta}(a^i_T|s_T)}{P_\prior(a^i_T|s_T)}\bigg]
+\end{equation}
+Given this, we can consider the agent's optimal policy, which is equal to 
+\begin{equation}
+\begin{aligned}
+    &\pi_{\theta}(a^i_T|s_T) = \frac{ \exp\bracka{Q^i(s_T, a^{i}_T)}P_\prior(a^i_T|s_T)} {\exp\bracka{V^i(s_T)}} \\
+    \text{where }& Q^i(s_T, a^{i}_T) = \frac{\beta^i}{\beta^{-i}} \log \int \exp\bracka{\beta^{-i} R(s_T, a^i_T, a^{-i}_T)} P_{\prior}(a^{-i}_T|s_T) \dby a^{-i} \\
+    \text{and }& V^i(s_T) = \log \int  \exp\bracka{Q^i(s_T, a^{i}_T)}P_\prior(a^i_T|s_T) \dby a^i
+\end{aligned}
+\end{equation}
+See appendix for full derivation of both agent's objective optimal agent's policy, while we are left with the following message:
+\begin{equation}
+    \mathbb{E}_{P(s_T)}\brackb{\frac{1}{\beta^i}V^i(s_T)} = \mathbb{E}_{P(s_T)}\brackb{V(s_T)}
+\end{equation}
+Let's consider the arbitrary time step $t$, which lead us to the following objective 
+\begin{equation}
+    \mathbb{E}_{P(s_t, a_t, a^{-i}_t)}\Bigg[ \underbrace{r(s_t, a_t, a^{-i}_t) + \gamma\mathbb{E}_{P(s_{t+1} | s_t, a_t, a^{-i}_t)}\brackb{V(s)}}_{Q(s_t, a^i_t, a^{-i}_t)} - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a_t|s_t)}{P_\prior(a^i_t|s_t)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior(a^{-i}_t | s_t, a^i_t)} \Bigg]
+\end{equation}
+By solving using the same method, we have the following optimal agent's policy
+\begin{equation}
+\begin{aligned}
+    &\pi_{\theta}(a^i_t|s_t) = \frac{ \exp\bracka{Q^i(s_t, a^{i}_t)}P_\prior(a^i_t|s_t)} {\exp\bracka{V^i(s_t)}} \\
+    \text{ where }
+    &Q^{i}(s_t, a^{i}_t) = \frac{\beta^i}{\beta^{-i}} \log \int \exp\bracka{\beta^{-i} Q(s_t, a^i_t, a^{-i}_t)} P_{\prior}(a^{-i}_t|s_t) \dby a^{-i} \\
+    &V^{i}(s_t) = \log \int  \exp\bracka{Q^i(s_t, a^{i}_t)}P_\prior(a^i_t|s_t) \dby a^i\\
+\end{aligned}
+\end{equation}
+For the definition of $Q(s_t, a^i_t, a^{-i}_t)$ will be define at the end, after consider the definition of optimal opponent agent, which is a solution to the following objective:
+\begin{equation}
+    \mathbb{E}_q\left[ \sum^T_{t=0} \gamma^t \bracka{r(s_t, a_t, a^{-i}_t) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a_t|s_t, a^{-i}_t)}{P_\prior(a^i_t|s_t, a^{-i}_t)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_t | s_t)}{P_\prior(a^{-i}_t | s_t)}} \right]
+\end{equation}
+which lead to the following results, using the same techniques as the derivation of policy:
+\begin{equation}
+\begin{aligned}
+    &\rho_{\phi}(a^{-i}_t|s_t) = \frac{ \exp\bracka{Q^{-i}(s_t, a^{-i}_t)}P_\prior(a^{-i}_t|s_t)} {\exp\bracka{V^{-i}(s_t)}} \\
+    \text{ where }&Q^{-i}(s_t, a^{-i}_t) = \frac{\beta^{-i}}{\beta^{i}} \log \int \exp\bracka{\beta^{i} Q(s_t, a^i_t, a^{-i}_t)} P_{\prior}(a^{i}_t|s_t, a^{-i}_t) \dby a^{i}  \\
+    &V^{-i}(s_t) = \log \int \exp\bracka{Q^{-i}(s_t, a^{-i}_t)}P_\prior(a^{-i}_t|s_t) \dby a^{-i}  \\
+\end{aligned}
+\end{equation}
+The authors \cite{grau2018balancing} proved that the value function of the agent and the opponent are related as follows:
+\begin{equation}
+\label{eqn:chap3-balance-value-equivalent}
+    \gamma\mathbb{E}_{P(s_t)}\brackb{V(s)} = \gamma \mathbb{E}_{P(s_t)}\brackb{\frac{1}{\beta^i} V^i(s_t)} = \gamma\mathbb{E}_{P(s_t)}\brackb{\frac{1}{\beta^{-i}} V^{-i}(s_t)}
+\end{equation}
+We can, therefore, learn the same Q-value function:
+\begin{equation}
+    Q(s_t, a^i_t, a^{-i}_t) = r(s_t, a_t, a^{-i}_t) + \mathbb{E}_{P(s_{t+1} | s_t, a_t, a^{-i}_t)}\brackb{V(s_{t+1})}
+\end{equation}
+Intuitively, we can see that $\beta^i$ and $\beta^{-i}$ are canceling each others. This is very interesting as we can control how the opponent model learns while able to control \correctquote{correct} type of the game. This is, indeed, a special case as we can't usually control the opponent's reward to be as effective as this. 
+
+\subsection{Theoretical Properties}
+\label{sec:chap3-balancing-Q-theoretical}
+Now, we shall consider the theoretical property of the algorithm. We start with the result from \cite{grau2018balancing}, where the authors show that Balancing Q-learning Bellman equation:
+\begin{equation}
+    \contractop_{\text{Balance}} Q(s_t, a^i_t, a^{-i}_t) = r(s_t, a_t, a^{-i}_t) + \mathbb{E}_{P(s_{t+1} | s_t, a_t, a^{-i}_t)}\brackb{V(s_{t+1})}
+\end{equation}
+is a contraction mapping. We would like to further investigate more on how the agent's update affects the action value function. Suppose a fixed policy $\pi$, how would an updated opponent affects the action value function given the value $\beta^{-i}$
+\begin{theorem}
+\label{thm:update-balance-opponent}
+    The action value function $Q^{-i, \pi, \rho}(s_t, a^i_t, a^{-i}_t)$ defined by Bellman equation as:
+    \begin{equation}
+    \begin{aligned}
+        Q^{-i, \pi, \rho}&(s_t, a^i_t, a^{-i}_t) = r(s_t, a_t, a^{-i}_t) \\
+        &+ \gamma\mathbb{E}_{s_{t+1}}\brackb{\mathbb{E}_{\pi, \rho}\brackb{Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{1}{\beta^i} \log\frac{\pi(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i}_{t+1}|s_{t+1})}{P_\prior(a^{-i}_{t+1}|s_{t+1})}}}
+    \end{aligned}
+    \end{equation}
+    Given the opponent's updated policy $\tilde{\rho}$ given normal policy $\rho$ as 
+    \begin{equation}
+    \begin{aligned}
+        \tilde{\rho}(a^{-i}_t | s_t) &= \argmin{\rho' \in \Pi} \kl \bracka{ \rho'(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{-i, \pi, \rho}(s_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{\exp V^{-i, \pi, \rho}(s_t)}} \\
+        &=\argmin{\rho' \in \Pi} J_{\rho}(\rho')
+    \end{aligned}
+    \end{equation}
+    The action-value function is affected in difference way according to the sign of $\beta^{-i}$
+    \begin{equation}
+    \begin{cases}
+        Q^{-i, \pi, \rho}(s_t, a^i_t, a^{-i}_t) \ge Q^{-i, \pi, \tilde{\rho}}(s_t, a^i_t, a^{-i}_t) &\text{ if } \beta^{-i} < 0 \\
+        Q^{-i, \pi, \rho}(s_t, a^i_t, a^{-i}_t) \le Q^{-i, \pi, \tilde{\rho}}(s_t, a^i_t, a^{-i}_t)&\text{ if } \beta^{-i} > 0
+    \end{cases}
+    \end{equation}
+\end{theorem}
+\begin{proof}
+The proof follows closely from ROMMEO proof on policy improvement \cite{tian2019regularized} which is based on soft Actor-Critic \cite{haarnoja2018softa} proof. We start by comparing these 2 quantities:
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{\pi, \red{\rho}}\brackb{Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{1}{\beta^i} \log\frac{\pi(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\red{\rho}(a^{-i}_{t+1}|s_{t+1})}{P_\prior(a^{-i}_{t+1}|s_{t+1})}} \\
+    &\mathbb{E}_{\pi, \red{\tilde{\rho}}}\brackb{Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{1}{\beta^i} \log\frac{\pi(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\red{\tilde{\rho}}(a^{-i}_{t+1}|s_{t+1})}{P_\prior(a^{-i}_{t+1}|s_{t+1})}}
+\end{aligned}
+\end{equation*}
+The differences are shown in red letter. Please note that the Q function definition of the second equation still based on the old opponent $\rho$. We start by finding the KL-divergence between arbitrary $\rho^+$ the objective for updating is the following, which can be expanded as 
+\begin{equation*}
+\begin{aligned}
+    &\kl \bracka{ \rho^+(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{-i, \pi, \rho}(s_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{\exp V^{-i, \pi, \rho}(s_t)}} \\
+    &= \int  \rho^+(a^{-i}_{t+1} | s_{t+1}) \log \frac{\rho^+(a^{-i}_{t+1} | s_{t+1}) \exp(V^{-i, \pi, \rho}(s_{t+1})) }{P_\prior(a^{-i}_{t+1} | s_{t+1}) \exp\bracka{Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1})} } \dby a^{-i}_{t+1} \\
+    &=\begin{aligned}[t]
+    \int &\rho^+(a^{-i}_{t+1} | s_{t+1}) \log\frac{\rho^+(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + V^{-i, \pi, \rho}(s_{t+1}) \\
+    &- \int \rho^+(a^{-i}_{t+1} | s_{t+1}) Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1}) \dby a^{i}_{t+1}
+    \end{aligned}
+\end{aligned}
+\end{equation*}
+Now the performance gap can be established due to the KL-divergence between $\rho$ and $\tilde{\rho}$. Please note that by definition $J_{\rho}(\rho) \ge J_{\rho}(\tilde{\rho})$ which leads to the following inequality
+\begin{equation*}
+\begin{aligned}
+&\begin{aligned}[t]
+    \int &\rho(a^{-i}_{t+1} | s_{t+1}) \log\frac{\rho(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + \cancel{V^{-i, \pi, \rho}(s_{t+1})} \\
+    &- \int \rho(a^{-i}_{t+1} | s_{t+1}) Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1}) \dby a^{i}_{t+1}
+\end{aligned} \\
+\ge&\begin{aligned}[t]
+    \int &\tilde{\rho}(a^{-i}_{t+1} | s_{t+1}) \log\frac{\tilde{\rho}(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + \cancel{V^{-i, \pi, \rho}(s_{t+1})} \\
+    &- \int \tilde{\rho}(a^{-i}_{t+1} | s_{t+1}) Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1}) \dby a^{i}_{t+1}
+\end{aligned}
+\end{aligned}
+\end{equation*}
+Let's investigate more into the definition of the last term, for $\tilde{\rho}$. We will have to consider the opponent model of the agent
+\begin{equation}
+    \int \tilde{\rho}(a^{-i}_{t+1} | s_{t+1}) \frac{\beta^{-i}}{\beta^{i}} \bracka{\beta^iQ(s_t, a^i_t, a^{-i}_t) - \log \frac{\pi(a^i_t | a^{-i}_t, s_t)}{P_\prior(a^i_t | s_t)}} \dby a^{-i}_{t+1}
+\end{equation}
+which has the following definition of opponent's agent model:
+\begin{equation*}
+    \pi(a^i_t | a^{-i}_t, s_t) = \frac{\exp(\beta^i Q^{-i, \pi, \rho}(s_t, a^i_t, a^{-i}_t)) P_\prior(a^i_t | s_t)}{\exp\bracka{Q^{i, \pi, \rho}(s_t, a^{-i}_t)}}
+\end{equation*}
+We expand the definition to be:
+\begin{equation*}
+\begin{aligned}
+    &\int \tilde{\rho}(a^{-i}_{t+1} | s_{t+1}) Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1}) \dby a^{-i}_{t+1} \\
+    =& \int \rho(a^{-i}_{t+1} | s_{t+1}) \int \pi(a^i_{t+1} | a^{-i}_{t+1}, s_{t+1}) \brackb{\beta^{-i}Q(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{\beta^{-i}}{\beta^{i}}\log \frac{\pi(a^i_{t+1} | a^{-i}_{t+1}, s_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1})}} \dby a^{i}_{t+1} \dby a^{-i}_{t+1} \\
+    =& \mathbb{E}_{a^i_{t+1}, a^{-i}_{t+1} \sim \pi, \tilde{\rho}} \brackb{\beta^{-i}Q(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{\beta^{-i}}{\beta^i} \mathbb{E}_{a^i_{t+1}}\log \frac{\pi(a^i_{t+1} | a^{-i}_{t+1}, s_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1})}}
+\end{aligned}
+\end{equation*}
+Plugging this back into the equation, which some arrangement, we have 
+\begin{equation*}
+\begin{aligned}
+&\begin{aligned}[t]
+    \mathbb{E}_{a^i_{t+1}, a^{-i}_{t+1} \sim \pi, \rho}\Bigg[\beta^{-i}Q(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \log\frac{\rho(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} - \frac{\beta^{-i}}{\beta^i} \mathbb{E}_{a^i_{t+1}}\log \frac{\pi(a^i_{t+1} | a^{-i}_{t+1}, s_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1})}\Bigg]
+\end{aligned} \\
+\le&\begin{aligned}[t]
+    &\mathbb{E}_{a^i_{t+1}, a^{-i}_{t+1} \sim \pi, \tilde{\rho}}\Bigg[\beta^{-i}Q(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) -\log\frac{\tilde{\rho}(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} - \frac{\beta^{-i}}{\beta^i} \mathbb{E}_{a^i_{t+1}}\log \frac{\pi(a^i_{t+1} | a^{-i}_{t+1}, s_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1})}\Bigg]
+\end{aligned}
+\end{aligned}
+\end{equation*}
+In the case that $\beta^{-i} < 0$, we have the following inequality:
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{a^i_{t+1}, a^{-i}_{t+1} \sim \rho}\bigg[-\frac{1}{\beta^i}\log \frac{\pi(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} + Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \bigg] \\
+    \ge &\mathbb{E}_{a^i_{t+1}, a^{-i}_{t+1} \sim \tilde{\rho}}\bigg[-\frac{1}{\beta^i}\log \frac{\pi(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\tilde{\rho}(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} + Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \bigg]
+\end{aligned}
+\end{equation*}
+Now, let's consider the  recursive definition of action value function $Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1})$, which leads to the fact that 
+\begin{equation}
+    Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \ge Q^{-i, \pi, \tilde{\rho}}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1})
+\end{equation}
+The recursive step will be shown in appendix \ref{appx:chap4-balancing-q-recrusive-Q} due to space constrain. Similarly, $\beta^{-i} > 0$, we have the inequality:
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{a^i_{t+1}, a^{-i}_{t+1} \sim \rho}\bigg[-\frac{1}{\beta^i}\log \frac{\pi(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} + Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \bigg] \\
+    \le &\mathbb{E}_{a^i_{t+1}, a^{-i}_{t+1} \sim \tilde{\rho}}\bigg[-\frac{1}{\beta^i}\log \frac{\pi(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\tilde{\rho}(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} + Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \bigg]
+\end{aligned}
+\end{equation*}
+this leads to $Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) \le Q^{-i, \pi, \tilde{\rho}}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1})$. We have proven the way $\beta^{-i}$ affects the update of opponent policy.
+\end{proof}
+Similarly, we can show for the policy that 
+\begin{theorem}
+\label{thm:update-balance-agent}
+    The action value function $Q^{i, \pi, \rho}(s_t, a^i_t, a^{-i}_t)$ defined by Bellman equation as:
+    \begin{equation}
+    \begin{aligned}
+        Q^{i, \pi, \rho}&(s_t, a^i_t, a^{-i}_t) = r(s_t, a_t, a^{-i}_t) \\
+        &+ \gamma\mathbb{E}_{s_{t+1}}\brackb{\mathbb{E}_{\pi, \rho}\brackb{Q^{i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{1}{\beta^i} \log\frac{\pi(a^i_{t+1}|s_{t+1})}{P_\prior(a^i_{t+1}|s_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\rho(a^{-i}_{t+1}|s_{t+1}, a^i_{t+1})}{P_\prior(a^{-i}_{t+1}|s_{t+1}, a^i_{t+1})}}}
+    \end{aligned}
+    \end{equation}
+    Given the agent's updated policy $\tilde{\rho}$ given normal policy $\pi$ as 
+    \begin{equation}
+    \begin{aligned}
+        \tilde{\rho}(a^{i}_t | s_t) &= \argmin{\rho' \in \Pi} \kl \bracka{ \rho'(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{i, \pi, \rho}(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t)}{\exp V^{i, \pi, \rho}(s_t)}} \\
+        &=\argmin{\rho' \in \Pi} J_{\rho}(\rho')
+    \end{aligned}
+    \end{equation}
+    The action-value function for $\beta^i > 0$ is 
+    \begin{equation}
+    Q^{i, \tilde{\pi}, \rho}(s_t, a^i_t, a^{-i}_t) \le Q^{i, \pi, \rho}(s_t, a^i_t, a^{-i}_t)
+    \end{equation}
+\end{theorem}
+\begin{proof}
+The prove follows the same step as theorem \ref{thm:update-balance-opponent}.
+\end{proof}
+Now, we will present a policy improvement results for Balancing Q-learning as 
+\begin{corollary}
+    The update of $Q(s_t, a^i_t, a^{-i}_t)$ is denoted as $\bar{Q}(s_t, a^i_t, a^{-i}_t)$. Suppose the update is based on improved policy when $\beta^i > 0$, 
+    \begin{equation}
+        Q(s_t, a^i_t, a^{-i}_t) \ge \bar{Q}(s_t, a^i_t, a^{-i}_t)
+    \end{equation}
+    Similarly, if we fix the policy and update opponent then we have:
+    \begin{equation}
+    \begin{cases}
+        Q(s_t, a^i_t, a^{-i}_t) \ge \bar{Q}(s_t, a^i_t, a^{-i}_t) &\text{ if } \beta^{-i} < 0 \\
+        Q(s_t, a^i_t, a^{-i}_t) \le \bar{Q}(s_t, a^i_t, a^{-i}_t)&\text{ if } \beta^{-i} > 0
+    \end{cases}
+    \end{equation}
+\end{corollary}
+\begin{proof}
+We use the results from theorem \ref{thm:update-balance-opponent} and \ref{thm:update-balance-agent}, with the result from \cite{grau2018balancing}'s Corollary 1 (shown in equation \ref{eqn:chap3-balance-value-equivalent}) that shows that both action value function are the same.
+\end{proof}
+Finally if we would like just to consider the PR2 like opponent model i.e $\rho(a^{-i}_t | s_t, a^i_t)$ given the value $\beta^{-i} > 0$ or $\beta^{-i} < 0$, we can follows the same procedure with similar step, which yields the same outcome as theorem \ref{thm:update-balance-opponent}. Note that this can be used to prove the improvement of PR2 and ROMMEO too, as they are subset of Balancing Q-learning. Now, we have shown that Balancing Q-learning does indeed control opponent's policy via $\beta^{-i}$. Now, we shall consider how can we manifest Balancing Q-learning via graphical model and variational inference.

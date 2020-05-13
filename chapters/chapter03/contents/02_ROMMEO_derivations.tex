@@ -1,0 +1,170 @@
+Now, we shall consider the derivation of ROMMEO using technique introduced in \cite{levine2018reinforcement}, which has be applied to single agent reinforcement learning shown briefly in section \ref{sec:chap2-derivation-soft-closed-form}. The working is partially covered in \cite{yu2019multi, wen2019multi} however a full derivation is required for the understanding of the algorithm. We will based our derivation for ROMMEO \cite{tian2019regularized}, while the same technique can be apply to PR2 \cite{wen2019probabilistic}. ROMMEO assumes that the joint probability between 2 agents can be further factorized as
+\begin{equation}
+    \pi(a, a^{-i} | s) = \pi(a | a^{-i}, s) \rho(a^{-i} | s)
+\end{equation}
+factorizing in other ways yields PR2. We will start by drawing the graphical model of joint probabilities that we want to approximate is depicted in Figure \ref{fig:chap3-approximated-ROMMEO}. 
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[obs] (ot) {$\mathcal{O}^i_t$};
+        \node[latent, below=of ot] (at) {$a^i_t$};
+        \node[latent, below=of at] (st) {$s_t$};
+        \node[latent, below=of st] (a1t) {$a^{-i}_t$};
+        \node[latent, below=of a1t] (o1t) {$\mathcal{O}^{-i}_t$};
+        
+        
+        % \path[->]  (o1)  edge   [bend left=45] node {} (a);
+        \edge{o1t} {a1t}
+        \edge {st} {at, a1t}
+        \edge {at} {ot}
+        \path[->]  (o1t)  edge   [bend left=60] node {} (ot);
+        \path[->]  (a1t)  edge   [bend left=45] node {} (ot);
+        \path[->]  (a1t)  edge   [bend left=30] node {} (at);
+        \path[->]  (st)  edge   [bend left=30] node {} (ot);
+        
+        \node[obs, right=3cm of ot] (ot1) {$\mathcal{O}^i_{t+1}$};
+        \node[latent, below=of ot1] (at1) {$a^i_{t+1}$};
+        \node[latent, below=of at1] (st1) {$s_{t+1}$};
+        \node[latent, below=of st1] (a1t1) {$a^{-i}_{t+1}$};
+        \node[obs, below=of a1t1] (o1t1) {$\mathcal{O}^{-i}_{t+1}$};
+        
+        \edge{o1t1} {a1t1}
+        \edge {st1} {at1, a1t1}
+        \edge {at1} {ot1}
+        \path[->]  (o1t1)  edge   [bend right=60] node {} (ot1);
+        \path[->]  (a1t1)  edge   [bend right=45] node {} (ot1);
+        \path[->]  (a1t1)  edge   [bend right=30] node {} (at1);
+        \path[->]  (st1)  edge   [bend right=30] node {} (ot1);
+        
+        \path[->]  (st)  edge   [] node {} (st1);
+        \path[->]  (at)  edge   [] node {} (st1);
+        \path[->]  (a1t)  edge   [] node {} (st1);
+        
+        \node[latent, right=5cm of st1] (stn) {$s_{t+n}$};
+        \path[->]  (st1)  edge [] node {} (stn);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \caption{Graphical model that we want to approximate. This is based on the joint probability provided in ROMMEO paper. The authors assume that the opponent we are playing against is optimal}
+    \label{fig:chap3-approximated-ROMMEO}
+    \end{minipage}
+\end{figure}
+Before we move on, please not that this is all within agent's calculation, while the opponent's policy will have the same process. Given this, we can show that the prior joint probability is equal to the following:
+\begin{equation}
+    \begin{aligned}
+        P(s_{1:T}, &a^i_{1:T}, a^{-i}_{1:T}, \optim^i_{1:T} = 1 | \optim^{-i}_{1:T} = 1) \\
+        &= P(s_0) \prod^T_{t=0} P_{\prior}(a^i_t | s_t, a^{-i}_t) P_{\prior}(a^{-i}_t | s_t) P(s_{t+1} | s_t, a^i_t, a^{-i}_t) P(\optim^i_t = 1 | s_t, a^i_t, a^{-i}_t, \optim^{-i}_t = 1) P(\optim^{-i}_t = 1)
+    \end{aligned}
+\end{equation}
+where the optimality variable is defined as 
+\begin{equation}
+    P(\optim_t^i = 1 | s_t, a^i_t, a^{-i}_t, \optim^{-i}_t = 1) \propto \exp \bracka{ \beta r(s_t, a^i_t, a^{-i}_t)  }
+\end{equation}
+In this case, the optimality of both agents and its opponent model are 
+Now for the variations joint probabilities that we want to optimize on the graphical model is depicted in Figure \ref{fig:chap3-variational-ROMMEO}.
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[latent] (at) {$a^i_t$};
+        \node[latent, below=of at] (st) {$s_t$};
+        \node[latent, below=of st] (a1t) {$a^{-i}_t$};
+        
+        % \edge{o1t} {a1t}
+        \edge {st} {at, a1t}
+        % \edge {at} {ot}
+        % \path[->]  (o1t)  edge   [bend left=60] node {} (ot);
+        % \path[->]  (a1t)  edge   [bend left=45] node {} (ot);
+        \path[->]  (a1t)  edge   [bend left=30] node {} (at);
+        % \path[->]  (st)  edge   [bend left=30] node {} (ot);
+        
+        % \node[obs, right=3cm of ot] (ot1) {$\mathcal{O}^i_{t+1}$};
+        \node[latent, right=3cm of at] (at1) {$a^i_{t+1}$};
+        \node[latent, below=of at1] (st1) {$s_{t+1}$};
+        \node[latent, below=of st1] (a1t1) {$a^{-i}_{t+1}$};
+        % \node[obs, below=of a1t1] (o1t1) {$\mathcal{O}^{-i}_{t+1}$};
+        
+        % \edge{o1t1} {a1t1}
+        \edge {st1} {at1, a1t1}
+        % \edge {at1} {ot1}
+        % \path[->]  (o1t1)  edge   [bend right=60] node {} (ot1);
+        % \path[->]  (a1t1)  edge   [bend right=45] node {} (ot1);
+        \path[->]  (a1t1)  edge   [bend right=30] node {} (at1);
+        % \path[->]  (st1)  edge   [bend right=30] node {} (ot1);
+        
+        \path[->]  (st)  edge   [] node {} (st1);
+        \path[->]  (at)  edge   [] node {} (st1);
+        \path[->]  (a1t)  edge   [] node {} (st1);
+        
+        \node[latent, right=5cm of st1] (stn) {$s_{t+n}$};
+        \path[->]  (st1)  edge [] node {} (stn);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \caption{Graphical model that we are going to optimize our policies on. This has almost the same structure as the version that we want to approximate. However, we doesn't care about the optimality of the agent itself, as we want to approximate its policy (denote as $\pi$) and the its opponent model (denote as $\rho$)}
+    \label{fig:chap3-variational-ROMMEO}
+    \end{minipage}
+\end{figure}
+And since the we assume that the opponent's model is optimization the same optimality, we can optimize both of them via variational inference. The joint probability of variational distribution can be calculated as following 
+\begin{equation}
+    q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) = P(s_0) \prod^T_{t=0} \pi_{\theta}(a^i_t | s_t, a^{-i}_t) \rho_{\phi}(a^{-i}_t | s_t) P(s_{t+1} | s_t, a^i_t, a^{-i}_t)P(\optim^{-i}_t = 1)
+\end{equation}
+We would like to solve the following optimization problem 
+\begin{equation}
+    \argmin{\pi, \phi \in \Pi \times \Phi}  \kl\bracka{q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) \Big\| P(s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}|\optim^i_{1:T} = 1  \optim^{-i}_{1:T} = 1) }
+\end{equation}
+This lead to optimizing the following ELBO. The derivation is shown in the appendix \ref{appx:chap3-ROMMEO-ELBO}, which translates the problem into a maximization problem of the following objective
+\begin{equation}
+\label{eqn:chap3-ROMMEO-ELBO}
+    \argmax{\pi, \phi \in \Pi \times \Phi} \mathbb{E}_{q}\brackb{ \sum^T_{t=0} \gamma^t\bracka{\beta r(s_t, a^i_t, a^{-i}_t)  - \log \frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } - \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)}}}
+\end{equation}
+We will starting off by consider the last time step, as we will progress backward in time. Considering the last time step:
+\begin{equation}
+\label{eqn:training-obj-last-time}
+    \mathbb{E}_{q} \brackb{ \beta r(s_T, a^i_T, a^{-i}_T)  - \log \frac{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}{P_{\prior}(a^i_T | s_T, a^{-i}_T) } - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)}}
+\end{equation}
+We can show that the optimal policy is equal to 
+\begin{equation}
+\begin{aligned}
+    &\pi_{\theta}(a^i_T | s_T, a^{-i}_T) = \frac{\exp \bracka{\beta r(s_t, a^i_T, a^{-i}_T)}P_{\prior}(a^i_T | s_T, a^{-i}_T)}{\exp\bracka{Q(s_T, a^{-i}_T)}} \\
+    \text{where }& Q(s_T, a^{-i}_T) = \log \int \exp \bracka{\beta R(s_T, a^i_T, a^{-i}_T}P_{\prior}(a^i_T | s_T, a^{-i}_T)  \dby a^i_T
+\end{aligned}
+\end{equation}
+The proof will be presented in the appendix \ref{appx:chap3-ROMMEO-agent-last-time}. Plugging optimal policy back in and we are left with opponent's objective:
+\begin{equation}
+    \mathbb{E}_{ \rho_{\phi}(a^{-i}_T | s_T) P(s_T)}\brackb{ Q(s_T, a^{-i}_T) - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} }
+\end{equation}
+which will gives us the optimal opponent model at time step $T$ to be as the following:
+\begin{equation}
+\begin{aligned}
+    &\rho_{\phi}(a^{-i}_T | s_T)  = \frac{ \exp\bracka{Q(s_T, a^{-i}_T)}P_{\prior}(a^{-i}_T | s_T) }{\exp\bracka{V(s_T)}}  \\
+    \text{where }& V(s_T) = \log \int \exp\bracka{Q(s_T, a^{-i}_T)}P_{\prior}(a^{-i}_T | s_T) \dby a^{-i}_T
+\end{aligned}
+\end{equation}
+All the proofs including the opponent's objective is in appendix \ref{appx:chap3-ROMMEO-opponent-last-time}. Given both agent and its opponent's model policy, we can consider the message passed, which by plugging the policy and opponent model to the objective\footnote{or consider the normalizing factor left by agent's and opponent model's policy}, we can see that we are left with the 
+\begin{equation}
+    \mathbb{E}_{P(s_T)}\brackb{V(s_T)}
+\end{equation}
+This quantity will be passed down to the later time. Now for time $t$, the objective that we are optimizing becomes 
+\begin{equation}
+    \mathbb{E}_{q} \Bigg[ \underbrace{\beta r(s_t, a^i_T, a^{-i}_T) + \gamma \mathbb{E}_{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)}  \brackb{V(s_{t+1})}}_{Q(s_t, a^i_t, a^{-i}_t)}  - \log \frac{\pi_{\theta}(a^i_T | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } - \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)} \Bigg]
+\end{equation}
+We can see that this leads to very similar problems as the one we have before, therefore, by using the same proving process, we can derive the optimal agent's policy and  optimal opponent model policy to be 
+\begin{equation}
+\begin{aligned}
+    \label{eqn:chap3-final-ROMMEO-policy}
+    \pi_{\theta}(a^i_t | s_t, a^{-i}_t) = \frac{\exp \bracka{Q(s_t, a^i_t, a^{-i}_t)}P_{\prior}(a^i_t | s_t, a^{-i}_t) }{\exp\bracka{Q(s_t, a^{-i}_t)}} \quad \quad \rho_{\phi}(a^{-i}_t | s_t) = \frac{ \exp\bracka{Q(s_t, a^{-i}_t)}P_{\prior}(a^{-i}_t | s_t) }{\exp\bracka{V(s_t)}}
+\end{aligned}
+\end{equation}
+where the analogous "Bellman equation" is the following (with the value and action value functions being)
+\begin{equation}
+    \label{eqn:chap3-final-ROMMEO}
+    \begin{aligned}
+        &Q(s_t, a^i_t, a^{-i}_t) = \beta r(s_t, a^i_t, a^{-i}_t) + \gamma\mathbb{E}_{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)} \brackb{V(s_{t+1})} \\
+        \text{where }&Q(s_t, a^{-i}_t) = \log \int \exp \bracka{Q(s_t, a^i_t, a^{-i}_t}P_{\prior}(a^i_t | s_t, a^{-i}_t)  \dby a^i_t \\ 
+        &V(s_t) = \log \int \exp\bracka{Q(s_t, a^{-i}_t)}P_{\prior}(a^{-i}_t | s_t) \dby a^{-i}_t \\
+    \end{aligned}
+\end{equation}    
+This finishes the derivation for ROMMEO in its most general form. If we consider PR2 then we have to maximize opponent model first, then by similar form we have similar problem.
+

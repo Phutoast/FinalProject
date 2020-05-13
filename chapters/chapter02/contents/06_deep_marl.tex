@@ -1,0 +1,72 @@
+\label{sec:chap2-deep-marl}
+
+\subsection{Policy Based}
+
+\subsubsection{Counterfactual Multi-Agent Policy Gradients (COMA-PG)}
+We will consider solving cooperative multi-agent problems in which the main problem with this setting is the fact that it is hard for the training algorithm to assign correct credit to correct agent. COMA-PG \cite{foerster2018counterfactual} solved this problem by proposing a following baseline for a policy gradient algorithm:
+\begin{equation}
+    D^i = r(s, a) - r(s, (a_c^i, a^{-i}))
+\end{equation}
+where $a_c$ is the \textit{default action} for agent $i$. The default action can be, simply, an expected action, so now the advantage function becomes:
+\begin{equation}
+    A^i(s, a) = Q(s, a) - \sum_{a'_i} \pi^i(a'_i | s) Q(s, (a'_i,a^{-i}))
+\end{equation}
+which we can use it to train a normal policy gradient algorithm.
+
+\subsubsection{Multi-Agent DDPG (MADDPG) \cite{lowe2017multi}}
+Now, we can consider the policy gradient for any multi-agent problem as:
+\begin{equation}
+\nabla_{\theta_i}J(\theta_i) = \mathbb{E}_{s\sim d(s), a_i \sim \pi_i} \left[ \nabla_{\theta_i} \log \pi_i(a_t | s_i) Q^{\pi}_i(s, a_1, \dots, a_N) \right]
+\end{equation}
+Now, they extended this to deterministic policy (similar to DDPG) $\mu_{\theta_i}$, which is 
+\begin{equation}
+    \nabla_{\theta_i}J(\mu_{\theta_i}) = \mathbb{E}_{s, a \sim \mathcal{D}} \left[ \nabla_{\theta_i} \mu_{\theta_i}(a_i | s_i) \nabla_{a_i} Q^{\mu}_i(s, a_1, \dots, a_N) |_{a_i = \mu(s_i)} \right]
+\end{equation}
+where $\mathcal{D}$ is experience replay that contains a tuple $(s, s', a_1, \dots, a_N, r_1, \dots, r_N)$, and, finally, critic can be trained by minimizing the following objective 
+\begin{equation}
+    \mathcal{L}(\theta_i) = \mathbb{E}_{(s, a, s', r) \sim \mathcal{D}}\left[ \left( Q^{\mu}_i (s, a_1, \dots, a_N) - r_i - \gamma Q^{\bar{\mu}}_i(s', a'_1, \dots, a'_N) |_{a'_i = \bar{\mu}(s_i')} \right)^2  \right]
+\end{equation}
+There is a notion of \textit{centralized} as we have to have a full knowledge of other agent's policy, while \textit{decentralized}\footnote{This is what we aim for} is where we doesn't assume any knowledge of other agent's inner policy, but we can still observe their actions. 
+
+\subsection{Value Function Based}
+Now we have see the use of value estimation in MADDPG, let's consider the use of centralized value function estimation. Please note that all the algorithms in this section assume cooperative setting. The main intuition behind all value function based is that the action value function Q can be decomposed to each individual agent's value. In value decomposition network (VDN) \cite{sunehag2017value}, the author assume that:
+\begin{equation}
+\begin{aligned}
+Q(s (a^1, \dots, a^N)) \approx \sum^N_{i=1} \tilde{Q}_i(s, a^i)
+\end{aligned} 
+\end{equation}
+Note that this works nicely in the case of cooperative setting as in competitive game the value function mixing is likely to be more \textit{complex} interactions, in contrast to, cooperative as they are likely moving toward the same goal. QMIX \cite{rashid2018qmix} is an extended version of VDN, by including a mixing network, instead of sum. However, there has to be some constrain on the function. Notably, 
+\begin{equation}
+\underset{a}{\arg\max} \ Q_{\text{tot}}(s, a) \ = \begin{pmatrix}
+	\underset{a}{\arg\max} \ Q_1(s, a) \\ \underset{a}{\arg\max} \ Q_2(s, a) \\ \vdots \\ \underset{a}{\arg\max} \ Q_N(s, a) \\
+\end{pmatrix}
+\end{equation}
+The VDN satisfies the condition but there is a more generalized notion of this, which is monotonicity. 
+\begin{equation}
+\forall n \in [N] : \frac{\partial Q_{\text{tot}}}{\partial Q_{n}} \ge 0
+\end{equation}
+This can be done by making the mixing function positive ($\ge 0$), which is proved to be a good approximation of monotonic function, which can be easily implemented using ReLU function \cite{nair2010rectified}. The training is standard Q-value objective. Finally, as shown in \cite{mahajan2019maven}, QMIX can suffers from learning suboptimal action value function and poor exploration. To prevent this from happening, MAVEN \cite{mahajan2019maven} learns multiple modes of value functions given latent variable $z$
+\begin{itemize}
+    \item The value function is conditioned on shared latent variables $z$ which is controlled by hierarchical policy $z = g_\theta(x, s_0)$ where $x$ is value that is sampled from simple distribution $P(x)$
+    \item For $z$, each joint action-value function is monotonic approximation to optimal action value function $g_{\eta}^a(o^a_{1:t}, a_{1:t}, u^{a}_{1:t-1})$ which also consists of $g_{\phi}(z, a)$ (Hyper-net as to modify the utility for particular mode of exploration). Now all value function are mixed using $g_{\psi}$ function 
+\end{itemize}
+We will train the Q-network as following 
+\begin{equation}
+    \mathcal{L}_{Q}(\phi, \eta,\psi) = \mathbb{E}_{\pi_a}  \left[ Q(u_t, s_t ; z) - \left[r(u_t, s) + \gamma \max_{u_{t+1}} Q(u_{t+1}, s_{t+1} ; z)\right] \right]
+\end{equation}
+while the hierarchical policy is trained cumulative rewards $R(\tau, z | \phi, \eta, \psi)= \sum_t r_t$ 
+\begin{equation}
+    \mathcal{L}_{RL}(\theta) = \int R(\tau_A | z)P_{\theta}(z | s_0) \ \dby z\dby s_0
+\end{equation}
+To prevent collapse, mutual information objective for a trajectory $\tau = \{(u_t, s_t)\}$ is introduced where we need $\sigma$ which returns Boltzman policy based on utility, while the trajectory encode via RNN. Now the mutual information loss is lower bounded by
+\begin{equation}
+\begin{aligned}
+    \mathcal{L}_{ML} &= \mathcal{H}(\sigma(\tau)) - \mathcal{H}(\sigma(\tau) | z) = \mathcal{H}(z) - \mathcal{H}(z | \sigma(z)) \\
+    &\ge \underbrace{\mathcal{H}(z) + \mathbb{E}_{\sigma(z), z} \left[ \log q_v(z | \sigma(\tau)) \right]}_{\mathcal{L}_v(\phi, \eta, \psi, v)}
+\end{aligned}
+\end{equation}
+Bad variational approximation can hurt the performance as induces gap. We can set the auxiliary reward as $r^z_{\text{aux}} (z) = \log(q_v(z | \sigma(z))) - \log  (p(z))$
+The final objective is 
+\begin{equation}
+    \max_{v, \phi, \eta, \psi, \theta} \mathcal{L}_{RL}(\theta) + \lambda_{MI}\mathcal{L}_v(\phi, \eta, \psi, v) - \lambda_{Q}\mathcal{L}_{Q}(\phi, \eta,\psi)
+\end{equation}

@@ -1,0 +1,109 @@
+\label{sec:chap4-single-soft-HRL}
+We will associate our model with option learning paradigm, and extends the result in \cite{igl2019multitask} by cooperating Soft-Actor Critic type solution as it is standard method for solving probabilistic reinforcement learning. Furthermore, our approach is similar to \cite{daniel2016probabilistic}, in terms of using similar probabilistic technique, however, in the paper, the authors concerning more on inferring policies from expert data, while didn't explicitly solve for each policy given the optimally condition (what we are trying to do now). In the nutshell, we have a master policy $\pi^H$ that suggesting the "mode of execution" or option to lower level policy $\pi$ based on termination policy $\pi^T$, which telling what the next option should be. The joint distribution of actions i.e $P(s_{1:T}, a_{1:T}, \mathcal{O}_{1:T}, z_{1:T}, b_{1:T})$ is depicted in figure \ref{fig:chap4-single-agent-hierarchical}.
+\begin{figure}[ht]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[latent] (st) {$s_t$};
+        \node[latent, below=of st] (at) {$a_t$};
+        \node[latent, above right=2cm of st] (zt) {$z_t$};
+        \node[latent, above=of zt] (bt) {$b_t$};
+        \node[obs, below left=of at] (ot) {$\mathcal{O}_t$};
+        
+        \node[latent, left=3cm of zt] (zt-1) {$z_{t-1}$};
+        
+        % \edge{o1t} {a1t}
+        \edge {st} {at, zt, bt}
+        \edge {bt} {zt}
+        \edge {zt}  {at}
+        \edge {zt-1}  {bt, zt}
+        \edge {at, st} {ot}
+    
+        \node[latent, right=3cmof st] (st1) {$s_{t+1}$};
+        \node[latent, below=of st1] (at1) {$a_{t+1}$};
+        \node[latent, above right=2cm of st1] (zt1) {$z_{t+1}$};
+        \node[latent, above=of zt1] (bt1) {$b_{t+1}$};
+        \node[obs, below left=of at1] (ot1) {$\mathcal{O}_{t+1}$};
+        
+        \edge {st, at} {st1}
+        
+        \edge {st1} {at1, zt1, bt1}
+        \edge {bt1} {zt1}
+        \edge {zt1}  {at1}
+        \edge {zt}  {bt1, zt1}
+        \edge {at1, st1} {ot1}
+        
+        \node[latent, right=5cm of st1] (stn) {$s_{t+n}$};
+        \path[->]  (st1)  edge [] node {} (stn);
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \caption{The the graphical model of hierarchical agent. We have the master policy which produces $z_t$ while having switch goal policy producing policy $b_t$}
+    \label{fig:chap4-single-agent-hierarchical}
+    \end{minipage}
+\end{figure}
+The joint distribution is then 
+\begin{equation}
+\begin{aligned}
+    P(s_{1:T}, a_{1:T}, z_{1:T}, b_{1:T}) = P(s_0)P(z_0)\prod^T_{t=0} &P(s_{t+1} | s_t, a_t) P_\prior(a_t | s_t, z_t)\\
+    &P_\prior^H(z_t | s_t, z_{t-1}, b_t) P_\prior^T(b_t | s_t, z_{t-1}) P(\mathcal{O}_t = 1 | s_t, a_t)
+ \end{aligned}
+\end{equation}
+The variations joint distribution is defined as 
+\begin{equation}
+\begin{aligned}
+    q(s_{1:T}, a_{1:T}, z_{1:T}, b_{1:T}) = P(s_0)P(z_0)\prod^T_{t=0} &P(s_{t+1} | s_t, a_t) \pi_{\theta}(a_t | s_t, z_t)\\
+    &\pi^H_{\phi}(z_t | s_t, z_{t-1}, b_t) \pi^T_{\phi}(b_t | s_t, z_{t-1}) 
+\end{aligned}
+\end{equation}
+Usually, the master policy and its prior are defined as. 
+\begin{equation}
+\begin{aligned}
+    &\pi^H_{\phi}(z_t | s_t, z_{t-1}, b_t) = (1-b_t) \delta(z_t  - z_{t-1}) + b_t q^H_{\phi}(z_t | s_t) \\ 
+    &P_\prior^H(z_t | s_t, z_{t-1}, b_t) = (1-b_t) \delta(z_t  - z_{t-1}) + b_t \frac{1}{m}
+\end{aligned}
+\end{equation}
+As it takes the value of $b_t$ to suggest when to change the option $z_t$. Now, the ELBO is equal to 
+\begin{equation}
+    \mathbb{E}\brackb{\sum^T_{t=1} \beta r(s_t, a_t) - \log \frac{\pi_{\theta}(a_t | s_t, z_t)}{P_\prior(a_t | s_t, z_t)}  - \log \frac{\pi^H_{\phi}(z_t | s_t, z_{t-1}, b_t)}{P_\prior^H(z_t | s_t, z_{t-1}, b_t)} - \log \frac{\pi^T_{\phi}(b_t | s_t, z_{t-1}) }{P_\prior^T(b_t | s_t, z_{t-1})}}
+\end{equation}
+This is the same as one defined in \cite{igl2019multitask}. Given the ELBO, we will consider the closed-form solution of the low-level policy/master policy and termination policy. For the low-level policy, we have 
+\begin{equation}
+\begin{aligned}
+    &\pi_{\theta}(a_{t} | s_{t}, z_{t}) = \frac{P_\prior(a_{t} | s_{t}, z_{t})\exp\bracka{Q(s_{t}, a_{t}, z_{t})}}{\exp V(s_{t}, z_{t})} \\
+    \text{ where }&V(s_{t}, z_{t}) = \log \int P_\prior(a_{t} | s_{t}, z_{t})\exp\bracka{Q(s_{t}, a_{t}, z_{t})} \dby a_{t}
+\end{aligned}
+\end{equation}
+For the high-level policy, we have 
+\begin{equation}
+\begin{aligned}
+    &\pi^H(z_t | s_t) = \frac{\frac{1}{m}\exp\bracka{Q^H(s_t, z_t)}}{\exp\bracka{V^H(s_t)}}
+    \\
+    \text{ where } &Q^H(s_t, z_t) =  V(s_t, z_t)  \\
+    &V^H(s_t) =  \frac{1}{m}\log \int \exp\bracka{Q(s_t, z_t)} \dby z_T
+\end{aligned} 
+\end{equation}
+Finally, the termination policy is 
+\begin{equation}
+\begin{aligned}
+    &\pi^T(b_{t} | s_{t}, z_{t-1}) = \frac{P_\prior^T(b_{t} | s_{t}, z_{t-1})\exp{U(s_{t}, z_{t-1}, b_{t})}}{\exp U(s_{t}, z_{t-1})} \\
+    \text{ where }& U(s_{t}, z_{t-1}, b_{t}) = b_{t} \brackb{V^H(s_{t})} + (1-b_{t})V(s_{t}, z_{t-1}) \\
+    & U(s_{t}, z_{t-1}) = \log \int P_\prior^T(b_{t} | s_{t}, z_{t-1})\exp\bracka{b_{t} \brackb{V^H(s_{t})} + (1-b_{t})V(s_{t}, z_{t-1})} \dby b_{t}
+\end{aligned}
+\end{equation}
+Finally, the Bellman equation for soft-hierarchical single-agent reinforcement learning is 
+\begin{equation}
+    Q(s_t, a_t, z_t) = \beta r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{U(s_{t+1}, z_t)}
+\end{equation}
+The proof will be in appendix \ref{appx:chap4-soft-single-HRL}. We can see that this is analogous to the option framework \cite{sutton1999between, bacon2017option}. Now, we have aware the work on similar topic \cite{lobo2019soft}, which the authors has almost the same solution as us but miss certain points on value function calculation, notably 
+\begin{equation}
+\begin{aligned}
+Q(s_t, a_t, z_t) = \beta r(s_t, a_t) + \mathbb{E}_{s_{t+1}}\Big[\mathbb{E}_{b_{t+1} \sim P(b_{t+1} | s_{t+1}, z_t), z_{t+1}' \sim P(z_{t+1} | s_{t+1})}\Big[&(1-b_{t+1})V(s_{t+1 }, z_t)  \\
+&+ b_{t+1}V(s_{t+1 }, z_t')\Big]\Big]
+\end{aligned}
+\end{equation}
+The authors fails to consider the case in which the master policy soft-max the value function $V(s_{t+1}, z_{t+1})$ and assuming this 
+\begin{equation}
+    \mathbb{E}_{z_{t+1}' \sim P(z_{t+1} | s_{t+1})}\brackb{V(s_{t+1}, z_{t+1})}
+\end{equation}
+instead, which we can see that this misses the regularization of the policy $\pi^H_\phi$. By using the soft-max, we have implicitly include the regularization. 

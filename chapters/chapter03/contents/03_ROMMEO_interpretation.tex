@@ -1,0 +1,28 @@
+\label{sec:chap3-ROMMEO-interpretation}
+Before we examine the results, let's state some of the theoretical results for ROMMEO, which are discussed in \cite{tian2019regularized}. The authors showed that the Bellman equation in equation \ref{eqn:chap3-final-ROMMEO} is a contraction mapping, while updating agent and its opponent model does improve the final Q value. These results are analogous to results from section \ref{sec:chap2-derivation-soft-closed-form}. Thus ROMMEO is implemented via soft Actor-Critic like algorithm, see section \ref{sec:chap2-soft-ac-implement} and \cite{tian2019regularized} for more details. 
+
+Let's examine further the results that we get from the derivation of ROMMEO. We start with the definition of value function $V(s)$. Let's expand the definition of it:
+\begin{equation}
+    V(s_{t}) =\mathbb{E}_{\pi_\theta, \rho_\phi}\brackb{Q(s_t, a^i_t, a^{-i}_t) - \log\frac{\rho_\phi(a^{-i}_t | s_t)}{P_\prior(a^{-i}_t | s_t)} - \log\frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t) }{P_{\prior}(a^i_t | s_t, a^{-i}_t)}}
+\end{equation}
+We can see that the Bellman equation holds for the following:
+\begin{equation}
+\begin{aligned}
+\label{eqn:chap3-rollout-Q}
+    Q(s_{t},& a^i_{t}, a^{-i}_{t}) = \beta r(s_t, a^i_t, a^{-i}_t) \\
+    &+ \gamma\mathbb{E}_{s_{t+1}}\brackb{\mathbb{E}_{\pi_\theta, \rho_\phi}\brackb{Q(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \log\frac{\rho_\phi(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} - \log\frac{\pi_{\theta}(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1}) }{P_{\prior}(a^i_{t+1} | s_{t+1}, a^{-i}_{t+1})}}}
+\end{aligned}
+\end{equation}
+Please keep in mind that in order for the value function to be complete, we have to consider the regularizers for both policy and its opponent model, which is based on the use of soft-max on action value function. One might wonder how does the agent $\pi_\theta(a^i_t | s_t, a^{-i}_t)$ executes its action ? According to \cite{tian2019regularized}, we can simply plugging the value of opponent models so that the agent can returns the action i.e 
+\begin{equation}
+\label{eqn:chap3-ROMMEO-execute-action}
+\pi_\theta(a^i_t |s_t) = \int \pi_\theta(a^i_t | s_t, a^{-i}_t) \rho_\phi(a^{-i}_t | s_t) \dby a^{-i}_t 
+\end{equation}
+However, please keep in mind that the agent is best responding to its opponent model only (see the rollout or even ELBO in equation \ref{eqn:chap3-rollout-Q} and \ref{eqn:chap3-ROMMEO-ELBO} relatively). This might be trivial but it can be very subtle thing to miss. 
+Let's view the value function from other forms, starting with the action value function 
+\begin{equation}
+    Q(s_t, a^{-i}_t) = \log \int \exp \bracka{Q(s_t, a^i_t, a^{-i}_t}P_{\prior}(a^i_t | s_t, a^{-i}_t)  \dby a^i_t 
+    % &V(s_t) = \log \int \exp\bracka{Q(s_t, a^{-i}_t)}P_{\prior}(a^{-i}_t | s_t) \dby a^{-i}_t
+\end{equation}
+This represents the action value function for the opponent model as it only contains the state and opponent model's action. As mentioned before\footnote{in section \ref{sec:chap2-derivation-soft-closed-form}}, this resembles \correctquote{soft-max} of agent's action based on agent's prior. In other words, the opponent model's action value function is the maximization of full action value function that is also influenced by the opponent's\footnote{or opponent model i.e agent's belief that opponent will use $P_\prior (a^i_t | s_t, a^{-i}_t)$ as its (refer to opponent) prior for the agent} prior on agent policy. The opponent models doesn't simply use expected value of action value given agent's prior i.e $\mathbb{E}_{P_\prior (a^i_t | s_t, a^{-i}_t)}\brackb{Q(s_t, a^i_t, a^{-i}_t)}$ nor use the action that maximizes agent's value i,e $\max_{a^i_t} Q(s_t, a^i_t, a^{-i}_t)$, but a mixture of both - prior based best response, since we know that the agent will try to increase its expected reward (a maximize) while trying to acts similarly to its prior (expected value). This is crucial since the prior not only a regularizer for the agent but also the opponent's prior on what the agent should do. Furthermore, functionally, it is also restricted agent not to go beyond certain level thus making the training more \correctquote{stable}. In conclusion, ROMMEO and PR2, which has similar form of derivation, doesn't only best response to the opponent models that is estimated via supervised learning (as we can use it as a prior) but also best responding based on the knowledge of the opponent and its belief on us.
+

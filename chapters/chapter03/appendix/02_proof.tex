@@ -1,0 +1,51 @@
+\subsection{ROMMEO ELBO derivation}
+\label{appx:chap3-ROMMEO-ELBO}
+Starting off with the KL-divergence (we have shown that this is equivalent to ELBO derived from Jensen's inequality) and we expand by doing a algebraic manipulation to get the following:
+
+\begin{equation*}
+    \begin{aligned}
+        &\kl\bracka{q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) \Big\| P(s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}|\optim^i_{1:T} = 1,  \optim^{-i}_{1:T} = 1) } \\
+        =& \mathbb{E}_{q}\brackb{\log \frac{q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) P(\optim^i_{1:T} = 1)}{P(s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}, \optim^i_{1:T} = 1 | \optim^{-i}_{1:T} = 1)}} \\
+        =& \mathbb{E}_{q}\brackb{\log \frac{P(\optim^i_{1:T} = 1)\cancel{P(s_0)} \prod^T_{t=0} \pi_{\theta}(a^i_t | s_t, a^{-i}_t) \rho_{\phi}(a^{-i}_t | s_t) \cancel{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)} \cancel{P(\optim^{-i}_t = 1)}}{\cancel{P(s_0)} \prod^T_{t=0} P_{\prior}(a^i_t | s_t, a^{-i}_t) P_{\prior}(a^{-i}_t | s_t) \cancel{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)} P(\optim^i_t = 1 | s_t, a^i_t, a^{-i}_t, \optim^{-i}_t = 1)\cancel{P(\optim^{-i}_t = 1)}} } \\
+        =& \mathbb{E}_{q}\brackb{ \log P(\optim^i_{1:T} = 1) + \sum^T_{t=0} - \beta R(s_t, a^i_t, a^{-i}_t)  + \log \frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } + \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)}} \\
+        =& - \mathbb{E}_{q}\brackb{ \sum^T_{t=0} \beta R(s_t, a^i_t, a^{-i}_t)  - \log \frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } - \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)}} - \const \\
+    \end{aligned}
+\end{equation*}
+
+\subsection{ROMMEO Optimal Agent's Policy}
+\label{appx:chap3-ROMMEO-agent-last-time}
+We starting by expanding the equation and separate the opponent's model. We then going to see that the objective is equivalent to minimizing the KL-divergence, which by Gibbs' inequality, we can imply that the optimal agent's policy can be found by setting the agent's policy to be equal to the quantity in KL-divergence. 
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{q}\brackb{ \beta R(s_T, a^i_T, a^{-i}_T)  - \log \frac{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}{P_{\prior}(a^i_T | s_T, a^{-i}_T) } - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} + Q(s_T, a^{-i}_T) - Q(s_T, a^{-i}_T) } \\
+    =&  \mathbb{E}_{q(s_T, a^{-i}_T)}\Bigg[\underbrace{\mathbb{E}_{\pi_{\theta}}\brackb{\beta R(s_T, a^i_T, a^{-i}_T)  - \log \frac{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}{P_{\prior}(a^i_T | s_T, a^{-i}_T) } - Q(s_T, a^{-i}_T)}}_{\circled{1}} - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} + Q(s_T, a^{-i}_T)\Bigg] \\
+\end{aligned}    
+\end{equation*}
+We will consider the only part $\circled{1}$ as it depends only on the optimal policy. 
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}\brackb{\beta R(s_T, a^i_T, a^{-i}_T)  - \log \frac{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}{P_{\prior}(a^i_T | s_T, a^{-i}_T) } - Q(s_T, a^{-i}_T)} \\
+    =&\mathbb{E}_{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}\brackb{\log \frac{\exp \bracka{\beta R(s_T, a^i_T, a^{-i}_T}P_{\prior}(a^i_T | s_T, a^{-i}_T) }{\pi_{\theta}(a^i_T | s_T, a^{-i}_T) \exp\bracka{Q(s_T, a^{-i}_T)}}} \\
+    =& - \kl\bracka{\pi_{\theta}(a^i_T | s_T, a^{-i}_T) \Bigg\| \frac{\exp \bracka{\beta R(s_T, a^i_T, a^{-i}_T)P_{\prior}(a^i_T | s_T, a^{-i}_T}) }{\exp\bracka{Q(s_T, a^{-i}_T)}}  }
+\end{aligned}
+\end{equation*}
+We can maximizing this value by minimizing the KL-divergence. And we can see that we can set $Q(s_T, a^{-i}_T)$ to be normalizing constant. Thus finish the proof. 
+
+\subsection{ROMMEO Optimal Opponent's Policy}
+\label{appx:chap3-ROMMEO-opponent-last-time}
+Similar proving process to the Optimal agent's policy. We will start by plugging the optimal agent's policy into the equation first, then we can use the KL-divergence trick.
+\begin{equation*}
+\begin{aligned}
+    &\mathbb{E}_{q}\brackb{ \beta R(s_T, a^i_T, a^{-i}_T)  - \log \frac{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}{P_{\prior}(a^i_T | s_T, a^{-i}_T) } - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} } \\ 
+    =& \mathbb{E}_{q}\brackb{ \beta R(s_T, a^i_T, a^{-i}_T)  - \log \frac{\exp \bracka{\beta R(s_T, a^i_T, a^{-i}_T}\cancel{P_{\prior}(a^i_T | s_T, a^{-i}_T)}}{\cancel{P_{\prior}(a^i_T | s_T, a^{-i}_T)} \exp\bracka{Q(s_T, a^{-i}_T)}} - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} } \\ 
+    =& \mathbb{E}_{q}\brackb{ \log\bracka{\exp\bracka{Q(s_T, a^{-i}_T)}} + \cancel{\beta R(s_T, a^i_T, a^{-i}_T)}  - \cancel{\log \bracka{\exp \bracka{\beta R(s_T, a^i_T, a^{-i}_T}}} - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} } \\
+    =& \mathbb{E}_{ \rho_{\phi}(a^{-i}_T | s_T) P(s_T)}\brackb{ Q(s_T, a^{-i}_T) - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} } \\
+    =& \mathbb{E}_{ \rho_{\phi}(a^{-i}_T | s_T) P(s_T)}\brackb{ Q(s_T, a^{-i}_T) - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} + V(s_T) - V(s_T)} \\
+    =& \mathbb{E}_{ \rho_{\phi}(a^{-i}_T | s_T) P(s_T)}\brackb{ \log \frac{\exp\bracka{Q(s_T, a^{-i}_T)}P_{\prior}(a^{-i}_T | s_T)}{\rho_{\phi}(a^{-i}_T | s_T)\exp\bracka{V(s_T)}}} + \mathbb{E}_{P(s_T)}\brackb{V(s_T)} \\
+\end{aligned}    
+\end{equation*}
+We will consider only the LHS of the equation, which is equal to the KL-divergence (technically expected KL-divergence since we also find expectation over state $s_T$)
+\begin{equation*}
+    - \kl\bracka{\rho_{\phi}(a^{-i}_T | s_T) \Bigg\|  \frac{ \exp\bracka{Q(s_T, a^{-i}_T)}P_{\prior}(a^{-i}_T | s_T) }{\exp\bracka{V(s_T)}}}
+\end{equation*}
+This finishes the proof (where $V(s_T)$ is the normalizing factor). Similarly, we can replace $Q(s, a^{-i}_T)$ with other functions and the result will be in the similar form.

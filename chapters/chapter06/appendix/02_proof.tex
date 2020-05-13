@@ -1,0 +1,79 @@
+\section{Solution to Multi-agent Soft-Hierarchical Reinforcement Learning}
+\label{appx:chap4-soft-multi-HRL}
+% \begin{itemize}
+%     \item $P_\prior(a^{-i}_t | s_t, z^i_t, a^{i}_t, z^{-i}_{t})$
+%     \item $P^{H,-i}_\prior(z^{-i}_t | s_t, a^{i}_t, z^{i}_t, z^{-i}_{t-1}, b^{i}_t)$
+%     \item $P^{T,-i}_\prior(b^i_t | s_t,  z^{-i}_{t-1}, a^{i}_t, z^{i}_t)$
+%     \item $P_\prior(a^{i}_t | s_t, z^{i}_t, z^{-i}_{t-1})$
+%     \item $P^{H,i}_\prior(z^{i}_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^{i}_t)$
+%     \item $P^{T,i}_\prior(b^{i}_t | s_t, z^{i}_{t-1}, z^{-i}_{t-1})$
+% \end{itemize}
+Starting with the objective, we have the following ELBO to solve at the final time step $T$. Note that solving this requires standard techniques: 
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}_q\Bigg[\beta r(s_T, a_T^i, a^{-i}_T) &- \log\frac{\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})} - \log\frac{\rho_\theta(a^{-i}_T | s_T, z^i_T, a^i_T, z^{-i}_T) }{P_\prior(a^{-i}_T | s_T, z^i_T, a^i_T, z^{-i}_T)} \\
+    &- \log\frac{q^{H, i}(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}{P^{H, i}_\prior(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)} - \log\frac{q^{H, -i}(z^{-i}_T | s_T, a^i_T, z^i_T, z^{-i}_{T-1}, b^i_T)}{P^{H, -i}_\prior(z^{-i}_T | s_T, a^i_T, z^i_T, z^{-i}_{T-1}, b^i_T)} \\
+    &- \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})} - \log\frac{q^{T,-i}(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)}{P^{T,-i}_\prior(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) } \Bigg]
+\end{aligned}
+\end{equation}
+Starting with the definition of the opponent model, which is equal to:
+\begin{equation*}
+\begin{aligned}
+    &\rho_\theta(a^{-i}_T | s_T, z^i_T, a^{i}_T, z^{-i}_T) = \frac{\exp Q(s_T, z^i_T, a^{i}_T, z^{-i}_T, a^{-i}_T) P_\prior(a^{-i}_T | s_T, z^i_T, a^{i}_T, z^{-i}_T)}{\exp Q(s_T, z^i_T, a^{i}_T, z^{-i}_T)} \\
+    \text{ where }& Q(s_T, z^i_T, a^{i}_T, z^{-i}_T, a^{-i}_T) = \beta r(s_T, a^i_T, a^{-i}_T) \\
+    &Q(s_T, z^i_T, a^{i}_T, z^{-i}_T) = \log \int \exp Q(s_T, z^i_T, a^{i}_T, z^{-i}_T, a^{-i}_T) P_\prior(a^{-i}_T | s_T, z^i_T, a^{i}_T, z^{-i}_T) \dby a^{-i}_T
+\end{aligned}
+\end{equation*}
+Plugging this back and split for the opponent model's master policy, which lead to the following objective
+\begin{equation}
+\begin{aligned}
+    &b_T^{-i}\begin{aligned}[t]
+        \Bigg[Q(s_T, z^i_T, a^{i}_T, z^{-i}_T) &- \log\frac{\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})} - \log\frac{q^{H, i}(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}{P^{H, i}_\prior(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)} \\
+        &- \log\frac{q^{H, -i}(z_T^{-i} | s_T, a^i_T, z^i_T)}{P^{H, -i}_\prior(z_T^{-i} | s_T, a^i_T, z^i_T)} - \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})} \\
+        &- \log\frac{q^{T,-i}(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)}{P^{T,-i}_\prior(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) } \Bigg]
+    \end{aligned} \\
+    +&(1-b_T^{-i})\begin{aligned}[t]
+        \Bigg[Q(s_T, z^i_T, a^{i}_T, z^{-i}_{T-1}) &- \log\frac{\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})} - \log\frac{q^{H, i}(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}{P^{H, i}_\prior(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)} \\
+        &- \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})} - \log\frac{q^{T,-i}(1-b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)}{P^{T,-i}_\prior(1-b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)} \Bigg]
+    \end{aligned}
+\end{aligned}
+\end{equation}
+Now, we can consider the opponent's master policy , which is equal to:
+\begin{equation}
+\begin{aligned}
+    &q^{H, -i}(z_T^{-i} | s_T, a^i_T, z^i_T) = \frac{\exp Q(s_T, z^i_T, a^{i}_T, z^{-i}_T) P_\prior(z_T^{-i} | s_T, a^i_T, z^i_T)}{\exp Q(s_T, z^i_T, a^{i}_T)} \\
+    \text{ where }& Q(s_T, z^i_T, a^{i}_T) = \log \int \exp Q(s_T, z^i_T, a^{i}_T, z^{-i}_T) P_\prior(z_T^{-i} | s_T, a^i_T, z^i_T) \dby z^{-i}_T
+\end{aligned}
+\end{equation}
+Plugging this back, we are left with the objective for termination policy, which is:
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}\Bigg[b^{-i}_T\brackb{Q(s_T, z^i_T, a^{i}_T)} &+ (1-b^{-i}_T)\brackb{Q(s_T, z^i_T, a^{i}_T, z^{-i}_{T-1})} - \log\frac{q^{T,-i}(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)}{P^{T,-i}_\prior(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)} \\
+    &- \log\frac{\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})} - \log\frac{q^{H, i}(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}{P^{H, i}_\prior(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}\\
+    &- \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}\Bigg]
+\end{aligned}
+\end{equation}
+Let's optimize the termination policy for opponent model, which is:
+\begin{equation}
+\begin{aligned}
+    &q^{T,-i}(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) = \frac{\exp Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T, b^{-i}_T) P_\prior(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)}{\exp Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)} \\
+    \text{ where }&Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T, b^{-i}_T) = b^{-i}_T\brackb{Q(s_T, z^i_T, a^{i}_T)} + (1-b^{-i}_T)\brackb{Q(s_T, z^i_T, a^{i}_T, z^{-i}_{T-1})} \\
+    &Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) = \log \int \exp Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T, b^{-i}_T) P_\prior(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) \dby b^{-i}_T
+\end{aligned}
+\end{equation}
+Now, we have the objective for an agent:
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}\Bigg[Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) &- \log\frac{q^{T,-i}(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)}{P^{T,-i}_\prior(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)} - \log\frac{\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})} \\
+    &- \log\frac{q^{H, i}(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}{P^{H, i}_\prior(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}
+    - \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}\Bigg]
+\end{aligned}
+\end{equation}
+Starting with agent's policy:
+\begin{equation}
+\begin{aligned}
+    &\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1}) = \frac{\exp Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{\exp Q(s_T,  z^{-i}_{T-1}, z^i_T)} \\
+    \text{ where }&Q(s_T,  z^{-i}_{T-1}, z^i_T) = \log \int \exp Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1}) \dby a^i_T
+\end{aligned}
+\end{equation}
+Let's now consider the 

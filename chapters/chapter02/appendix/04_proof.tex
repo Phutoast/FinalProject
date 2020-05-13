@@ -1,0 +1,36 @@
+\subsection{ELBO for Reinforcement Learning with KL-divergence}
+\label{appx:chap2-ELBO-KL-Single}
+\begin{equation*}
+\begin{aligned}
+    \mathbb{E}_{q(s_{1:T}, a_{1:T})}\brackb{\log\frac{P(s_{1:T}, a_{1:T} | \mathcal{O}_{1:T} = 1)}{q(s_{1:T}, a_{1:T})}} &= \mathbb{E}_{q(s_{1:T}, a_{1:T})}\brackb{\log\frac{P(s_{1:T}, a_{1:T} , \mathcal{O}_{1:T} = 1)}{q(s_{1:T}, a_{1:T}) P(\mathcal{O}_{1:T} = 1)}} \\
+    &= \mathbb{E}_{q(s_{1:T}, a_{1:T})}\brackb{\frac{P(s_{1:T}, a_{1:T} , \mathcal{O}_{1:T} = 1)}{q(s_{1:T}, a_{1:T})}} + \const
+\end{aligned}
+\end{equation*}
+Now, we can consider the ratio of joint probability 
+\begin{equation*}
+\begin{aligned}
+    \log &\frac{\cancel{P(s_0)} \prod^{T}_{t=1} \cancel{P(s_{t+1} | s_t, a_t)} P_{\prior}(a_t | s_t) P(\mathcal{O}_t = 1 | s_t, a_t)}{\cancel{P(s_0)} \prod^{T}_{t=1} \cancel{P(s_{t+1} | s_t, a_t)} \pi(a_t | s_t) } \\
+    &= \sum^T_{t=1} \log P(\mathcal{O}_t = 1 | s_t, a_t) - \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)} \\
+    &= \sum^{T}_{t=1} \beta r(s_t, a_t) - \log \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)}
+\end{aligned}
+\end{equation*}
+Plugging this back in yields the answer.
+
+\subsection{ELBO for Reinforcement Learning with Jensen's inequality}
+\label{appx:chap2-ELBO-Jensen-Single}
+Starting, when we want the to maximize the log-probability of optimality 
+\begin{equation*}
+    \begin{aligned}
+        \log P(\mathcal{O}_{1:T} = 1) &= \int P(s_{1:T}, a_{1:T}, \mathcal{O}_{1:T} = 1) \dby s_{1:T} \dby a_{1:T} \\ 
+        &= \int P(s_{1:T}, a_{1:T}, \mathcal{O}_{1:T} = 1) \frac{q(s_{1:T}, a_{1:T})}{q(s_{1:T}, a_{1:T})} \ ds_{1:T} \ da_{1:T} \\
+        &\ge \mathbb{E}_{q(s_{1:T}, a_{1:T})} \left[ \log \frac{P(s_{1:T}, a_{1:T}, \mathcal{O}_{1:T} = 1)}{q(s_{1:T}, a_{1:T})} \right] \\
+        &=  \mathbb{E}_{q} \left[\sum^{T}_{t=1} \beta r(s_t, a_t) - \log \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)} \right]
+    \end{aligned}
+\end{equation*}
+which is the same as ELBO for KL-divergence.
+
+\subsection{Soft Bellman Operator is a Contraction Mapping}
+\label{appx:chap2-soft-bellman-contract}
+
+\subsection{Soft Policy Update Improvement}
+\label{appx:chap2-soft-policy-update-improvement}

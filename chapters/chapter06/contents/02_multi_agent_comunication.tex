@@ -1,0 +1,66 @@
+\label{sec:chap4-multi-soft-HRL-communication}
+Now, we are going to consider multi-agent case in which we have to consider the other agent's option last time step, which is a type of delayed communication. This would be a direct extension to the single agent HRL problem. Consider the following joint probability distribution of the problem:
+\begin{equation}
+\begin{aligned}
+    P(&s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}, z^i_{1:T}, z^{-i}_{1:T}, b^i_{1:T}, b^{-i}_{1:T}, \mathcal{O}^i_{1:T} = 1, \mathcal{O}^{-i}_{1:T} = 1) \\
+    &= P(s_1)P(z^{-i}_0, z^i_0)\prod^T_{t=1} P(s_{t+1} | s_t, a_t^i, a_t^{-i})P_\prior(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t) P^{H,-i}_\prior(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t) \\
+    &P^{T,-i}_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1}) P^{H,i}_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t) P^{T,i}_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})\\
+    &P(\mathcal{O}^i_t = 1 | \mathcal{O}^{-i}_t = 1)P(\mathcal{O}^{-i}_t = 1)
+\end{aligned}
+\end{equation}
+% \begin{itemize}
+%     \item $P_\prior(a^i_t | s_t, z^i_t, a^{-i}_t, z^{-i}_t)$
+%     \item $P^{H,i}_\prior(z^i_t | s_t, a^{-i}_t, z^{-i}_t)$
+%     \item $P^{T,i}_\prior(b^i_t | s_t,  z^i_{t-1}, a^{-i}_t, z^{-i}_t)$
+%     \item $P_\prior(a^{-i}_t | s_t, z^{-i}_t)$
+%     \item $P^{H,-i}_\prior(z^{-i}_t | s_t, z^{-i}_{t-1}, b^{-i}_t)$
+%     \item $P^{T,-i}_\prior(b^{-i}_t | s_t, z^{-i}_{t-1})$
+% \end{itemize}
+% WE HAVE
+% \begin{itemize}
+%     \item $P_\prior(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t)$
+%     \item $P^{H,-i}_\prior(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t)$
+%     \item $P^{T,-i}_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)$
+%     \item $P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1})$
+%     \item $P^{H,i}_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t)$
+%     \item $P^{T,i}_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})$
+% \end{itemize}
+Now, we shall consider the joint variational distribution. 
+\begin{equation}
+\begin{aligned}
+    q(s_{1:T}, &a^i_{1:T}, a^{-i}_{1:T}, z^i_{1:T}, z^{-i}_{1:T}, b^i_{1:T}, b^{-i}_{1:T}, \mathcal{O}^{-i}_{1:T} = 1) \\
+    &= P(s_1)P(z^{-i}_0, z^i_0)\prod^T_{t=1} q(s_{t+1} | s_t, a_t^i, a_t^{-i})\rho_\phi(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t) q^{H,-i}(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t) \\
+    &q^{T,-i}(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) \pi_\theta(a^i_t | s_t, z^i_t, z^{-i}_{t-1}) q^{H,i}(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t) q^{T,i}(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})\\
+    &P(\mathcal{O}^i_t = 1 | \mathcal{O}^{-i}_t = 1)P(\mathcal{O}^{-i}_t = 1)
+\end{aligned}
+\end{equation}
+Where we have the optimal random variable to be 
+\begin{equation}
+    P(\mathcal{O}^i_t = 1 | \mathcal{O}^{-i}_{1:T} = 1) \propto \exp\bracka{\beta r(s_t, a_t^i, a^{-i}_t)}
+\end{equation}
+Before we move on, let's specifically define the master policy's conditional probability and its prior:
+\begin{equation}
+\begin{aligned}
+    &q^{H, i}(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t) = (1-b_t^i) \delta(z_t^i  - z_{t-1}^i) + b_t^i q^{H, i}_{\phi}(z_t^i | s_t) \\
+    &P_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t) = (1-b_t^i) \delta(z_t^i  - z_{t-1}^i) + b_t^i \frac{1}{m} \\
+    &q^{H, -i}(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t) = (1-b_t^{-i}) \delta(z_t^{-i}  - z_{t-1}^{-i}) + b_t^{-i} q^{H, -i}_{\phi}(z_t^{-i} | s_t, a^i_t, z^i_t) \\
+    &P_\prior(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t) = (1-b_t^{-i}) \delta(z_t^{-i}  - z_{t-1}^{-i}) + b_t^{-i} \frac{1}{m} \\
+\end{aligned}
+\end{equation}
+Given both of them, we can derive the ELBO by finding KL-divergence, which is equal to 
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}_q\Bigg[\sum^T_{t=0}\beta r(s_t, a_t^i, a^{-i}_t) &- \log\frac{\pi_\theta(a^i_t | s_t, z^i_t, z^{-i}_{t-1})}{P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1})} - \log\frac{\rho_\theta(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t) }{P_\prior(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t)} \\
+    &- \log\frac{q^{H, i}(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t)}{P^{H, i}_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t)} - \log\frac{q^{H, -i}(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t)}{P^{H, -i}_\prior(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t)} \\
+    &- \log\frac{q^{T,i}(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})}{P^{T,i}_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})} - \log\frac{q^{T,-i}(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)}{P^{T,-i}_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) } \Bigg]
+\end{aligned}
+\end{equation}
+% \begin{itemize}
+%     \item $P_\prior(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t)$
+%     \item $P^{H,-i}_\prior(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t)$
+%     \item $P^{T,-i}_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)$
+%     \item $P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1})$
+%     \item $P^{H,i}_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t)$
+%     \item $P^{T,i}_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})$
+% \end{itemize}
+We will show the full working for solving in appendix \ref{appx:chap4-soft-multi-HRL}
