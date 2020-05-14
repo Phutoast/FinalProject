@@ -1,0 +1,97 @@
+Now, we have consider the implementation of the algorithms starting with the implementation of single agent learning, and this can be easily extends to multi-agent problem. The purpose of this section is to show that Soft Actor-Critic like algorithm can be applied directly to the implementation of the algorithms. Finally, we will not go through the tricks that would stabilize the training since we are focusing on the control as probabilistic framework extensions and proves that the implementation is possible by constructing one.
+ 
+\subsection{Single agent problem}
+Starting with the value function $V(s_t, z_t)$, which we can train using the following :
+\begin{equation}
+    \mathcal{L}_{V_1} = \mathbb{E}_{s_t, z_t \sim \mathcal{D}} \brackb{\frac{1}{2}\bracka{V(s_t, z_t) - \mathbb{E}_{a_t \sim \pi_\theta(a_t | s_t, z_t)}\brackb{Q(s_t, a_t, z_t) - \log \frac{\pi_\theta(a_t | s_t, z_t)}{P_\prior(a_t | s_t, z_t)}}}^2}
+\end{equation}
+Similarly, the value function $V(s_t)$ can be trained to 
+\begin{equation}
+    \mathcal{L}_{V_2} = \mathbb{E}_{s_t \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{V(s_t) - \mathbb{E}_{z_t \sim \pi^H(z_t | s_t)}\brackb{V(s_t, z_t) - \log\bracka{m\cdot \pi^H(z_t | s_t)}}}^2}
+\end{equation}
+Finally, we can train the value function for the termination policy $V(s_t, z_{t-1})$ as:
+\begin{equation}
+    \mathcal{L}_{V_3} = \mathbb{E}_{s_t, z_{t-1} \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{V(s_t, z_{t-1}) - \mathbb{E}_{b_t \sim \pi^T(b_t | s_t, z_{t-1})}\brackb{ V(s_t, z_{t-1}, b_t) - \log \frac{\pi^T(b_t | s_t, z_{t-1})}{P_\prior(b_t | s_t, z_{t-1})}}  }}
+\end{equation}
+Now, lower level policy is in the form of $a_t = f^L(\xi ; s_t, z_t)$ where $\xi \sim \mathcal{N}(0, I)$, we can train it to minimize the KL-divergence between this to the optimal policy that we have shown in equation \ref{eqn:chap4-single-HRL-lower} as
+\begin{equation}
+    \mathcal{L}_{\pi^L} = \kl\bracka{\pi^L(a_t | s_t, z_t) \Bigg\| \frac{P_\prior(a_{t} | s_{t}, z_{t})\exp\bracka{Q(s_{t}, a_{t}, z_{t})}}{\exp V(s_{t}, z_{t})}}
+\end{equation}
+Similarly, the higher-level policy will be in the form of $z_t = f^H(\xi ; s_t)$ where $\xi \sim \mathcal{N}(0, I)$ with the following KL-divergence objective from the optimal policy equation \ref{eqn:chap4-single-HRL-higher}:
+\begin{equation}
+    \mathcal{L}_{\pi^H} = \kl\bracka{\pi^H(z_t | s_t) \Bigg\| \frac{\exp\bracka{Q(s_t, z_t)}}{m\exp\bracka{V(s_t)}}}
+\end{equation}
+And the termination policy is in the form of $b_t = \sigma(f^T(\xi ; s_t, z_{t-1}))$, where $\sigma$ denotes the Sigmoid function, which transforms the output to be between $0$ and $1$. We still use the KL-divergence objective derived from equation \ref{eqn:chap4-single-HRL-termination}:
+\begin{equation}
+    \mathcal{L}_{\pi^T} = \kl\bracka{\pi^T(b_t | s_t, z_{t-1}) \Bigg\| \frac{P_\prior^T(b_{t} | s_{t}, z_{t-1})\exp{V(s_{t}, z_{t-1}, b_{t})}}{\exp V(s_{t}, z_{t-1})} }
+\end{equation}
+Finally, we can train the action value function $Q(s_t, a_t, z_t)$, which is calculated via the Bellman equation \ref{eqn:chap4-single-HRL-bellman} as:
+\begin{equation}
+    \mathcal{L}_Q = \mseloss{(s_t, a_t, z_t, r_t, s_{t+1}) \sim \mathcal{D}}{Q(s_t, a_t, z_t)}{\beta r(s_t, a_t) + \gamma V(s_{t+1}, z_t)}
+\end{equation}
+
+\subsection{Multi agent problem}
+Since there are lots of objective to follows, we will list them down here. The technique used is the same as one proposed in single agent case. We shall start with the definition of the value function 
+\begin{itemize}
+    \item Opponent's lower level policy value function $Q(s_t, z^i_t, z^{-i}_t, a^i_t)$:
+    \begin{equation}
+        \mathcal{L}_{Q_1} = \mseloss{(s_t, z^i_t, z^{-i}_t, a^i_t, a^i_t) \sim \mathcal{D}}{Q(s_t, z^i_t, z^{-i}_t)}{\mathbb{E}_{a^{-i}_t}\brackb{Q(s_t, z^i_t, a^i_t, z^{-i}_t, a^{-i}_t) - \log\frac{ \rho(a^{-i}_t | s_t, z^i_t, z^{-i}_t, a^i_t)}{P_\prior(a^{-i}_t | s_t, z^i_t, z^{-i}_t, a^i_t)}}}
+    \end{equation}
+    where the opponent model action is sampled from $a^{-i}_t \sim \rho(a^{-i}_t | s_t, z^i_t, z^{-i}_t, a^i_t)$.
+    \item Opponent's master policy value function $Q(s_t, z^i_t)$:
+    \begin{equation}
+        \mathcal{L}_{Q_2} = \mseloss{(s_t, z^i_t, z^{-i}_t) \sim \mathcal{D}}{Q(s_t, z^i_t)}{\mathbb{E}_{z^{-i}_t}\brackb{Q(s_t, z^i_t, z^{-i}_t) - \log\frac{q^{H, -i}(z^{-i}_t | s_t, z^i_t)}{P_\prior(z^{-i}_t | s_t, z^i_t)}}}
+    \end{equation}
+    where the option is sampled from $z^{-i}_t \sim q^{H, -i}(z^{-i}_t | s_t, z^i_t)$.
+    \item Opponent's termination policy value function $Q(s_t, z^{-i}_{t-1}, a^i_t, z^i_t)$:
+    \begin{equation}
+        \mathcal{L}_{Q_3} = \mseloss{(s_t, z^{-i}_{t-1}, a^i_t, z^i_t) \sim \mathcal{D}}{Q(s_t, z^{-i}_{t-1}, a^i_t, z^i_t)}{\mathbb{E}_{b^{-i}_t}\brackb{Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t, b^{-i}_t) - \log\frac{q^{T,-i}(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) }{P_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) }}}
+    \end{equation}
+    where the terminating signal is sampled from $b^{-i}_t \sim q^{T,-i}(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)$.
+    \item Agent's lower level policy value function $Q(s_t,  z^{-i}_{t-1}, z^i_t)$:
+    \begin{equation}
+        \mathcal{L}_{Q_4} = \mseloss{(s_t,  z^{-i}_{t-1}, z^i_t) \sim \mathcal{D}}{Q(s_t,  z^{-i}_{t-1}, z^i_t)}{\mathbb{E}_{a^i_t}\brackb{Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)  - \frac{\pi(a^i_t | s_t, z^i_t, z^{-i}_{t-1})}{P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1})}}}
+    \end{equation}
+    where the lower level action is sampled from $a^i_t \sim \pi(a^i_t | s_t, z^i_t, z^{-i}_{t-1})$
+    \item Agent's master policy value function $Q(s_t,  z^{-i}_{t-1})$:
+    \begin{equation}
+        \mathcal{L}_{Q_5} = \mseloss{(s_t,  z^{-i}_{t-1})\sim \mathcal{D}}{Q(s_t,  z^{-i}_{t-1})}{\mathbb{E}_{z^i_t}\brackb{Q(s_t,  z^{-i}_{t-1}, z^i_t) - \log\frac{q^{H, i}(z_t^i | s_t, z^{-i}_{t-1})}{P_\prior(z_t^i | s_t, z^{-i}_{t-1})}}}
+    \end{equation}
+    where the agent's option is sampled from $z_t^i \sim q^{H, i}(z_t^i | s_t, z^{-i}_{t-1})$
+    \item Finally, agent's termination policy value function $Q(s_t, z^i_{t-1}, z^{-i}_{t-1})$:
+    \begin{equation}
+        \mathcal{L}_{Q_6} = \mseloss{}{Q(s_t, z^i_{t-1}, z^{-i}_{t-1})}{\mathbb{E}_{b^i_t}\bracka{Q(s_t, z^i_{t-1}, z^{-i}_{t-1}, b^i_t) - \log \frac{q^{T, i}(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})}{P_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})}}}
+    \end{equation}
+    where the agent's terminating condition is sampled from $b^i_t \sim q^{T, i}(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})$
+\end{itemize}
+Now, we have listed all the agent's and its opponent model's value function, we can now consider the policies objective. 
+\begin{itemize}
+    \item Opponent Model's lower level policy $a^{-i}_t = f(\xi ; s_t, z^i_t, a^{i}_t, z^{-i}_t)$
+    \begin{equation}
+        \mathcal{L}_{\rho} = \klloss{\rho_\theta(a^{-i}_t | s_t, z^i_t, a^{i}_t, z^{-i}_t)}{ \frac{\exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t, a^{-i}_t) P_\prior(a^{-i}_t | s_t, z^i_t, a^{i}_t, z^{-i}_t)}{\exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t)}}
+    \end{equation}
+    \item Opponent Model's master policy $z^{-i}_t = f^{H, -i}(\xi;  s_t, a^i_t, z^i_t)$
+    \begin{equation}
+        \mathcal{L}_{q^{H, -i}} = \klloss{q^{H, -i}(z_t^{-i} | s_t, a^i_t, z^i_t)}{\frac{\exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t) P_\prior(z_t^{-i} | s_t, a^i_t, z^i_t)}{\exp Q(s_t, z^i_t, a^{i}_t)}}
+    \end{equation}
+    \item Opponent Model's termination policy $b^{-i}_t= f^{T, -i}(\xi; s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)$
+    \begin{equation}
+        \mathcal{L}_{q^{T,-i}} = \klloss{q^{T,-i}(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)}{\frac{\exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t, b^{-i}_t) P_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)}{\exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)}}
+    \end{equation}
+    \item Agent lower level policy $a^i_t= f(\xi; s_t, z^i_t, z^{-i}_{t-1})$
+    \begin{equation}
+        \mathcal{L}_{\pi} = \klloss{ \pi_\theta(a^i_t | s_t, z^i_t, z^{-i}_{t-1})}{\frac{\exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1})}{\exp Q(s_t,  z^{-i}_{t-1}, z^i_t)}}
+    \end{equation}
+    \item Agent master policy $z^i_t= f^{H, i}(\xi; s_t, z^{-i}_{t-1})$
+    \begin{equation}
+        \mathcal{L}_{q^{H, i}} = \klloss{q^{H, i}(z_t^i | s_t, z^{-i}_{t-1})}{\frac{\exp Q(s_t,  z^{-i}_{t-1}, z^i_t) P_\prior(z_t^i | s_t, z^{-i}_{t-1})}{\exp Q(s_t,  z^{-i}_{t-1})}}
+    \end{equation}
+    \item agent termination policy $b^i_t= f^{T, i}(\xi;s_t, z^i_{t-1}, z^{-i}_{t-1})$
+    \begin{equation}
+        \mathcal{L}_{q^{T,i}} = \klloss{q^{T,i}(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})}{\frac{\exp Q(s_t, z^i_{t-1}, z^{-i}_{t-1}, b^i_t) P_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})}{\exp Q(s_t, z^i_{t-1}, z^{-i}_{t-1}) }}
+    \end{equation}
+\end{itemize}
+Note that all the noises is sampled from normal distribution $\xi \sim \mathcal{N}(0, I)$. Finally, the action value function $Q(s_t, z^i_t, a^i_t, z^{-i}_t, a^{-i}_t)$:
+\begin{equation}
+    \mathcal{L}_{Q} = \mseloss{(s_t, z^i_t, a^i_t, z^{-i}_t, a^{-i}_t, r_t, s_{t+1}) \sim \mathcal{D}}{Q(s_t, z^i_t, a^i_t, z^{-i}_t, a^{-i}_t)}{\beta r(s_t, a_t^i, a^{-i}_t) + \gamma \mathbb{E}{Q(s_{t+1}, z^i_{t}, z^{-i}_{t})}}
+\end{equation}

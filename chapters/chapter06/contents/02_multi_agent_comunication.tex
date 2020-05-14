@@ -1,5 +1,5 @@
 \label{sec:chap4-multi-soft-HRL-communication}
-Now, we are going to consider multi-agent case in which we have to consider the other agent's option last time step, which is a type of delayed communication. This would be a direct extension to the single agent HRL problem. Consider the following joint probability distribution of the problem:
+Now, we are going to consider multi-agent case in which we have to consider the other agent's option last time step, which is a type of delayed communication. This would be a direct extension to the single agent HRL problem. The graphical model can be too complex to draw we therefore going to show only the factorization of joint probabilities. Consider the following joint probability distribution of the problem:
 \begin{equation}
 \begin{aligned}
     P(&s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}, z^i_{1:T}, z^{-i}_{1:T}, b^i_{1:T}, b^{-i}_{1:T}, \mathcal{O}^i_{1:T} = 1, \mathcal{O}^{-i}_{1:T} = 1) \\
@@ -41,7 +41,7 @@ Where we have the optimal random variable to be
 Before we move on, let's specifically define the master policy's conditional probability and its prior:
 \begin{equation}
 \begin{aligned}
-    &q^{H, i}(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t) = (1-b_t^i) \delta(z_t^i  - z_{t-1}^i) + b_t^i q^{H, i}_{\phi}(z_t^i | s_t) \\
+    &q^{H, i}(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t) = (1-b_t^i) \delta(z_t^i  - z_{t-1}^i) + b_t^i q^{H, i}_{\phi}(z_t^i | s_t, z^{-i}_{T-1}) \\
     &P_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t) = (1-b_t^i) \delta(z_t^i  - z_{t-1}^i) + b_t^i \frac{1}{m} \\
     &q^{H, -i}(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t) = (1-b_t^{-i}) \delta(z_t^{-i}  - z_{t-1}^{-i}) + b_t^{-i} q^{H, -i}_{\phi}(z_t^{-i} | s_t, a^i_t, z^i_t) \\
     &P_\prior(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t) = (1-b_t^{-i}) \delta(z_t^{-i}  - z_{t-1}^{-i}) + b_t^{-i} \frac{1}{m} \\
@@ -63,4 +63,52 @@ Given both of them, we can derive the ELBO by finding KL-divergence, which is eq
 %     \item $P^{H,i}_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t)$
 %     \item $P^{T,i}_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})$
 % \end{itemize}
-We will show the full working for solving in appendix \ref{appx:chap4-soft-multi-HRL}
+We will show the full working for solving in appendix \ref{appx:chap4-soft-multi-HRL}. Now, the policies are: starting with opponent model's policy 
+\begin{equation*}
+\begin{aligned}
+    &\rho(a^{-i}_t | s_t, z^i_t, a^{i}_t, z^{-i}_t) = \frac{\exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t, a^{-i}_t) P_\prior(a^{-i}_t | s_t, z^i_t, a^{i}_t, z^{-i}_t)}{\exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t)} \\
+    \text{ where } &Q(s_t, z^i_t, a^{i}_t, z^{-i}_t) = \log \int \exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t, a^{-i}_t) P_\prior(a^{-i}_t | s_t, z^i_t, a^{i}_t, z^{-i}_t) \dby a^{-i}_t
+\end{aligned}
+\end{equation*}
+Now, the opponent's master policy is 
+\begin{equation}
+\begin{aligned}
+    &q^{H, -i}(z_t^{-i} | s_t, a^i_t, z^i_t) = \frac{\exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t) P_\prior(z_t^{-i} | s_t, a^i_t, z^i_t)}{\exp Q(s_t, z^i_t, a^{i}_t)} \\
+    \text{ where }& Q(s_t, z^i_t, a^{i}_t) = \log \int \exp Q(s_t, z^i_t, a^{i}_t, z^{-i}_t) P_\prior(z_t^{-i} | s_t, a^i_t, z^i_t) \dby z^{-i}_t
+\end{aligned}
+\end{equation}
+And, the opponent's terminal policy is 
+\begin{equation}
+\begin{aligned}
+    &q^{T,-i}(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) = \frac{\exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t, b^{-i}_t) P_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)}{\exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)} \\
+    \text{ where }&Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t, b^{-i}_t) = b^{-i}_t\brackb{Q(s_t, z^i_t, a^{i}_t)} + (1-b^{-i}_t)\brackb{Q(s_t, z^i_t, a^{i}_t, z^{-i}_{t-1})} \\
+    &Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) = \log \int \exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t, b^{-i}_t) P_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) \dby b^{-i}_t
+\end{aligned}
+\end{equation}
+Now, we shifted to agent's policy, which is equal to 
+\begin{equation}
+\begin{aligned}
+    &\pi(a^i_t | s_t, z^i_t, z^{-i}_{t-1}) = \frac{\exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1})}{\exp Q(s_t,  z^{-i}_{t-1}, z^i_t)} \\
+    \text{ where }&Q(s_t,  z^{-i}_{t-1}, z^i_t) = \log \int \exp Q(s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1}) \dby a^i_t
+\end{aligned}
+\end{equation}
+The master policy for the agent follows the agent's value function
+\begin{equation}
+\begin{aligned}
+    &q^{H, i}(z_t^i | s_t, z^{-i}_{t-1}) = \frac{\exp Q(s_t,  z^{-i}_{t-1}, z^i_t) P_\prior(z_t^i | s_t, z^{-i}_{t-1})}{\exp Q(s_t,  z^{-i}_{t-1})} \\
+    \text{ where }&Q(s_t,  z^{-i}_{t-1}) = \log \int\exp Q(s_t,  z^{-i}_{t-1}, z^i_t) P_\prior(z_t^i | s_t, z^{-i}_{t-1}) \dby z_t^i
+\end{aligned}
+\end{equation}
+Finally, ends with the agent termination policy with left us the the message.
+\begin{equation}
+\begin{aligned}
+    &q^{T,i}(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1}) = \frac{\exp Q(s_t, z^i_{t-1}, z^{-i}_{t-1}, b^i_t) P_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})}{\exp Q(s_t, z^i_{t-1}, z^{-i}_{t-1}) } \\
+    \text{ where }&Q(s_t, z^i_{t-1}, z^{-i}_{t-1}, b^i_t)  = b^i_t\brackb{Q(s_t,  z^{-i}_{t-1})} + (1-b^i_t)\brackb{Q(s_t,  z^{-i}_{t-1}, z^i_{t-1})} \\
+    &Q(s_t, z^i_{t-1}, z^{-i}_{t-1}) = \log \int \exp Q(s_t, z^i_{t-1}, z^{-i}_{t-1}, b^i_t) P_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1}) \dby b^i_t
+\end{aligned}
+\end{equation}
+Now, finally the bellman equation is 
+\begin{equation}
+    Q(s_t, a_t^i, a^{-i}_t, z^i_{t}, z^{-i}_{t} ) = \beta r(s_t, a_t^i, a^{-i}_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{Q(s_{t+1}, z^i_{t}, z^{-i}_{t})}
+\end{equation}
+Note that this is similar to the one proposed to \cite{han2019multi}. The agent's policy can be executed by message $z_{t-1}^{-i}$ sent from opponent. This is also interesting since by having the message from opponent, the agent can anticipate what the opponent can do next, which is shown in the calculation of the action value function.

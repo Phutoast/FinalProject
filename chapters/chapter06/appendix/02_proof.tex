@@ -64,9 +64,8 @@ Let's optimize the termination policy for opponent model, which is:
 Now, we have the objective for an agent:
 \begin{equation}
 \begin{aligned}
-    \mathbb{E}\Bigg[Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) &- \log\frac{q^{T,-i}(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)}{P^{T,-i}_\prior(b^{-i}_T | s_T,  z^{-i}_{T-1}, a^i_T, z^i_T)} - \log\frac{\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})} \\
-    &- \log\frac{q^{H, i}(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}{P^{H, i}_\prior(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}
-    - \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}\Bigg]
+    \mathbb{E}\Bigg[Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) &- \log\frac{\pi_\theta(a^i_T | s_T, z^i_T, z^{-i}_{T-1})}{P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1})} - \log\frac{q^{H, i}(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)}{P^{H, i}_\prior(z^i_T | s_T, z^{-i}_{T-1}, z^i_{T-1}, b^i_T)} \\
+    &- \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}\Bigg]
 \end{aligned}
 \end{equation}
 Starting with agent's policy:
@@ -76,4 +75,46 @@ Starting with agent's policy:
     \text{ where }&Q(s_T,  z^{-i}_{T-1}, z^i_T) = \log \int \exp Q(s_T,  z^{-i}_{T-1}, a^i_T, z^i_T) P_\prior(a^i_T | s_T, z^i_T, z^{-i}_{T-1}) \dby a^i_T
 \end{aligned}
 \end{equation}
-Let's now consider the 
+Let's now consider the differences when the agent's master policy doesn't use the old option $z^i_{T-1}$
+\begin{equation}
+\begin{aligned}
+    &b_T^{i}\begin{aligned}[t]
+    \Bigg[ Q(s_T,  z^{-i}_{T-1}, z^i_T) - \log\frac{q^{H, i}_{\phi}(z_T^i | s_T, z^{-i}_{T-1})}{P^{H, i}_\prior(z_T^i | s_T, z^{-i}_{T-1})} -  \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}\Bigg]
+    \end{aligned} \\
+    &+(1-b_T^i)\begin{aligned}[t]
+    \Bigg[ Q(s_T,  z^{-i}_{T-1}, z^i_{T-1})-  \log\frac{q^{T,i}(1-b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(1-b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})} \Bigg]
+    \end{aligned} \\
+\end{aligned}
+\end{equation}
+Now, we consider the agent's master policy
+\begin{equation}
+\begin{aligned}
+    &q^{H, i}_{\phi}(z_T^i | s_T, z^{-i}_{T-1}) = \frac{\exp Q(s_T,  z^{-i}_{T-1}, z^i_T) P_\prior(z_T^i | s_T, z^{-i}_{T-1})}{\exp Q(s_T,  z^{-i}_{T-1})} \\
+    \text{ where }&Q(s_T,  z^{-i}_{T-1}) = \log \int\exp Q(s_T,  z^{-i}_{T-1}, z^i_T) P_\prior(z_T^i | s_T, z^{-i}_{T-1}) \dby z_T^i
+\end{aligned}
+\end{equation}
+We are ended with the objective for agent's terminal policy:
+\begin{equation}
+\mathbb{E}_q\brackb{b^i_T\brackb{Q(s_T,  z^{-i}_{T-1})} + (1-b^i_T)\brackb{Q(s_T,  z^{-i}_{T-1}, z^i_{T-1})} - \log\frac{q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{P^{T,i}_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}}
+\end{equation}
+Finally, we end with the policy
+\begin{equation}
+\begin{aligned}
+    &q^{T,i}(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1}) = \frac{\exp Q(s_T, z^i_{T-1}, z^{-i}_{T-1}, b^i_T) P_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1})}{\exp Q(s_T, z^i_{T-1}, z^{-i}_{T-1}) } \\
+    \text{ where }&Q(s_T, z^i_{T-1}, z^{-i}_{T-1}, b^i_T)  = b^i_T\brackb{Q(s_T,  z^{-i}_{T-1})} + (1-b^i_T)\brackb{Q(s_T,  z^{-i}_{T-1}, z^i_{T-1})} \\
+    &Q(s_T, z^i_{T-1}, z^{-i}_{T-1}) = \log \int \exp Q(s_T, z^i_{T-1}, z^{-i}_{T-1}, b^i_T) P_\prior(b^i_T | s_T, z^i_{T-1}, z^{-i}_{T-1}) \dby b^i_T
+\end{aligned}
+\end{equation}
+We are left with the message $Q(s_T, z^i_{T-1}, z^{-i}_{T-1})$, which we can consider message as follows 
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}_q\Bigg[\beta r(s_t, a_t^i, a^{-i}_t) &- \log\frac{\pi_\theta(a^i_t | s_t, z^i_t, z^{-i}_{t-1})}{P_\prior(a^i_t | s_t, z^i_t, z^{-i}_{t-1})} - \log\frac{\rho_\theta(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t) }{P_\prior(a^{-i}_t | s_t, z^i_t, a^i_t, z^{-i}_t)} \\
+    &- \log\frac{q^{H, i}(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t)}{P^{H, i}_\prior(z^i_t | s_t, z^{-i}_{t-1}, z^i_{t-1}, b^i_t)} - \log\frac{q^{H, -i}(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t)}{P^{H, -i}_\prior(z^{-i}_t | s_t, a^i_t, z^i_t, z^{-i}_{t-1}, b^i_t)} \\
+    &- \log\frac{q^{T,i}(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})}{P^{T,i}_\prior(b^i_t | s_t, z^i_{t-1}, z^{-i}_{t-1})} - \log\frac{q^{T,-i}(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t)}{P^{T,-i}_\prior(b^{-i}_t | s_t,  z^{-i}_{t-1}, a^i_t, z^i_t) } + \gamma\mathbb{E}_{s_{t+1}}\brackb{Q(s_{t+1}, z^i_{t}, z^{-i}_{t})}\Bigg]
+\end{aligned}
+\end{equation}
+Now, let's consider Bellman equation as follows:
+\begin{equation}
+    Q(s_t, a_t^i, a^{-i}_t, z^i_{t}, z^{-i}_{t} ) = \beta r(s_t, a_t^i, a^{-i}_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{Q(s_{t+1}, z^i_{t}, z^{-i}_{t})}
+\end{equation}
+Following the same procedure before, we can have the optimal policy as follows.  

@@ -1,0 +1,197 @@
+\label{sec:chap5-public-agent}
+
+Now, let's formulize the problem of public Belief into graphical model setting. We will follow closely from \cite{shvechikovjoint} as we assume that the observation of the next step is depending on the action of the agents. The graphical model is depicted in figure \ref{fig:chap4-public-belief-MARL}.
+\begin{figure}[h]
+    \begin{minipage}[t]{0.5\linewidth}
+    \centering
+    \begin{tikzpicture}[latent/.append style={minimum size=1.0cm}]
+        \node[latent] (st) {$s_t$};
+        \node[obs, below=of st] (o-pubt) {$o^{\operatorname{pub}}_t$};
+        \node[obs, below=1cmof o-pubt] (msg) {$m_t$};
+        \node[latent, left=of o-pubt] (o-pri-1t) {$o^{\operatorname{pri}, i}_t$};
+        \node[latent, right=of o-pubt] (o-pri-2t) {$o^{\operatorname{pri}, -i}_t$};
+        \node[obs, below=4cm of o-pri-1t] (a1t) {$a^{i}_t$};
+        \node[obs, below=4cm of o-pri-2t] (a2t) {$a^{-i}_t$};
+        \node[obs, below=5cm of o-pubt] (reward-t) {$r_t$};
+        \node[obs, below=of reward-t] (optim-t) {$\mathcal{O}_t$};
+        
+        \node[latent, right=5cm of st] (st1) {$s_{t+1}$};
+        \node[obs, below=of st1] (o-pubt1) {$o^{\operatorname{pub}}_{t+1}$};
+        \node[obs, below=2cmof o-pubt1] (msg1) {$m_{t+1}$};
+        \node[latent, left=of o-pubt1] (o-pri-1t1) {$o^{\operatorname{pri}, i}_{t+1}$};
+        \node[latent, right=of o-pubt1] (o-pri-2t1) {$o^{\operatorname{pri}, -i}_{t+1}$};
+        \node[obs, below=4cm of o-pri-1t1] (a1t1) {$a^{i}_{t+1}$};
+        \node[obs, below=4cm of o-pri-2t1] (a2t1) {$a^{-i}_{t+1}$};
+        \node[obs, below=5cm of o-pubt1] (reward-t1) {$r_{t+1}$};
+        \node[obs, below=of reward-t1] (optim-t1) {$\mathcal{O}_{t+1}$};
+        
+        \edge {st} {o-pubt, o-pri-1t, o-pri-2t, st1}
+        \edge {st1} {o-pubt1, o-pri-1t1, o-pri-2t1}
+        \edge {o-pri-1t} {a1t}
+        \edge {o-pri-2t} {a2t}
+        
+        \edge {reward-t1} {optim-t1}
+        \edge {reward-t} {optim-t}
+        
+        \path[->]  (st)  edge   [bend right=15] node {} (a1t);
+        \path[->]  (st)  edge   [bend left=15] node {} (a2t);
+        \path[->]  (st)  edge   [bend left=30] node {} (msg);
+        \path[->]  (st)  edge   [bend left=30] node {} (reward-t);
+        \path[->]  (o-pubt)  edge   [bend right=25] node {} (a1t);
+        \path[->]  (o-pubt)  edge   [bend left=25] node {} (a2t);
+        
+        \edge {msg} {a1t, a2t}
+        
+        \edge {a1t} {o-pri-1t1}
+        \edge {a2t} {o-pri-2t1}
+        
+        \edge {a1t, a2t} {reward-t}
+        \edge {o-pri-1t1} {a1t1}
+        \edge {o-pri-2t1} {a2t1}
+        
+        \edge {a1t1, a2t1} {reward-t1}
+        \path[->]  (st1)  edge   [bend right=15] node {} (a1t1);
+        \path[->]  (st1)  edge   [bend left=15] node {} (a2t1);
+        \path[->]  (st1)  edge   [bend left=25] node {} (msg1);
+        \path[->]  (st1)  edge   [bend left=30] node {} (reward-t1);
+        \path[->]  (o-pubt1)  edge   [bend right=25] node {} (a1t1);
+        \path[->]  (o-pubt1)  edge   [bend left=25] node {} (a2t1);
+        \edge {msg1} {a1t1, a2t1}
+    \end{tikzpicture}
+    \end{minipage}%
+    \begin{minipage}[t]{0.5\linewidth}
+    \caption{The graphical model representing the public belief POMDP $o^{\operatorname{pub}}$ representing the public observation, which depends on the current state and agents' action. We left the state transition function $P(s_{t+1} | s_t, a_t)$ to reduce the clusters. We assume a cooperative setting in which each agents (including the public belief agent) trying to optimize. }
+    \label{fig:chap4-public-belief-MARL}
+    \end{minipage}
+\end{figure}
+The reason we split between reward $r_t$ and optimality $\mathcal{O}_t$ is because the reward will depends on unknown state hence but when we are training agent we didn't have a knowledge of that state. This will be clear after we have derived the public agent. Let's start by defining our joint distribution for this:
+\begin{equation}
+\label{eqn:elbo-pub-belief}
+\begin{aligned}
+    P(s_0)  \prod^T_{t=0} &P(s_{t+1} | s_t, a_t^i, a_t^{-i}) P(o^{\pri, i}_{t+1} | s_{t+1}, a^i_t) P(o^{\pri, -i}_{t+1} | s_{t+1}, a^{-i}_t) P(o^{\pub}_{t+1} | s_{t+1}, a^i_t, a^{-i}_t) \\
+    &P(a^i_t | s_t, o^{\pri, i}_t, m_t, o^{\pub}_t) P(a^{-i}_t | s_t, o^{\pri, -i}_t, m_t, o^{\pub}_t) P(\mathcal{O}_t| r_t) P(r_t | s_t, a^i_t, a^{-i}_t) P(m_t | s_t)
+\end{aligned}
+\end{equation}
+Let's consider the following scenario: In card games, usually the public observation consists of action of agents and possibly a public card. The action of agents can also affects the public card. The state is the configuration of the cards for all players and the private observation is simple a mask to the card removing opponent private card and allows us to see only our card. The public observation is a mask over the private observations with past action. This shows that state is sufficiently statistic for individual private observation. Now, its the time to consider the derivation of public agent, which we can treat as POMDP problem, where the derivation follows \cite{shvechikovjoint} closely. We consider the variational distribution for the public agent:
+\begin{equation}
+\begin{aligned}
+    P(s_0) &\bracka{\prod^T_{t=0} q(s_{t+1} | s_t, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)}\bracka{\prod^T_{t=0}q( o^{\pri, i}_{t+1}| s_t, a^i_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)} \\
+    &\bracka{\prod^T_{t=0}q(o^{\pri, -i}_{t+1} | s_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)}\bracka{\prod^T_{t=0} q(m_t | o^{\pub}_{1:t}, a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T})}
+\end{aligned}
+\end{equation} 
+Let's consider the ELBO for the problem. We have the following:
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}\Bigg[ \sum^T_{t=1} \log &\frac{ P(s_{t+1} | s_t, a_t^i, a_t^{-i})P(o^{\pri, i}_{t+1} | s_{t+1}, a^i_t) P(o^{\pri, -i}_{t+1} | s_{t+1}, a^{-i}_t) P(o^{\pub}_{t+1} | s_{t+1}, a^i_t, a^{-i}_t) P(a^i_t | s_t, o^{\pri, i}_t, m_t, o^{\pub}_t)  }{q(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1} | s_t, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)} \\
+    &\cdot \frac{P(m_t | s_t) P(\mathcal{O}_t, r_t | r_t)P(r_t | s_t, a^i_t, a^{-i}_t) P(a^{-i}_t | s_t, o^{\pri, -i}_t, m_t, o^{\pub}_t)}{q(m_t | o^{\pub}_{1:t}, a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T})}  \Bigg]
+\end{aligned}
+\end{equation}
+Now, we want to infer the unknown given what we can observe:
+\begin{equation}
+\begin{aligned}
+    P(s_{t+1}, o^{\pri, i}_{t+1}, &o^{\pri, -i}_{t+1}, m_t | a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T}, o^{\pub}_{1:t+1}) \\
+    &= \frac{P(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1}| a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t})}{P(a^i_t, a^{-i}_t, \mathcal{O}_t, r_t, o^{\pub}_{t+1} | a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t})}
+\end{aligned}
+\end{equation}
+We shall consider the numerator as follows, since we can see that the current is conditional independent given the current state.
+\begin{equation}
+\begin{aligned}
+    P(s_{t+1}, &o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1}| a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t}) \\
+    &= \int P(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1} | s_t) 
+    P(s_t | a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t}) \dby s_t
+\end{aligned}
+\end{equation}
+Let's perform the importance sampling using the proposal distribution or the variational distribution:
+\begin{equation}
+\begin{aligned}
+    \int P(s_{t+1}, &o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1} | s_t) 
+    P(s_t | a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t})\dby s_t \\
+    &= \begin{aligned}[t]
+        \int \frac{P(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1} | s_t)}{q(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t)} &q(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t) \\
+        &P(s_t | a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t}) \dby s_t
+    \end{aligned}
+\end{aligned}
+\end{equation}
+We will denote the importance weight $w_{t+1}(s_t, s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t)$ as 
+\begin{equation}
+    w_{t+1}(s_t, s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t) = \frac{P(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1} | s_t)}{q(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t)}
+\end{equation}
+Now given the following importance sampling, we can see that we can sample the state $s_t$ by using ancestor index $u^k_t$. Let's approximate this using ancestor index type sampling:
+\begin{equation}
+\label{eqn:chap5-sample-index}
+\begin{aligned}
+    &\frac{1}{K}\sum^K_{k=1} w_{t+1}(s_t^{u^k_t}, s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t) \cdot q(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t | s_t^{u^k_t}, a^i_t, a^{-i}_t, o^{\pub}_{t+1}) \\
+    =&\begin{aligned}[t]
+        \frac{1}{K}\sum^K_{k=1} w_{t+1}(s_t^{u^k_t}, s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t) &q(s_{t+1} | s_t^{u^k_t}, a^i_t, a^{-i}_t, o^{\pub}_{t+1}) q(o^{\pri, i}_{t+1} | s_t^{u^k_t}, a^i_t, m_t, \mathcal{O}_{1:T}, r_{1:T}, o^{\pub}_{t+1}) \\
+        &q(o^{\pri, -i}_{t+1} | s_t^{u^k_t}, a^{-i}_t, m_t, \mathcal{O}_{1:T}, r_{1:T}, o^{\pub}_{t+1})  q(m_t | o^{\pub}_{1:t}, a^{-i}_{1:t}, a^i_{1:t}, \mathcal{O}_{1:T}, r_{1:T})
+    \end{aligned} \\
+    \approx&\begin{aligned}[t]
+        \frac{1}{K}\sum^K_{k=1} w_{t+1}(s_t^{u^k_t}, s_{t+1}^k, o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1}, m_t^1) &\delta (s_{t+1} - s_{t+1}^k) \delta (o^{\pri, i}_{t+1} - o^{\pri, i, k}_{t+1}) \\
+        &\delta (o^{\pri, -i}_{t+1} - o^{\pri, -i, k}_{t+1}) \delta (m_t - m_t^1)
+        % &q(s_{t+1} | s_t^{u^k_t}, a^i_t, a^{-i}_t, o^{\pub}_{t+1}) q(o^{\pri, i}_{t+1} | s_t^{u^k_t}, a^i_t) \\
+        % &q(o^{\pri, -i}_{t+1} | s_t^{u^k_t}, a^{-i}_t)  q(m_t | o^{\pub}_{1:t}, \mathcal{O}_{1:T}, r_{1:T})
+    \end{aligned} \\
+\end{aligned}
+\end{equation}
+We can see above that we can further approximate our equation using sampling from our proposal/variational distribution. Now, we can fine the denominator by marginalization. Given this we have the final posterior being weighted mixture of particles:
+\begin{equation}
+\begin{aligned}
+    P(s_{t+1},& o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t | a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T}, o^{\pub}_{1:t+1}) \\
+    &=\frac{1}{K}\sum^K_{k=1} W^k_{t+1} \delta (s_{t+1} - s_{t+1}^k) \delta (o^{\pri, i}_{t+1} - o^{\pri, i, k}_{t+1}) \delta (o^{\pri, -i}_{t+1} - o^{\pri, -i, k}_{t+1}) \delta (m_t - m_t^1)
+\end{aligned}
+\end{equation}
+where the $W^k_{t+1}$ is the re-normalized weight. Now, the probability over the state is simply:
+\begin{equation}
+    P(s_{t+1} | a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T}, o^{\pub}_{1:t+1}) = \frac{1}{K}\sum^K_{k=1} W^k_{t+1} \delta (s_{t+1} - s_{t+1}^k)
+\end{equation}
+which we can further sample using ancestor index similar to equation \ref{eqn:chap5-sample-index}. Now, since the probability of the observable variable is:
+\begin{equation}
+    P(a^{i}_{1:\tau}, a^{-i}_{1:\tau}, \mathcal{O}_{1:\tau}, r_{1:\tau} o^{\pub}_{1:\tau}) = \prod^\tau_{t=0}\frac{1}{K}\sum^K_{k=1} w_{t+1}(s_t^{u^k_t}, s_{t+1}^k, o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1}, m_t^1)
+\end{equation}
+which is a tighter variational lower bound. Now, the objective becomes:
+\begin{equation}
+    \mathbb{E}\brackb{\sum^\tau_{t=0} \log \frac{1}{K} \sum ^K_{k=1} w_{t+1}(s_t^{u^k_t}, s_{t+1}^k, o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1}, m_t^1)}
+\end{equation}
+Let's recall the definition of the importance weight with suitable indexes:
+\begin{equation}
+\begin{aligned}
+    &\frac{P(s_{t+1}^k | s_t^{u^k_t}, a_t^i, a_t^{-i})P(o^{\pri, i, k}_{t+1} | s_{t+1}^k, a^i_t) P(o^{\pri, -i, k}_{t+1} | s_{t+1}^k, a^{-i}_t) P(o^{\pub}_{t+1} | s_{t+1}^k, a^i_t, a^{-i}_t)}{q(s_{t+1}^k | s_t^{u^k_t}, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)} \\
+    \times&\frac{P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i}_t, o^{\pri, -i}_t, m_t, o^{\pub}_t) P(m_t | s_t^{u^k_t}) P(\mathcal{O}_t | r_t)}{q(o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1} | s_t^{u^k_t}, a^i_t, a^{-i}_t, m_t, o^{\pub}_{t+1}, \mathcal{O}_t, r_t)} \\
+    \times&\frac{P(\mathcal{O}_t | r_t)}{q(m_t | o^{\pub}_{1:t}, a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T})}
+\end{aligned}
+\end{equation}
+We have the following objective that follows maximum entropy framework:
+\begin{equation}
+\begin{aligned}
+\label{eqn:chap5-elbo-public-agent}
+    \mathbb{E}\Bigg[\sum^\tau_{t=0} &\log P(\mathcal{O}_t | r_t) + \mathbb{H}\brackb{q(m_t | o^{\pub}_{1:t}, a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T})} \\
+    &+ \log \frac{1}{K} \sum ^K_{k=1}\Bigg(\frac{P(s_{t+1}^k | s_t^{u^k_t}, a_t^i, a_t^{-i})P(o^{\pri, i, k}_{t+1} | s_{t+1}^k, a^i_t) P(o^{\pri, -i, k}_{t+1} | s_{t+1}^k, a^{-i}_t) P(o^{\pub}_{t+1} | s_{t+1}^k, a^i_t, a^{-i}_t)}{q(s_{t+1}^k | s_t^{u^k_t}, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)} \\
+    &\cdot \frac{P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i, k}_t, o^{\pri, -i, k}_t, m_t, o^{\pub}_t) P(m_t | s_t^{u^k_t}) P(\mathcal{O}_t | r_t)}{q(o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1} | s_t^{u^k_t}, a^i_t, a^{-i}_t, m_t, o^{\pub}_{t+1}, \mathcal{O}_t, r_t)} \Bigg)\Bigg]
+\end{aligned}
+\end{equation}
+Now, in practice the public agent shall be a weighted sum of underlying state, public observation, and agent actions i.e
+\begin{equation}
+    \sum^K_{k=1} W^k_t \pi(m^k_t | s^k_t, o^{\pub}_t, a^i_t, a^{-i}_t)
+\end{equation}
+There are 2 points that we want to consider (that we have mentioned above):
+\begin{itemize}
+    \item The interpretability of $o^{\pri, i, k}_t$ and $o^{\pri, -i, k}_t$. There isn't a lot we can do with this apart from constructing a network that would translate the public agent's private observation into the the agent's private observation. Or we can pretrain a network that output the agent's private observation. However, we have to make sure for the sake of the training to not change the main public agent's network by backpropagate the local feature, since it is cruitial for all the agent's to have the same public agent.
+    \item The joint action $P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i}_t, o^{\pri, -i}_t, m_t, o^{\pub}_t)$. After having all the private observation and public observation, we can trying to do the reconstruction loss on the agents' actions. However, we can further assume that the agents' policy are based on boltzmann distribution of action value function. Given this assumption, the maximum-log-likelihood estimation should follows the usual adversarial imitation learning that we have extensively discussed in \cite{yu2019multi}. For a normal scenario, we simply able to train its own Q function. As noted before, we shouldn't include any additional information from the agent to help us with the public agent (including agent's own action value function). 
+\end{itemize}
+We would like to state that all the problems above can be lifted if we assume that each agent owns its own public agent and trying to model the others using oneself or other methods. By ignoring the common knowledge of messages $m_t$, we lose a guarantee that the agents will be in "sync" of each other thus returning to a problem of equilibrium selection. Finally, we shall consider the individual agent that corresponds on the message, its own private observation, and the state. Let's start with the definition of action value function $Q(s_t, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which is defined as:
+\begin{equation}
+    Q(\{s_t\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t) = \sum^K_{k=1} W^k_t Q(s_t^k, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)
+\end{equation}
+The agent is based on single agent problem, which we can find its policy as:
+\begin{equation}
+\begin{aligned}
+    &\pi(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t) = \frac{P_\prior(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)\exp{Q(\{s_t^k\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)}}{V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)} \\
+    \text{ where }&Q(s_t, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t) = r_t + \gamma\mathbb{E}\brackb{Q(\{s_{t+1}^k\}^K_{k=1}, m_{t+1}, o^{\pri, i}_{t+1}, o^{\pub}_{t+1})} \\
+    &V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t) = \int P_\prior(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)\exp{Q(\{s_t^k\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)} \dby a^i_t
+\end{aligned}
+\end{equation}
+% while the final policy is a weighted sum of all possible states
+% \begin{equation}
+%     \sum^K_{k=1} W^k_t \pi(a^i_t | s_t^k, m_t, o^{\pri, i}_t, o^{\pub}_t)
+% \end{equation}
+% This concludes the derivation of the policy and we will consider the implementation of public agent agent and lower level policy.

@@ -1,0 +1,49 @@
+\label{sec:chap5-public-agent-implementation}
+Now, let's consider the implementation of public agent, which is similar to DVRL. Starting with the hidden state calculation for each time step, we have 3 hidden variables that we have to infer
+\begin{equation}
+\begin{aligned}
+    &u^k_{t-1} \sim \text{Categorical}\bracka{\frac{w^k_{t-1}}{\sum^K_{k=1}w^k_{t-1}}} \\
+    &x^k_{t+1} \sim q(s_{t+1} | f^{u^k_t}_t, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, r_t) \quad y^k_{t+1} \sim q(o^{\pri, i}_{t+1} | f^{u^k_t}_t, a^i_t, o^{\pub}_{t+1}, m_t, r_t) \\ 
+    &z^k_{t+1} \sim q(o^{\pri, -i}_{t+1} | f^{u^k_t}_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, r_t) \\
+    &f^k_t = \psi^{\text{RNN} \ 1}_\theta (x^k_{t+1}, f^{u^k_t}_t, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t) \quad g^k_t = \psi^{\text{RNN} \ 2}_\theta (y^k_{t+1}, g^{u^k_t}_t, a^i_t, o^{\pub}_{t+1}, m_t, r_t) \\
+    &h^k_t = \psi^{\text{RNN} \ 3}_\theta (z^k_{t+1}, h^{u^k_t}_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, r_t) \\
+    &w^k_T = \begin{aligned}[t]
+        &\frac{P(s_{t+1}^k | s_t^{u^k_t}, a_t^i, a_t^{-i})P(o^{\pri, i, k}_{t+1} | s_{t+1}^k, a^i_t) P(o^{\pri, -i, k}_{t+1} | s_{t+1}^k, a^{-i}_t) P(o^{\pub}_{t+1} | s_{t+1}^k, a^i_t, a^{-i}_t)}{q(s_{t+1}^k | s_t^{u^k_t}, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, r_t)} \\
+        \cdot&\frac{P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i}_t, o^{\pri, -i}_t, m_t, o^{\pub}_t) P(m_t | s_t^{u^k_t}) P(\mathcal{O}_t | r_t)}{q(o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1} | s_t^{u^k_t}, a^i_t, a^{-i}_t, m_t, o^{\pub}_{t+1}, r_t)} \cdot \frac{P(\mathcal{O}_t | r_t)}{q(m_t | o^{\pub}_{1:t}, a^{i}_{1:t}, a^{-i}_{1:t}, r_{1:T})}
+    \end{aligned}
+\end{aligned}
+\end{equation}
+Now, we have the following particles, which is in tuple $(x^k_{t+1}, y^k_{t+1}, z^k_{t+1}, f^k_t, g^k_t, h^k_t, w^k_t)$. Now the agent have to be optimized the EBLO in equation \ref{eqn:chap5-elbo-public-agent}, where we have 
+\begin{equation}
+\begin{aligned}
+\label{eqn:chap5-elbo-public-agent}
+    \mathbb{E}\Bigg[\sum^\tau_{t=0} &\log P(\mathcal{O}_t | r_t) + \mathbb{H}\brackb{q(m_t | o^{\pub}_{1:t}, a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T})} + \log \frac{1}{K} \sum ^K_{k=1}\tilde{w}_t^k\Bigg]
+\end{aligned}
+\end{equation}
+where 
+\begin{equation}
+\begin{aligned}
+    \tilde{w}_t^k = &\frac{P(s_{t+1}^k | s_t^{u^k_t}, a_t^i, a_t^{-i})P(o^{\pri, i, k}_{t+1} | s_{t+1}^k, a^i_t) P(o^{\pri, -i, k}_{t+1} | s_{t+1}^k, a^{-i}_t) P(o^{\pub}_{t+1} | s_{t+1}^k, a^i_t, a^{-i}_t)}{q(s_{t+1}^k | s_t^{u^k_t}, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)} \\
+    &\cdot \frac{P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i, k}_t, o^{\pri, -i, k}_t, m_t, o^{\pub}_t) P(m_t | s_t^{u^k_t}) P(\mathcal{O}_t | r_t)}{q(o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1} | s_t^{u^k_t}, a^i_t, a^{-i}_t, m_t, o^{\pub}_{t+1}, \mathcal{O}_t, r_t)} 
+\end{aligned}
+\end{equation}
+Now, let's consider the lower agent objective. We are going to start with the definition of the value function $V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which trained to minimize:
+\begin{equation}
+\begin{aligned}
+\mathcal{L}_{V} = \mathbb{E}_{\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t\sim \mathcal{D}} \Bigg[\frac{1}{2}\Bigg(&V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t) \\
+&- \mathbb{E}_{a_t^i}\brackb{Q(\{s_t^k\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t) - \log \frac{P_\prior(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)}{\pi(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)}}\Bigg)^2\Bigg]
+\end{aligned}
+\end{equation}
+where the action is sampled from $a^i_t \sim \pi(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)$. Now for the action value function, we follows from the Bellman equation:
+\begin{equation}
+\begin{aligned}
+    \mathcal{L}_Q = \mathbb{E}_{\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t, r_t, \{s_{t+1}^k\}^K_{k=1},m_{t+1}, o^{\pri, i}_{t+1}, o^{\pub}_{t+1},\sim \mathcal{D}}\Bigg[\frac{1}{2}\Bigg( &Q(\{s_t^k\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)  \\
+    &- \brackb{r_t + \gamma V(\{s_{t+1}^k\}^K_{k=1}, m_{t+1}, o^{\pri, i}_{t+1}, o^{\pub}_{t+1})} \Bigg)\Bigg]
+\end{aligned}
+\end{equation}
+Finally, the policy will be in the form of $f(\xi ; \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)$ where $\xi \sim \mathcal{N}(0, I)$ and trained using minimizing the KL-divergence:
+\begin{equation}
+    \loss_{\pi} = \kl\bracka{\pi(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)\Bigg\|\frac{P_\prior(a^i_t | \{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)\exp{Q(\{s_t^k\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)}}{V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)}}
+\end{equation}
+Given this, we conclude the training for probabilistic public-agent.
+    

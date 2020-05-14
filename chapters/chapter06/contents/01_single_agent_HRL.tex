@@ -70,6 +70,7 @@ As it takes the value of $b_t$ to suggest when to change the option $z_t$. Now, 
 This is the same as one defined in \cite{igl2019multitask}. Given the ELBO, we will consider the closed-form solution of the low-level policy/master policy and termination policy. For the low-level policy, we have 
 \begin{equation}
 \begin{aligned}
+\label{eqn:chap4-single-HRL-lower}
     &\pi_{\theta}(a_{t} | s_{t}, z_{t}) = \frac{P_\prior(a_{t} | s_{t}, z_{t})\exp\bracka{Q(s_{t}, a_{t}, z_{t})}}{\exp V(s_{t}, z_{t})} \\
     \text{ where }&V(s_{t}, z_{t}) = \log \int P_\prior(a_{t} | s_{t}, z_{t})\exp\bracka{Q(s_{t}, a_{t}, z_{t})} \dby a_{t}
 \end{aligned}
@@ -77,23 +78,26 @@ This is the same as one defined in \cite{igl2019multitask}. Given the ELBO, we w
 For the high-level policy, we have 
 \begin{equation}
 \begin{aligned}
-    &\pi^H(z_t | s_t) = \frac{\frac{1}{m}\exp\bracka{Q^H(s_t, z_t)}}{\exp\bracka{V^H(s_t)}}
+\label{eqn:chap4-single-HRL-higher}
+    &\pi^H(z_t | s_t) = \frac{\frac{1}{m}\exp\bracka{Q(s_t, z_t)}}{\exp\bracka{V(s_t)}}
     \\
-    \text{ where } &Q^H(s_t, z_t) =  V(s_t, z_t)  \\
+    \text{ where } &Q(s_t, z_t) =  V(s_t, z_t)  \\
     &V^H(s_t) =  \frac{1}{m}\log \int \exp\bracka{Q(s_t, z_t)} \dby z_T
 \end{aligned} 
 \end{equation}
-Finally, the termination policy is 
+Finally, the termination policy is  
 \begin{equation}
 \begin{aligned}
-    &\pi^T(b_{t} | s_{t}, z_{t-1}) = \frac{P_\prior^T(b_{t} | s_{t}, z_{t-1})\exp{U(s_{t}, z_{t-1}, b_{t})}}{\exp U(s_{t}, z_{t-1})} \\
-    \text{ where }& U(s_{t}, z_{t-1}, b_{t}) = b_{t} \brackb{V^H(s_{t})} + (1-b_{t})V(s_{t}, z_{t-1}) \\
-    & U(s_{t}, z_{t-1}) = \log \int P_\prior^T(b_{t} | s_{t}, z_{t-1})\exp\bracka{b_{t} \brackb{V^H(s_{t})} + (1-b_{t})V(s_{t}, z_{t-1})} \dby b_{t}
+\label{eqn:chap4-single-HRL-termination}
+    &\pi^T(b_{t} | s_{t}, z_{t-1}) = \frac{P_\prior^T(b_{t} | s_{t}, z_{t-1})\exp{V(s_{t}, z_{t-1}, b_{t})}}{\exp V(s_{t}, z_{t-1})} \\
+    \text{ where }& V(s_{t}, z_{t-1}, b_{t}) = b_{t} \brackb{V^H(s_{t})} + (1-b_{t})V(s_{t}, z_{t-1}) \\
+    & V(s_{t}, z_{t-1}) = \log \int P_\prior^T(b_{t} | s_{t}, z_{t-1})\exp\bracka{b_{t} \brackb{V^H(s_{t})} + (1-b_{t})V(s_{t}, z_{t-1})} \dby b_{t}
 \end{aligned}
 \end{equation}
 Finally, the Bellman equation for soft-hierarchical single-agent reinforcement learning is 
 \begin{equation}
-    Q(s_t, a_t, z_t) = \beta r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{U(s_{t+1}, z_t)}
+\label{eqn:chap4-single-HRL-bellman}
+    Q(s_t, a_t, z_t) = \beta r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{V(s_{t+1}, z_t)}
 \end{equation}
 The proof will be in appendix \ref{appx:chap4-soft-single-HRL}. We can see that this is analogous to the option framework \cite{sutton1999between, bacon2017option}. Now, we have aware the work on similar topic \cite{lobo2019soft}, which the authors has almost the same solution as us but miss certain points on value function calculation, notably 
 \begin{equation}
