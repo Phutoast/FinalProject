@@ -31,6 +31,81 @@ which is the same as ELBO for KL-divergence.
 
 \subsection{Soft Bellman Operator is a Contraction Mapping}
 \label{appx:chap2-soft-bellman-contract}
+This has been proven in \cite{haarnoja2017reinforcement}, but we will expand some of the details in this section for completeness. Let's first formally define the map $\contractop$ to be:
+\begin{equation}
+    \contractop^{\pi} Q(s_t, a_t) = r(s_t, a_t) + \gamma \mathbb{E}_{s_{t+1} \sim p_{s}}\left[ \log \int \exp(Q(s_{t+1}, a')) P_{\prior}(a' | s_{t+1}) \ d a' \right]
+\end{equation}
+Let's consider the infinite norm and we want to show that 
+\begin{equation}
+    \norm{\contractop^{\pi} Q_1 - \contractop^{\pi} Q_2}_{\infty}  \le \gamma \norm{Q_1 - Q_2}_{\infty}
+\end{equation}
+Let's start with just substitute the Bellman operator, we will first won't expand the $V$ to save the space, and we will expand on it later on.
+\begin{equation*}
+    \begin{aligned}
+        \norm{\contractop^{\pi} Q_1 - \contractop^{\pi} Q_2}_{\infty} &= \norm{r(s_t, a_t) + \gamma \mathbb{E}_{s_{t+1} \sim p_{s}}\left[ V_1(s_{t+1}) \right] - r(s_t, a_t) - \gamma \mathbb{E}_{s_{t+1} \sim p_{s}}\left[ V_2(s_{t+1}) \right]}_{\infty} \\
+        &= \gamma \max_{s_t, a_t}\left|\mathbb{E}_{s_{t+1} \sim p_{s}}\left[ V_1(s_{t+1})- V_2(s_{t+1})\right] \right|\\
+        &\le \gamma \max_{s_t, a_t}\mathbb{E}_{s_{t+1} \sim p_{s}} \left| V_1(s_{t+1})- V_2(s_{t+1}) \right|
+    \end{aligned}
+\end{equation*}
+Now we would want to show that $\left| V_1(s_{t+1})- V_2(s_{t+1}) \right| \le \varepsilon$ where $\varepsilon = \norm{Q_1 - Q_2}_{\infty}$. Now there are 2 cases we can consider: \textbf{In the fist case}, we have that 
+\begin{equation*}
+    \begin{aligned}
+        \log \int \exp Q_1(\bold{s}_{t+1}, \bold{a}') P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' &\le \log \int_{\mathcal{A}} \exp \big(Q_2(\bold{s}_{t+1}, \bold{a}') + \varepsilon \big) P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= \log \int \exp \varepsilon \cdot \exp Q_2(\bold{s}_{t+1}, \bold{a}') P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= \varepsilon + \log \int \exp Q_2(\bold{s}_{t+1}, \bold{a}')P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}'
+    \end{aligned}
+\end{equation*}
+Finally we have that 
+\begin{equation*}
+    \log \int \exp Q_1(\bold{s}_{t+1}, \bold{a}') P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' - \log \int \exp Q_2(\bold{s}_{t+1}, \bold{a}')P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \le \varepsilon
+\end{equation*}
+\textbf{In the second case}, we have that:
+\begin{equation*}
+    \begin{aligned}
+        \log \int \exp Q_1(\bold{s}_{t+1}, \bold{a}') P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' &\ge \log \int_{\mathcal{A}} \exp \big(Q_2(\bold{s}_{t+1}, \bold{a}') - \varepsilon \big) P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= \log \int \exp (-\varepsilon) \cdot \exp Q_2(\bold{s}_{t+1}, \bold{a}') P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \\ 
+        &= -\varepsilon + \log \int \exp Q_2(\bold{s}_{t+1}, \bold{a}')P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}'
+    \end{aligned}
+\end{equation*}
+And so we have
+\begin{equation*}
+    \log \int \exp Q_1(\bold{s}_{t+1}, \bold{a}') P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' - \log \int \exp Q_2(\bold{s}_{t+1}, \bold{a}')P_{\prior} (\bold{a}' | \bold{s}_{t+1}) d\bold{a}' \ge -\varepsilon
+\end{equation*}
+Therefore we can concluded that $\left| V_1(s_{t+1})- V_2(s_{t+1}) \right| \le \varepsilon$ since $V_1(s_{t+1}) - V_2(s_{t+1}) \le \epsilon$ and $V_1(s_{t+1}) - V_2(s_{t+1}) \ge -\epsilon$. Plug this into the the inequality as 
+\begin{equation*}
+    \begin{aligned}
+        \norm{\contractop^{\pi} Q_1 - \contractop^{\pi} Q_2}_{\infty} &\le \gamma \max_{s_t, a_t}\mathbb{E}_{s_{t+1} \sim p_{s}} \left| V_1(s_{t+1})- V_2(s_{t+1}) \right| \\
+        &\le \gamma \norm{Q_1 - Q_2}_{\infty}
+    \end{aligned}
+\end{equation*}
+Therefore we can see that the soft-Bellman operator is a contraction mapping. Therefore, repeated apply of this mapping will reach the fixed point.
 
 \subsection{Soft Policy Update Improvement}
 \label{appx:chap2-soft-policy-update-improvement}
+This has been proven in \cite{haarnoja2018softa}, but we will expand some of the details in this section for completeness, since this is going to be useful in the latter chapters. Let arbitrary policy $\pi_+$ be 
+\begin{equation}
+    J_{\pi_{\text{old}}}(\pi_+) = \kl\left( \pi_+(\cdot | s_t) \bigg|\bigg| \frac{\exp(Q^{\pi_{\text{old}}}(s_t, \cdot)) P_{\prior}(\cdot | s_t)}{\exp Z^{\pi_{\text{old}}}(s_t)} \right)
+\end{equation}
+Please note that $Z^{\pi_{\text{old}}}(s_t)$ isn't equal to $V^{\pi_\text{old}}(s_t)$ because $\pi_{\text{old}}$ is an arbitrary policy, and it converges when the policy satisfies energy based form. We can show that by the definition of $\pi_{\text{new}}$ that $J_{\pi_{\text{old}}}(\pi_\text{old}) \ge J_{\pi_{\text{old}}}(\pi_\text{new})$, given this we can expand the definition of KL-divergence above giving us the following:
+\begin{equation}
+\begin{aligned}
+    \mathbb{E}_{\pi_{\text{old}}}&\brackb{\cancel{Z^{\pi_{\text{old}}}(s_t)} - Q^{\pi_{\text{old}}}(s_t, \cdot) - \log P_{\prior}(\cdot | s_t) + \log \pi_{\text{old}}(\cdot | s_t)} \\
+    &\ge\mathbb{E}_{\pi_{\text{new}}}\brackb{\cancel{Z^{\pi_{\text{old}}}(s_t)} - Q^{\pi_{\text{old}}}(s_t, \cdot) - \log P_{\prior}(\cdot | s_t) + \log \pi_{\text{new}}(\cdot | s_t)}
+\end{aligned}
+\end{equation}
+This would gives us 
+\begin{equation}
+\begin{aligned}
+    &-V^{\pi_{\text{old}}}(s_t) \ge \mathbb{E}_{\pi_{\text{new}}}\brackb{ - Q^{\pi_{\text{old}}}(s_t, \cdot) - \log P_{\prior}(\cdot | s_t) + \log \pi_{\text{new}}(\cdot | s_t)} \\
+    \iff&V^{\pi_{\text{old}}}(s_t) \le \mathbb{E}_{\pi_{\text{new}}}\brackb{ Q^{\pi_{\text{old}}}(s_t, \cdot) - \log \frac{\pi_{\text{new}}(\cdot | s_t)}{P_{\prior}(\cdot | s_t)}}
+\end{aligned}
+\end{equation}
+Now, we can consider the recursive definition of Q learning as follows:
+\begin{equation}
+\begin{aligned}
+    Q^{\pi_{\text{old}}} &= r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{V^{\pi_{\text{old}}}(s_{t+1})} \\
+    &\le r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{\mathbb{E}_{\pi_{\text{new}}}\brackb{ Q^{\pi_{\text{old}}}(s_{t+1}, \cdot) - \log \frac{\pi_{\text{new}}(\cdot | s_{t+1})}{P_{\prior}(\cdot | s_{t+1})}}} \\
+    &\vdots \\
+    &\le Q^{\pi_{\text{new}}}
+\end{aligned}
+\end{equation}

@@ -22,9 +22,29 @@ Please note that this improved policy is deterministic, therefore, we can simply
 
 \subsection{Expected Bellman Operator is a Contraction Mapping}
 \label{appx:chap2-rl-expected-bell-contract}
+Recalling the definition of the Map:
+\begin{equation}
+    \contractop^{\pi} V(s) = \mathbb{E}_{a \sim \pi(a | s)} \brackb{r(s, a) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V(s')}} 
+\end{equation}
+Let's consider the differences between 2 value functions $V_1(s)$ and $V_2(s)$ after being applied by the Bellman operator:
+\begin{equation}
+\begin{aligned}
+    \contractop^\pi V_1(s) - \contractop^\pi V_2(s) &= \mathbb{E}_{a \sim \pi(a | s)} \brackb{ \cancel{r(s, a)} + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V_1(s')} - \cancel{r(s, a)} - \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V_2(s')} } \\
+    &= \gamma\mathbb{E}_{a, s'}\brackb{V_1(s') - V_2(s')}
+\end{aligned}
+\end{equation}
+Now, we shall consider the $\infty$-norm of the equaltion, we have:
+\begin{equation}
+\begin{aligned}
+    \max_{s}\left|\contractop^\pi V_1(s) - \contractop^\pi V_2(s)\right| &= \gamma\max_{s}\left|\mathbb{E}_{a, s'}\brackb{V_1(s') - V_2(s')}\right| \\
+    &\le \gamma\max_{s}\left|\mathbb{E}_{a, s'}\brackb{\max_s\left|V_1(s') - V_2(s')\right|}\right| \\
+    &\le \gamma \max_{s}\left| V_1(s) - V_2(s) \right| 
+\end{aligned}
+\end{equation}
+Given this, we finished the proof.
 
-\subsection{Optimal value Bellman Operator is a Contraction Mapping}
-\label{appx:chap2-rl-optimal-val-bellman-contract}
+% \subsection{Optimal value Bellman Operator is a Contraction Mapping}
+% \label{appx:chap2-rl-optimal-val-bellman-contract}
 
-\subsection{Optimal action value Bellman Operator is Contraction Mapping}
-\label{appx:chap2-rl-optimal-q-bellman-contract}
+% \subsection{Optimal action value Bellman Operator is Contraction Mapping}
+% \label{appx:chap2-rl-optimal-q-bellman-contract}

@@ -1,12 +1,15 @@
 \label{chapter:chap4}
-\epigraph{\correctquote{The political is the most intense and extreme antagonism, and every concrete antagonism becomes that much more political the closer it approaches the most extreme point, that of the friend-enemy grouping.}}{The Concept of the Political (1932) \\ by Carl Schmitt}
-
 \begin{miniabstract}
-After we have a unified view on MAPI framework, which we have reinterpret Balancing Q-learning \cite{grau2018balancing} as a probabilistic inference. We are now going to consider a more general setting, when the opponent's reward isn't proportional to agent's reward. However, we will show that one can't stray away from the use of $\beta$ variable during the training. We have split this section into a chapter, since, the main goal of the previous chapter is to \correctquote{understand} Balancing Q-learning, while this chapter we will try to extends the algorithm to be as general as possible. The structure of this chapter and any chapter afterward going to be the derivation of algorithm and its neural network implementation.
+After we have a unified view on MAPI framework, which we have reinterpret Balancing Q-learning \cite{grau2018balancing} as a probabilistic inference. We are now going to consider extensions to agent's functionality. In this chapter, we are going to consider the case of temporal abstraction and communication in coopeartive multi-agent reinforcement learning problem. We will start by considering single agent option learning problem and solving it together with soft actor-critic like algorithm, as a minor contribution. After considering single agent problem, we are going to define a model in which the agent can plan and communicate and solving then.
 \end{miniabstract}
 
-\section{General Sum Extension to Balance Q-learning}
-\input{chapters/chapter04/contents/01_extension_balancing_Q}
 
-\section{Implementation of The General Sum Extension}
-\input{chapters/chapter04/contents/02_implementation}
+\section{Single Agent Soft-Hierarchical Reinforcement Learning}
+\input{chapters/chapter04/contents/01_single_agent_HRL}
+
+\section{Multi-Agent Delayed Soft-Option Communication}
+\input{chapters/chapter04/contents/02_multi_agent_comunication}
+
+\section{Implementation}
+\input{chapters/chapter04/contents/03_implementations}
+

@@ -187,6 +187,3 @@ where $\mathcal{D}$ is just the replay memory. The actiob value function is the 
     \loss_{\pi}(\phi) = \mathbb{E}_{s_t \sim \mathcal{D}} \left[ \kl\left( \pi_{\phi}(\cdot | s_t) \bigg| \bigg| \frac{\exp(Q_{\theta}(s_t, \cdot)) P_{\prior}(\cdot | s_t)}{Z_{\theta}(s_t)} \right) \right]
 \end{equation}
 The authors also uses normalizing flow to get the range of action bounded. We suggested \cite{haarnoja2018softa} for more details.
-
-\subsection{Bounded Rationality Interpretation}
-As a bonus, we will consider how we can use information theory to understand the KL-divergence regularization/constrain. 

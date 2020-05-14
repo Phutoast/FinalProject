@@ -1,4 +1,6 @@
 \label{sec:chap3-ROMMEO-interpretation}
+
+\subsection{Understanding ROMMEO}
 Before we examine the results, let's state some of the theoretical results for ROMMEO, which are discussed in \cite{tian2019regularized}. The authors showed that the Bellman equation in equation \ref{eqn:chap3-final-ROMMEO} is a contraction mapping, while updating agent and its opponent model does improve the final Q value. These results are analogous to results from section \ref{sec:chap2-derivation-soft-closed-form}. Thus ROMMEO is implemented via soft Actor-Critic like algorithm, see section \ref{sec:chap2-soft-ac-implement} and \cite{tian2019regularized} for more details. 
 
 Let's examine further the results that we get from the derivation of ROMMEO. We start with the definition of value function $V(s)$. Let's expand the definition of it:

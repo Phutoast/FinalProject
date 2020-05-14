@@ -92,7 +92,7 @@ is a contraction mapping. We would like to further investigate more on how the a
     Given the opponent's updated policy $\tilde{\rho}$ given normal policy $\rho$ as 
     \begin{equation}
     \begin{aligned}
-        \tilde{\rho}(a^{-i}_t | s_t) &= \argmin{\rho' \in \Pi} \kl \bracka{ \rho'(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{-i, \pi, \rho}(s_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{\exp V^{-i, \pi, \rho}(s_t)}} \\
+        \tilde{\rho}(a^{-i}_t | s_t) &= \argmin{\rho' \in \Pi} \kl \bracka{ \rho'(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{-i, \pi, \rho}(s_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{\exp Z^{-i, \pi, \rho}(s_t)}} \\
         &=\argmin{\rho' \in \Pi} J_{\rho}(\rho')
     \end{aligned}
     \end{equation}
@@ -105,20 +105,20 @@ is a contraction mapping. We would like to further investigate more on how the a
     \end{equation}
 \end{theorem}
 \begin{proof}
-The proof follows closely from ROMMEO proof on policy improvement \cite{tian2019regularized} which is based on soft Actor-Critic \cite{haarnoja2018softa} proof. We start by comparing these 2 quantities:
+The proof follows closely from ROMMEO proof on policy improvement \cite{tian2019regularized} which is based on soft Actor-Critic \cite{haarnoja2018softa} proof for more details on the method see appendix \ref{appx:chap2-soft-policy-update-improvement}. We start by comparing these 2 quantities:
 \begin{equation*}
 \begin{aligned}
     &\mathbb{E}_{\pi, \red{\rho}}\brackb{Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{1}{\beta^i} \log\frac{\pi(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\red{\rho}(a^{-i}_{t+1}|s_{t+1})}{P_\prior(a^{-i}_{t+1}|s_{t+1})}} \\
     &\mathbb{E}_{\pi, \red{\tilde{\rho}}}\brackb{Q^{-i, \pi, \rho}(s_{t+1}, a^i_{t+1}, a^{-i}_{t+1}) - \frac{1}{\beta^i} \log\frac{\pi(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})}{P_\prior(a^i_{t+1}|s_{t+1}, a^{-i}_{t+1})} - \frac{1}{\beta^{-i}}\log \frac{\red{\tilde{\rho}}(a^{-i}_{t+1}|s_{t+1})}{P_\prior(a^{-i}_{t+1}|s_{t+1})}}
 \end{aligned}
 \end{equation*}
-The differences are shown in red letter. Please note that the Q function definition of the second equation still based on the old opponent $\rho$. We start by finding the KL-divergence between arbitrary $\rho^+$ the objective for updating is the following, which can be expanded as 
+The differences are shown in red letter. Please note that the action value function definition of the second equation still based on the old opponent $\rho$. We start by finding the KL-divergence between arbitrary $\rho^+$ the objective for updating is the following, which can be expanded as 
 \begin{equation*}
 \begin{aligned}
-    &\kl \bracka{ \rho^+(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{-i, \pi, \rho}(s_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{\exp V^{-i, \pi, \rho}(s_t)}} \\
-    &= \int  \rho^+(a^{-i}_{t+1} | s_{t+1}) \log \frac{\rho^+(a^{-i}_{t+1} | s_{t+1}) \exp(V^{-i, \pi, \rho}(s_{t+1})) }{P_\prior(a^{-i}_{t+1} | s_{t+1}) \exp\bracka{Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1})} } \dby a^{-i}_{t+1} \\
+    &\kl \bracka{ \rho^+(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{-i, \pi, \rho}(s_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{\exp Z^{-i, \pi, \rho}(s_t)}} \\
+    &= \int  \rho^+(a^{-i}_{t+1} | s_{t+1}) \log \frac{\rho^+(a^{-i}_{t+1} | s_{t+1}) \exp(Z^{-i, \pi, \rho}(s_{t+1})) }{P_\prior(a^{-i}_{t+1} | s_{t+1}) \exp\bracka{Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1})} } \dby a^{-i}_{t+1} \\
     &=\begin{aligned}[t]
-    \int &\rho^+(a^{-i}_{t+1} | s_{t+1}) \log\frac{\rho^+(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + V^{-i, \pi, \rho}(s_{t+1}) \\
+    \int &\rho^+(a^{-i}_{t+1} | s_{t+1}) \log\frac{\rho^+(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + Z^{-i, \pi, \rho}(s_{t+1}) \\
     &- \int \rho^+(a^{-i}_{t+1} | s_{t+1}) Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1}) \dby a^{i}_{t+1}
     \end{aligned}
 \end{aligned}
@@ -127,11 +127,11 @@ Now the performance gap can be established due to the KL-divergence between $\rh
 \begin{equation*}
 \begin{aligned}
 &\begin{aligned}[t]
-    \int &\rho(a^{-i}_{t+1} | s_{t+1}) \log\frac{\rho(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + \cancel{V^{-i, \pi, \rho}(s_{t+1})} \\
+    \int &\rho(a^{-i}_{t+1} | s_{t+1}) \log\frac{\rho(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + \cancel{Z^{-i, \pi, \rho}(s_{t+1})} \\
     &- \int \rho(a^{-i}_{t+1} | s_{t+1}) Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1}) \dby a^{i}_{t+1}
 \end{aligned} \\
 \ge&\begin{aligned}[t]
-    \int &\tilde{\rho}(a^{-i}_{t+1} | s_{t+1}) \log\frac{\tilde{\rho}(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + \cancel{V^{-i, \pi, \rho}(s_{t+1})} \\
+    \int &\tilde{\rho}(a^{-i}_{t+1} | s_{t+1}) \log\frac{\tilde{\rho}(a^{-i}_{t+1} | s_{t+1})}{P_\prior(a^{-i}_{t+1} | s_{t+1})} \dby a^{-i}_{t+1} + \cancel{Z^{-i, \pi, \rho}(s_{t+1})} \\
     &- \int \tilde{\rho}(a^{-i}_{t+1} | s_{t+1}) Q^{-i, \pi, \rho}(s_{t+1}, a^{-i}_{t+1}) \dby a^{i}_{t+1}
 \end{aligned}
 \end{aligned}
@@ -196,7 +196,7 @@ Similarly, we can show for the policy that
     Given the agent's updated policy $\tilde{\rho}$ given normal policy $\pi$ as 
     \begin{equation}
     \begin{aligned}
-        \tilde{\rho}(a^{i}_t | s_t) &= \argmin{\rho' \in \Pi} \kl \bracka{ \rho'(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{i, \pi, \rho}(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t)}{\exp V^{i, \pi, \rho}(s_t)}} \\
+        \tilde{\rho}(a^{i}_t | s_t) &= \argmin{\rho' \in \Pi} \kl \bracka{ \rho'(a^{-i}_t | s_t) \Bigg\| \frac{\exp\bracka{Q^{i, \pi, \rho}(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t)}{\exp Z^{i, \pi, \rho}(s_t)}} \\
         &=\argmin{\rho' \in \Pi} J_{\rho}(\rho')
     \end{aligned}
     \end{equation}

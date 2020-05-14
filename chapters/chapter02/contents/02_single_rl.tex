@@ -79,7 +79,7 @@ Now, it is quite computational ineffective to evaluates the policy every times t
     \label{eqn:chap2-optimal-bellman-operator}
     \contractop^*_V V(s) = \max_{a \in A}\Big[r(s, a) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V(s')} \Big]
 \end{equation}
-Note that it is related to optimal Bellman equation represented in equation \ref{eqn:chap2-optim-Q-and-V}. In this case, we update the the value function toward the action that yields highest value given only one update. This is, indeed, a contraction mapping, thus repeatedly updating the value function by optimal value Bellman operator will give us optimal value function. The prove will be appendix \ref{appx:chap2-rl-optimal-val-bellman-contract}. Finally, given the optimal value function, one can calculate the optimal action value function, and optimal policy. 
+Note that it is related to optimal Bellman equation represented in equation \ref{eqn:chap2-optim-Q-and-V}. In this case, we update the the value function toward the action that yields highest value given only one update. This is, indeed, a contraction mapping, thus repeatedly updating the value function by optimal value Bellman operator will give us optimal value function. The proof will be similar to the proof done in section above. Finally, given the optimal value function, one can calculate the optimal action value function, and optimal policy. 
 
 \subsection{Q Iteration}
 \label{sec:chap2-Q-iter}
@@ -87,7 +87,7 @@ Now, instead of using value function as in value iteration, it is always desirab
 \begin{equation}
     \contractop^*_Q Q(s, a) = r(s, a) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{\max_{a\in A} Q(s', a)} 
 \end{equation}
-We can proof in appendix \ref{appx:chap2-rl-optimal-q-bellman-contract} that this operator is indeed a contraction mapping. However, there is more to this. Since there is no need to explicitly consider the transition function, we defined the following update rule given iteartion $k$ and $(s_t, a_t)$ experience:
+this operator is indeed a contraction mapping. The proof is similar compare to other algorithms. However, there is more to this. Since there is no need to explicitly consider the transition function, we defined the following update rule given iteartion $k$ and $(s_t, a_t)$ experience:
 \begin{equation}
 \label{eqn:chap2-Q-stochastic-update}
     Q^{(k+1)}(s_t, a_t) \leftarrow (1-\alpha_t) Q^{(k)}(s_t, a_t) + \alpha\brackb{r(s_t, a_t) + \gamma \max_{a'} Q^{(k)}(s_{t+1}, a')}
