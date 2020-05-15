@@ -1,7 +1,7 @@
 \subsection{Derivations for closed form solution}
 \label{sec:chap2-derivation-soft-closed-form}
 
-We will based the derivation on \cite{levine2018reinforcement}. The derivation of this will be the basis for \textit{all} derivation of algorithms in this thesis, therefore, we will state full proof within the section. As introduced in section \ref{sec:chap1-MERL-intro}, we would like to find the posterior where the agent is optimal. Let's recall the definition of optimality 
+We will base the derivation on \cite{levine2018reinforcement}. The derivation of this will be the basis for \textit{all} derivation of algorithms in this thesis; therefore, we will state full proof within the section. As introduced in section \ref{sec:chap1-MERL-intro}, we would like to find the posterior where the agent is optimal. Let's recall the definition of optimality. 
 \begin{equation}
     P(\mathcal{O}_t = 1 | s_t, a_t) \propto \exp (\beta r (s_t, a_t))
 \end{equation}
@@ -83,12 +83,11 @@ Let's try to maximizing the negative KL-divergence between 2 probability distrib
     &= \mathbb{E}_{q(s_{1:T}, a_{1:T})} \brackb{\sum^{T}_{t=1} \beta r(s_t, a_t) - \log \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)} }
 \end{aligned}
 \end{equation}
-The full expansion will be in the appendix \ref{appx:chap2-ELBO-KL-Single} with alternative Jensen's inequality derivation in appendix \ref{appx:chap2-ELBO-Jensen-Single} for completeness\footnote{We have shown in section \ref{sec:chap2-vi-technique}, and this is going to be the last derivation with Jensen's inequality}, please note that $\tau = (s_{1:T}, a_{1:T})$. 
-We can simply use policy gradient to help us on optimizing the objective: that is fine. But, let's consider the closed form solution of this problem. We are trying to solve it from the last time step and then inductively solving the equation to general time step $t$. Start of with the final time step $T$, which we want to maximize the following objective:
+The full expansion will be in the appendix \ref{appx:chap2-ELBO-KL-Single} with alternative Jensen's inequality derivation in appendix \ref{appx:chap2-ELBO-Jensen-Single} for completeness\footnote{We have shown in section \ref{sec:chap2-vi-technique}, and this is going to be the last derivation with Jensen's inequality}, please note that $\tau = (s_{1:T}, a_{1:T})$. We can use a policy gradient to help us on optimizing the objective: that is fine. But, let's consider the closed-form solution to this problem. We are trying to solve it from the last time step and then inductively solving the equation to general time step $t$. Start with the final time step $T$, which we want to maximize the following objective:
 \begin{equation}
     \mathbb{E}_{q} \left[\beta r(s_T, a_T) - \log \frac{\pi(a_T | s_T)}{P_{\prior}(a_T | s_T)}\right]
 \end{equation}
-We will introduce $V(s_T)$, however, its value will be clear after the derivation: 
+We will introduce $V(s_T)$; however, its value will be clear after the derivation: 
 \begin{equation}
     \mathbb{E}_{q} \left[\beta r(s_T, a_T) - \log \frac{\pi(a_T | s_T)}{P_{\prior}(a_T | s_T)} + V(s_T) - V(s_T) \right]
 \end{equation}
@@ -104,11 +103,11 @@ If we want to maximize the objective, which is the same as minimizing KL-diverge
     \text{ where }& V(s_T) = \log \int \exp(\beta r(s_T, a_T)) P_{\prior}(a_T | s_T) \dby a_T
 \end{aligned}
 \end{equation}
-We can see that $V(s_T)$ is normalizing factor for probability distribution. By setting the policy $\pi$ to minimize the KL-divergence, the objective becomes $V(s_T)$, which we would call it \correctquote{backward message} and we pass it down to the time step before, where we maximizes the following objective with backward messages $\mathbb{E}_{s_{t+1}}[V\bracka{s_{t+1}}]$ with discounted factor as :
+We can see that $V(s_T)$ is a normalizing factor for a probability distribution. Note that it is only the case where the agent is in the form of Boltzmann policy that the value function is the normalizing factor. By setting the policy $\pi$ to minimize the KL-divergence, the objective becomes $V(s_T)$, which we would call it \correctquote{backward message} and we pass it down to the time step before, where we maximize the following objective with backward messages $\mathbb{E}_{s_{t+1}}[V\bracka{s_{t+1}}]$ with discounted factor as:
 \begin{equation}
     \mathbb{E}_{q} \Bigg[\underbrace{\beta r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}[V\bracka{s_{t+1}}]}_{Q(s_t, a_t)} - \log \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)} + V(s_t) - V(s_t) \Bigg] 
 \end{equation}
-Using the same method, we have the following general time policy $t$:
+Using the same method, we have the following general time policy $t$.We, sometimes, call this kind of policy a Boltzman Policy:
 \begin{equation}
 \begin{aligned}
 \label{eqn:chap2-optimal-policy-general}
@@ -125,15 +124,15 @@ Now, let's consider the meaning of for $V(s_{t})$, \cite{levine2018reinforcement
 \label{eqn:chap2-soft-value-def-expand}
     V(s_t) = \mathbb{E}_{a_t \sim \pi(a_t | s_t)}\brackb{Q(s_t, a_t) - \log \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)}}
 \end{equation}
-Note that, we usually consider the policy to be the one represented in equation \ref{eqn:chap2-optimal-policy-general}\footnote{Some of the mistakes made comes from the consideration of expected $Q$ function without regularized terms for value function.}. Now, substitute the Q-function into the value function, which we have the recursive definition of value function:
+Note that, we consider the policy to be the one represented in equation \ref{eqn:chap2-optimal-policy-general}\footnote{Some of the mistakes made comes from the consideration of expected $Q$ function without regularized terms for value function.}. Now, substitute the Q-function into the value function, which we have the recursive definition of value function:
 \begin{equation}
     V(s_t) = \mathbb{E}_{a_t \sim \pi(a_t | s_t)} \left[\beta r(s_t, a_t) - \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)} + \gamma\mathbb{E}_{s_{t+1}}[V(s_{t+1})]\right]
 \end{equation}
-Which we can rollout the sum of reward. This, therefore, has establish the connection between this value function and reinforcement learning, value function. Before we move to the implementation, let's consider some theoretical property of this Bellman equation. First, we can construct the soft Bellman operator as follows: 
+Which we can roll out as the sum of regularized reward. This equality, therefore, has established the connection between the value function and reinforcement learning value function. Before we move to the implementation, let's consider some theoretical property of this Bellman equation. First, we can construct the soft Bellman operator as follows: 
 \begin{equation}
     \contractop^{\pi} Q(s_t, a_t) = r(s_t, a_t) + \gamma \mathbb{E}_{s_{t+1} \sim p_{s}}\left[ \log \int \exp(Q(s_{t+1}, a)) P_{\prior}(a | s_{t+1}) \dby a \right]
 \end{equation}
-which we can proof that it is a contraction mapping, see appendix \ref{appx:chap2-soft-bellman-contract} for the proof, which is a restatement from \cite{haarnoja2017reinforcement}, while this will be useful later. Furthermore, we can show that the update of the policy leads to increase in Q-function, which is proven in \cite{haarnoja2018softa} and will be restated here. 
+which we can prove that it is a contraction mapping, see appendix \ref{appx:chap2-soft-bellman-contract} for the proof, which is a restatement from \cite{haarnoja2017reinforcement}, while this will be useful later. Furthermore, we can show that the update of the policy leads to an increase in Q-function, which is proven in \cite{haarnoja2018softa} and will be restated and proof here. 
 \begin{theorem}
     Let the updated policy $\pi_{\text{new}}$ be 
     \begin{equation}
@@ -145,11 +144,11 @@ The proof is in appendix \ref{appx:chap2-soft-policy-update-improvement} for com
 
 \subsection{Soft Q-Learning}
 \label{sec:chap2-soft-q-implementation}
-Now we have the closed form solution for the optimization problem. Let's consider how can we implement this algorithm. First, let's consider how can we model the value function, from the definition, we can derive the following Monte-Carlo estimation with importance sampling (which we can use to be a target or simply a ) i.e 
+Now we have the closed-form solution for the optimization problem. For implementation procedure, first, let's consider how can we model the value function, from the definition, we can derive the following Monte-Carlo estimation with importance sampling i.e 
 \begin{equation}
     V_{\theta}(s_t) = \log \mathbb{E}_{q_{a'}}\Bigg[ \frac{\exp(Q(s_t, a_t)) P_{\prior}(a_t | s_t)}{q_{a'}(a')} \Bigg]
 \end{equation}
-Now, the action value function, we have the following prediction problem with minimizing Mean-square error:
+Now, for the action-value function, we have the following prediction problem with minimizing Mean-square error:
 \begin{equation}
 \label{eqn:chap2-soft-Q-mse}
     \loss_Q(\theta) = \mathbb{E}_{s_t, a_t}\left[ \frac{1}{2} \left( Q_{\theta}(s_t, a_t) - \hat{Q}_{\theta^-}(s_t, a_t)  \right)^2 \right]
@@ -159,11 +158,11 @@ where the target is defined by
 \label{eqn:chap2-soft-Q-mse-target}
     \hat{Q}_{\theta^-}(s_t, a_t) = \beta r(s_t, a_t) + \gamma \mathbb{E}_{s_{t+1} \sim p_{s}}\left[ V_{\theta^-}(s_{t+1}) \right]
 \end{equation}
-Now, for the policy, we have the following to use SVGD that is introduced in section \ref{sec:chap2-svgd}. We start by consider a policy to be in a form of $a_t = f_{\phi}(\xi ; s_t)$ where $\xi \sim \mathcal{N}(0, I)$, which we try to minimize the following function:
+Now, for the policy, we start by consider a policy to be in a form of $a_t = f_{\phi}(\xi ; s_t)$ where $\xi \sim \mathcal{N}(0, I)$, which we try to minimize the following function:
 \begin{equation}
-    \loss(\phi ; s_t) = \kl\left( \pi_{\phi}(\cdot | s_t) \bigg\| \exp\left( Q^{\theta}(s_t, \cdot) - V^{\theta}(s_t)  \right) P_{\prior}(\cdot) \right)
+    \loss(\phi ; s_t) = \kl\left( \pi_{\phi}(\cdot | s_t) \bigg\| \exp\left( Q_{\theta}(s_t, \cdot) - V_{\theta}(s_t)  \right) P_{\prior}(\cdot) \right)
 \end{equation}
-We want to find the direction $\Delta f_{\phi}(\cdot ; s_t)$ that reduces the KL-divergence via SVGD, which gives us:
+We can find the direction $\Delta f_{\phi}(\cdot ; s_t)$ that reduces the KL-divergence via SVGD, which gives us following update terms:
 \begin{equation}
     \begin{aligned}
         \Delta f_{\phi}(\cdot ; s_t) = \mathbb{E}_{a_t \sim \pi^{\phi}}\bigg[ \kappa \left( a_t, f_{\phi}(\cdot ; s_t) \right) &\nabla_{a'} \bracka{Q_{\theta}(s_t, a') + \log P_\prior(a')} \Big|_{a' = a_t} \\
@@ -178,12 +177,12 @@ Now, the training direction for the policy is:
 \subsection{Soft Actor-Critic}
 \label{sec:chap2-soft-ac-implement}
 
-In Soft Actor-Critic case, we learns 3 networks: Q-function $Q_{\theta} (s_t, a_t)$ and Value-Function $V_{\psi}(s_t)$ and Policy $\pi_{\phi}(a_t | s_t)$. Let's start with value function, instead of using Monte-Carlo estimation, we shall use definition from equation \ref{eqn:chap2-soft-value-def-expand} as the target value, which we can minimize mean-square error:
+In Soft Actor-Critic case, we learn 3 networks: Q-function $Q_{\theta} (s_t, a_t)$ and Value-Function $V_{\psi}(s_t)$ and Policy $\pi_{\phi}(a_t | s_t)$. Let's start with value function, instead of using Monte-Carlo estimation, we shall use definition from equation \ref{eqn:chap2-soft-value-def-expand} as the target value, which we can minimize mean-square error:
 \begin{equation}
     \loss_V(\psi) = \mathbb{E}_{s_t \sim \mathcal{D}} \left[ \frac{1}{2} \left( V_{\psi}(s_t) - \mathbb{E}_{a_t \sim \pi_{\phi}}\left[ Q_{\theta}(s_t, a_t) - \log \frac{\pi_{\phi}(a_t | s_t)}{P_{\prior}(a_t | s_t)} \right] \right)^2 \right]
 \end{equation}
-where $\mathcal{D}$ is just the replay memory. The actiob value function is the same as soft Q-learning (see equation \ref{eqn:chap2-soft-Q-mse} and \ref{eqn:chap2-soft-Q-mse-target}) but,now, we have independent value function instead. For policy, we directly optimize the KL-divergence, which we can ignore the value function because it doesn't depends on the policy's action, while the policy can be represented as $f_\phi(\xi ; s_t)$ similar to soft Q-learning:
+where $\mathcal{D}$ is just the replay memory. The action-value function training objective is the same as soft Q-learning (see equation \ref{eqn:chap2-soft-Q-mse} and \ref{eqn:chap2-soft-Q-mse-target}) but,now, we have independent value function instead. For policy, we directly optimize the KL-divergence, which we can ignore the normalizing terms because it doesn't depend on the action, while the policy can be represented as $f_\phi(\xi ; s_t)$ similar to soft Q-learning:
 \begin{equation}
     \loss_{\pi}(\phi) = \mathbb{E}_{s_t \sim \mathcal{D}} \left[ \kl\left( \pi_{\phi}(\cdot | s_t) \bigg| \bigg| \frac{\exp(Q_{\theta}(s_t, \cdot)) P_{\prior}(\cdot | s_t)}{Z_{\theta}(s_t)} \right) \right]
 \end{equation}
-The authors also uses normalizing flow to get the range of action bounded. We suggested \cite{haarnoja2018softa} for more details.
+The authors also use normalizing flow to get the range of action bounded. We suggested \cite{haarnoja2018softa} for more details.

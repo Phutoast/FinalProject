@@ -1,30 +1,32 @@
 \label{sec:chap2-deep-rl}
-Now, it is always the case that the state action value is too big for us to represent exact value function or action value function. We will now present the way that we can approximate these values with other method for control, notably policy gradient and the combination of both: actor critic algorithm.
+Now, it is always the case that the state action value is too big for us to represent the exact value function or action-value function. We will now present the way that we can approximate these values, together with another method for control, notably policy gradient and the combination of both paradigms: actor-critic algorithm.
 
 \subsection{Deep Q learning \cite{mnih2015human}}
-Deep Q learning is based on traditional Q iterating, whereby instead of using stochastic iteration (see section \ref{sec:chap2-Q-iter}), the authors tries to approximate Q-function using neural network $Q_\theta(s, a)$ which is trained to minimized mean square error between its prediction and the target prediction i.e
+Deep Q learning is based on traditional Q iterating, whereby instead of using stochastic iteration (see section \ref{sec:chap2-Q-iter}), the authors try to approximate optimal Q-function using neural network $Q_\theta^*(s, a)$ by training to minimize mean square error between its prediction and the target prediction i.e
 \begin{equation}
     \mathcal{L}(\theta) = \mathbb{E}_{(s, a, r, s')^n_{i=1} \sim B(\mathcal{D})}\brackb{ \frac{1}{n}\sum^n_{i=1} \bracka{Q_{\theta}(s_i, a_i) - r(s_i, a_i) - \gamma\max_{a'} Q_{\theta^-}(s'_i, a'_i)}^2 }
 \end{equation}
-The training relies on experience replay $\mathcal{D}$, which stores the past experiences in the tuple (this works because Q learning is off-policy), and target action value function $Q_{\theta'}(s, a)$, which is the network some time before the current iteration, added to increase stability in training, and $\mathcal{B}$ being mini-batch sampler. Furthermore, due to size of state space, the authors use $\varepsilon$-greedy policy to help the agent collecting the experience (better exploration) so that it gets more diverse set of training data. The policy is defined as
+The training relies on experience replay $\mathcal{D}$, which stores the past experiences in the tuple, and target action-value function $Q_{\theta'}(s, a)$ added to increase stability in training. The following process updates the target action-value function 
+\begin{equation}
+\label{eqn:chap2-update-target}
+    \theta^- \leftarrow \rho \theta^- + (1-\rho) \theta
+\end{equation}
+which is a common way to update a target function. $\mathcal{B}$ being mini-batch sampler. Furthermore, due to the size of state space, the authors use $\varepsilon$-greedy policy to help the agent collecting the experience (better exploration) so that it gets more diverse set of training data. The policy is defined as
 \begin{equation}
     \pi(a | s) = \begin{cases}
         \argmax{a'} Q(s, a') &\text{ with probability } \varepsilon \\
         a' \sim \text{Uniform}(a_0, a_1, \dots, a_{|A|}) &\text{ otherwise } \\
     \end{cases} \\
 \end{equation}
-and $\varepsilon$ can be decay overtime. The target parameter $\theta^-$ is updated in every time step:
-\begin{equation}
-\label{eqn:chap2-update-target}
-    \theta^- \leftarrow \rho \theta^- + (1-\rho) \theta
-\end{equation}
-This will be the same for all algorithms (including Actor Critic). The authors have shown that given the following training scheme (with some minor tricks), the agent can achieve super-human performance on Arcade Learning Environment \cite{bellemare2013arcade}. Note that there are some game that the agent doesn't learn at all. The infamous Montezuma's revenge is one instance of this. This is due to the fact that the agent has to learn to reason over long time steps in order to solve the game. This problem can be mitigated via hierarchical reinforcement learning, which we will explore more in later sections\footnote{This is one of the main reasons for the development in \ref{chapter:chap6}}.
+and $\varepsilon$ decays overtime. The authors showed that given the following training scheme (with some minor tricks), the agent could achieve super-human performance on Arcade Learning Environment \cite{bellemare2013arcade}. Note that there are some games that the agent doesn't learn at all. The infamous Montezuma's revenge is one instance of this. Because the agent has to learn to reason over long time steps to solve the game, Q-learning isn't sufficient enough for reasoning over the long time step. This problem can be mitigated via hierarchical reinforcement learning \cite{kulkarni2016hierarchical, dayan1993feudal, vezhnevets2017feudal} or intrinsic motivation \cite{pathak2017curiosity}. 
 
-There are other techniques that improves the training stability or increases its performance notable, Double-Q learning \cite{van2016deep}, which tackles the over-optimism prediction by using the action output of \textit{current iteration} of agent estimate the value of target network in the target i.e
+% \footnote{This is one of the main reasons for the development in \ref{chapter:chap4}}.
+
+Other techniques that improve the training stability or increase its performance are, notable, Double-Q learning \cite{van2016deep}, which tackles the over-optimism prediction by using the action output of \textit{current iteration} of agent estimate the value of target network in the target i.e
 \begin{equation}
     \mathcal{L}(\theta) = \mathbb{E}_{(s, a, r, s')^n_{i=1} \sim B(\mathcal{D})}\brackb{ \frac{1}{n}\sum^n_{i=1} \bracka{Q_{\theta}(s_i, a_i) - r(s_i, a_i) - Q_{\theta^-}(s'_i, \argmax{a'} Q_\theta(s'_i, a'))}^2 }
 \end{equation}
-Furthermore, Prioritized DQN \cite{schaul2015prioritized}, which allows the experience replay to sample higher quality experience tuple, Dueling DQN \cite{wang2015dueling}, which increase the capacity of the estimation of action value function by combining approximate value function and approximate advantage function, Distributional DQN \cite{bellemare2017distributional}, which estimates the distribution over the action value function \cite{osband2018randomized}, Noisy Net \cite{fortunato2017noisy}, which injects the noise into the output of neural network layers, aiming to improves explorations, and combination of them all - rainbow DQN \cite{hessel2018rainbow}.
+Furthermore, Prioritized DQN \cite{schaul2015prioritized}, which allows the experience replay to sample higher quality experience tuple, Dueling DQN \cite{wang2015dueling}, which increase the capacity of the estimation of action-value function by combining approximate value function and approximate advantage function, Distributional DQN \cite{bellemare2017distributional}, which estimates the distribution over the action-value function \cite{osband2018randomized}, Noisy Net \cite{fortunato2017noisy}, which injects the noise into the output of neural network layers, aiming to improves explorations, and combination of them all - rainbow DQN \cite{hessel2018rainbow}.
 
 \subsection{Policy Gradient \cite{sutton2000policy}}
 Now, instead of approximating value function, why don't we directly optimized $\pi_\theta(a | s)$ given the sum of expected reward as objective i.e 
@@ -35,20 +37,20 @@ The strategy is to find the gradient of the sum of expected reward, which we can
 \begin{equation}
     \frac{\partial}{\partial \theta} \mathbb{E}_{a_t, s_t \sim \pi_\theta}\brackb{\sum^\infty_{t=0}\gamma^t r(s_t, a_t)} = \mathbb{E}_{a_t, s_t \sim \pi_\theta}\brackb{R_t\frac{\partial}{\partial \theta} \log \pi_\theta(a_t | s_t) }
 \end{equation}
-where $Q^\pi(s_t, a_t) = \mathbb{E}\left[R_t | s_0 = s_t, a_0 = a_t\right]$. Now, we can do stochastic approximation via Monte Carlo sampling, while we can train neural network using stochastic gradient ascent. We call this basic algorithm REINFORCE. However, this algorithm is notorious hard to train due to high variance of the estimator. We can reduce the variance by minus the Q-value estimation with baseline $B(s)$ value, where the baseline should be independent of $\theta$. In usual case, we use value function estimator $B_t$\footnote{where $V^\pi(s_t) = \mathbb{E}\brackb{B_t}$}, which leads us to use of advantage function $A^\pi(s, a)$ estimatorΩ instead of $R_t$\footnote{This would make sense intuitively because advantage function only estimate how good each action is given the current state, which is the only measurement we want for policy gradient algorithm.}. Furthermore, please note that we can add an entropy regularizer to help the policy learns via maximum entropy principles, see section \ref{sec:chap1-MERL-intro} for a quick introduction.
+where $Q^\pi(s_t, a_t) = \mathbb{E}\left[R_t | s_0 = s_t, a_0 = a_t\right]$. Now, we can perform stochastic approximation via Monte Carlo sampling, while we can train a neural network using stochastic gradient ascent. We call this basic algorithm REINFORCE \cite{sutton2000policy}. However, this algorithm is notoriously hard to train due to the high variance of the estimator. We can reduce the variance by minus the Q-value estimation by a baseline $B(s)$ value that is independent of $\theta$ and $a$. In usual case, we use value function estimator $B_t$\footnote{where $V^\pi(s_t) = \mathbb{E}\brackb{B_t}$}, which leads us to use of advantage function $A^\pi(s, a)$ estimator\footnote{This would make sense intuitively because advantage function only estimates how good each action is given the current state, which is the only measurement we want for policy gradient algorithm.}. Furthermore, we can add an entropy regularizer to help the policy learns via maximum entropy principles, see section \ref{sec:chap1-MERL-intro} for a quick introduction.
 
 \subsection{Actor Critic}
 \label{sec:chap2-ator-critic}
-Now, instead of using a Monte Carlo estimation of the reward, why don't we try to estimate this quality using function approximator like neural network? By using neural network, we now move toward actor critic algorithm, hence, the name Advantage Actor Critic Algorithms. \cite{mnih2016asynchronous}\footnote{Also see  \url{https://openai.com/blog/baselines-acktr-a2c/}}. The usual implementation is as follows, for the actor/policy network, the implementation is the similar. But for critic/advantage function estimator, we only need to train value function $V_\theta(s_t)$  and estimate the advantage function as follows:
+Now, instead of using a Monte Carlo estimation of the reward, why don't we try to estimate this quality using function approximator like a neural network? By using a neural network approximation, we now move toward actor-critic algorithm; hence, the name \correctquote{Advantage Actor-Critic Algorithms}. \cite{mnih2016asynchronous}\footnote{Also see  \url{https://openai.com/blog/baselines-acktr-a2c/}}. The usual implementation is as follows, for the actor/policy network, the implementation is similar. But for critic/advantage function estimator, we only need to train value function $V_\theta(s_t)$  and estimate the advantage function as follows:
 \begin{equation}
     A(s_t, a_t) \approx \underbrace{\sum^n_{i=0} \gamma^i r_{t + i} + \gamma^{n+1} V_\theta(s_{n+1})}_{\approx Q_\theta(s_t, a_t)} - V_\theta(s_t)
 \end{equation}
-The longer the $n$ times steps the more accurate (and more variance) the estimator going to become. We can use this value to train the agent. Now, we can train the value function by minimizing the following objective:
+The longer the $n$ times steps, the more accurate (and more variance) the estimator going to become. We can use this value to train the agent. Now, we can train the value function by minimizing the following objective:
 \begin{equation}
 \label{eqn:chap2-ac-critic-loss}
-    \loss(\theta) = \mathbb{E}_{(r_0, \cdots, r_{n+1}), s_{n+1} \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{V_\theta(s_0) - \sum^n_{i=0} \gamma^i r_i + \gamma^{n+1}V_\theta(s_{n+1})}^2}
+    \loss(\theta) = \mathbb{E}_{(r_0, \cdots, r_{n+1}), s_{n+1} \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{V_\theta(s_0) - \sum^n_{i=0} \gamma^i r_i - \gamma^{n+1}V_\theta(s_{n+1})}^2}
 \end{equation}
-which is a mean-square error between predictive value and bootstrapped\footnote{Bootstrap is the act that we include $V_\theta(s_{n+1})$ after certain length of cumulative reward instead of having full trajectory i.e using one prediction as part of the target for other prediction} value. Now, we have layed the basic foundation to Actor critic (AC) method let's consider 2 variances of successful extension to AC, which are TRPO \cite{schulman2015trust} and PPO \cite{schulman2017proximal}. Let's start with TRPO, it is based on the following theorem presented in \cite{schulman2015trust} as 
+which is a mean-square error between predictive value and bootstrapped\footnote{Bootstrap is the act that we include $V_\theta(s_{n+1})$ after a certain length of cumulative reward instead of having full trajectory, i.e. using one prediction as part of the target for other prediction} value. Now, we have laid the essential foundation to Actor critic (AC) method let's consider two variances of successful extension to AC, which are TRPO \cite{schulman2015trust} and PPO \cite{schulman2017proximal}. Let's start with TRPO, which is based on the following theorem presented in \cite{schulman2015trust}:
 \begin{theorem}
 Let $\kl^{\max}\bracka{\pi, \tilde{\pi}} = \max_s \kl\bracka{\pi(\cdot | s) \big\| \tilde{\pi}(\cdot | s)}$  then the following holds
 \begin{equation}
@@ -60,7 +62,7 @@ where $\varepsilon = \max_{s, a}|A_\pi(s, a)|$ and $L_\pi(\tilde{\pi})$ is defin
 \end{equation}
 As the visitation frequency $\rho_\pi(s) = \sum^\infty_{n=0} \gamma^n P(s_n = s)$
 \end{theorem}
-Given $M_i(\pi) = L_{\pi_i}(\pi) - C\kl^{\max}\bracka{\pi_i, \pi}$, we have the inequality $\eta(\pi_{i+1}) \ge M_i(\pi_{i+1})$ and $\eta(\pi_i) = M_i(\pi_i)$, then we have $\eta(\pi_{i+1}) - \eta(\pi_i) \ge  M_i(\pi_{i+1}) - M_i(\pi_i)$. We can see that if we optimize $M_i(\pi)$, we would optimize $\eta(\pi)$. Now, we can turn $M_i(\pi)$ into constrained optimization problem 
+Given $M_i(\pi) = L_{\pi_i}(\pi) - C\kl^{\max}\bracka{\pi_i, \pi}$, we have the inequality $\eta(\pi_{i+1}) \ge M_i(\pi_{i+1})$ and $\eta(\pi_i) = M_i(\pi_i)$, this leads to $\eta(\pi_{i+1}) - \eta(\pi_i) \ge  M_i(\pi_{i+1}) - M_i(\pi_i)$. This implies that if we optimize $M_i(\pi)$, then we would optimize $\eta(\pi)$. Now, we can turn $M_i(\pi)$ into constrained optimization problem 
 \begin{equation}
 \begin{aligned}
     &\max_\theta L_{\theta_\text{old}}(\theta) \\
@@ -74,14 +76,14 @@ The problem is that the KL-divergence might not be tractable. We can approximate
     \text{ such that }& D^{\rho_{\theta_\text{old}}}_{\text{KL}}(\theta_{\theta_\text{old}}, \theta) \le \delta
 \end{aligned}
 \end{equation}
-The trust region is the KL-constraint imposed on the policy optimization. All the proofs and implementations will be explored in details in \cite{schulman2015trust}. PPO \cite{schulman2017proximal} is the approximate version of TRPO. There are 2 variances for PPO that are proposed in the paper:
+The trust region is the KL-constraint imposed on policy optimization by not allowing the updated policy to be too far from the current policy. All the proofs and implementations are explored in details in \cite{schulman2015trust}. PPO \cite{schulman2017proximal} is the approximate version of TRPO. There are two variances for PPO that are proposed in the paper:
 \begin{itemize}
-    \item Clipped Surrogate Objective: Using the following object for the loss
+    \item Clipped Surrogate Objective: Using the following object for the objective
     \begin{equation}
         \mathbb{E}\brackb{\min\bracka{\frac{\pi_\theta(a | s)}{\pi_{\theta_{\text{old}}}(a | s)} A_t, \operatorname{clip}\bracka{\frac{\pi_\theta(a | s)}{\pi_{\theta_{\text{old}}}(a | s)}, 1-\varepsilon, 1+\varepsilon} A_t}}
     \end{equation}
     where $\varepsilon$ is hyper-parameter and usually set to $0.2$
-    \item  Adaptive KL Penalty Coefficient: We consider the unconstrained version of KL-divergence and update its weight on KL-divergence $\beta$ as the current evaluation goes as:
+    \item  Adaptive KL Penalty Coefficient: We consider the unconstrained version of KL-divergence and update its weight on KL-divergence $\beta$ based on the current evaluation:
     \begin{equation}
         \begin{aligned}
             &\mathbb{E}\brackb{\frac{\pi_\theta(a | s)}{\pi_{\theta_{\text{old}}}(a | s)} A_t - \beta \kl\bracka{ \pi_{\theta_\text{old}}(\cdot | s) \big\| \pi(\cdot | s)}} \text{ where } \beta \leftarrow \begin{cases}
@@ -94,11 +96,12 @@ The trust region is the KL-constraint imposed on the policy optimization. All th
 \end{itemize}
 
 \subsection{Deep Deterministic Policy Gradient}
-Now, we will consider the problem in which the agent's action is continuous. The resulting algorithm based on Actor critic variance called Deep Deterministic Policy Gradient (DDPG) \cite{lillicrap2015continuous}. We will also consider the extension to Twin Delayed DDPG (TD3) \cite{fujimoto2018addressing} to make the training of DDPG more stable. Starting with DDPG, the core intuition behind it\footnote{There are more into the theory of how it works. We suggest reading \cite{silver2014deterministic}} is that we train the agent to maximize critic's prediction of reward i.e maximizing the following objective with respect to $\theta$
+\label{sec:chap2-ddpg}
+Now, we will consider the problem in which the agent's action is continuous. The resulting algorithm based on Actor critic variance called Deep Deterministic Policy Gradient (DDPG) \cite{lillicrap2015continuous}. We will also consider the extension to Twin Delayed DDPG (TD3) \cite{fujimoto2018addressing} to make the training of DDPG more stable. Starting with DDPG, the core intuition behind it\footnote{There are more into the theory of how it works. We suggest reading \cite{silver2014deterministic}} is that we train the agent to maximize critic's prediction of reward, i.e. maximizing the following objective with respect to $\theta$
 \begin{equation}
     \loss(\theta) = Q_\phi(s, \pi_\theta(s))
 \end{equation}
-Note that we didn't do any sampling the agent, hence the name \textit{deterministic}.  The actor is training with typical mean-square error loss, similar to equation \ref{eqn:chap2-ac-critic-loss} i.e
+Note that we didn't do any sampling the agent, hence the name \textit{deterministic}.  The actor is training with typical mean-square error loss, similar to equation \ref{eqn:chap2-ac-critic-loss}:
 \begin{equation}
     \loss(\phi) = \mathbb{E}_{\mathcal{D}}\brackb{\frac{1}{2}\bracka{Q_\phi(s, a) - r - \gamma Q_{\phi^-}(s', \pi_\theta(s'))}^2}
 \end{equation}
@@ -113,4 +116,4 @@ Now, TD3 extends DDPG algorithms as follows
     \end{equation}
     \item We update actor network in lesser frequency than the critic (this includes the target actor, which is updated similar to equation \ref{eqn:chap2-update-target})
 \end{itemize}
-This 2 techniques will be a trick for other algorithms to improve the performance and stability especially for continuous action.
+This two techniques will be a trick for other algorithms to improve the performance and stability, especially for continuous action.

@@ -2,42 +2,42 @@
 
 \subsection{Problem Formulation and Solution Concepts}
 \label{sec:chap2-formulation-concepts}
-Now, we have explored single agent reinforcement learning. Let's move the multi-agent reinforcement learning. We will start by defining the MDPs that we are going to use in multi-agent case. There are many variations for multi-agent. We will introduce to stochastic game \cite{shapley1953stochastic} formation. 
+Now, we have explored single-agent reinforcement learning. Let's move the multi-agent reinforcement learning. We will start by defining the problem definition in a multi-agent case, which is a stochastic game \cite{shapley1953stochastic} formation. 
 \begin{definition}
 Stochastic Game is a tuple: $\langle S, N, A_1, \cdots, A_N, \mathcal{T}, p_{01}, \cdots, p_{0N}, R_1, \cdots, R_N, \gamma \rangle$ where 
 \begin{itemize}
-    \item $S = \{s_0, s_1, \cdots , s_S\}$. State space 
-    \item $N \in \mathbb{N}$. Number of agents. 
-    \item $A_i = \{a_0, a_1, \cdots, a_{A_i}\}$. Action space for player $i$
-    \item $\mathcal{T} : S \times A_1 \times \cdots \times A_N \times S \rightarrow [0, 1]$. Transition function 
-    \item $p_{0i}: S \rightarrow [0, 1]$. Intial state distribution for player $i$
-    \item $r_{i \ t+1} \sim R_i(r_{i \ t+1} | s_{t+1}, a_{1 \ t}, \cdots a_{N \ t})$. Reward distribution function for player $i$.
-    \item $\gamma \in \mathbb{R}$. Discount Factor 
+    \item State space: $S = \{s_0, s_1, \cdots , s_{|S|}\}$. 
+    \item Number of agents: $N \in \mathbb{N}$. 
+    \item Action space for player $i$: $A_i = \{a_0, a_1, \cdots, a_{|A_i|}\}$. 
+    \item Transition function: $\mathcal{T} : S \times A_1 \times \cdots \times A_N \times S \rightarrow [0, 1]$.  
+    \item Initial state distribution for player $i$: $p_{0i}: S \rightarrow [0, 1]$. 
+    \item Reward distribution function for player $i$: $r_{i \ t+1} \sim R_i(r_{i \ t+1} | s_{t+1}, a_{1 \ t}, \cdots a_{N \ t})$.
+    \item Discount Factor: $\gamma \in \mathbb{R}$. 
 \end{itemize}
 \end{definition}
 \noindent
-Now the goal of agents is to maximize its expected reward
+Now, the goal of agents is to maximize its expected reward
 \begin{equation}
     \argmax{\pi_i} \mathbb{E}\brackb{\sum^\infty_{t=0} \gamma ^t r^i(s_t, a^i_t, a^{-i}_t) } 
 \end{equation}
-This objective might be too vague as we don't know what kind of opponent we are going to play against, and same reasoning for the opponent itself. Let's simplify the problem by \textit{fixing} the opponent and then update the agent's policy alone. This is the same as any single agent problem, which we can define this as the agent is \textit{best responding} to certain set of opponent i.e 
+This objective might be too vague as we don't know what kind of opponent we are going to play against, and the same problem also applied to the opponent. Let's simplify the problem by \textit{fixing} the opponent and then update the agent's policy alone. By doing this, we reduce the problem into a single-agent problem, which we can define this as the agent is \textit{best responding} to a particular set of opponent i.e 
 \begin{equation}
 \begin{aligned}
     \operatorname{BR}^i(\pi_1, \cdots, &\pi_{i-1}, \pi_{i+1}, \cdots, \pi_N) \\
     &= \argmax{\pi_i} \mathbb{E}_{\pi_1, \cdots , \pi_i, \cdots, \pi_N}\brackb{\sum^\infty_{t=0} \gamma ^t r^i(s_t, a^1_t, \cdots, a^i_t, \cdots, a^{N}_t) }
 \end{aligned}
 \end{equation}
-Now, Nash equilibrium is the set of polices\footnote{Or sets of policies as it is possible for a game to have more than 1 Nash equilibrium} where every policy doesn't benefit from any deviation, suppose $\pi_1^*, \cdots, \pi_N^*$ are set of policy that are Nash equilibrium i.e 
+Now, Nash equilibrium is the set of polices\footnote{Or sets of policies as a game can have more than 1 Nash equilibrium} where every policy doesn't benefit from any deviation, suppose $\pi_1^*, \cdots, \pi_N^*$ are set of policies that are Nash equilibrium then
 \begin{equation}
 \begin{aligned}
     \forall i \in [1, N], \forall \pi_i \in \Pi_i : \mathbb{E}_{\pi_1^*, \cdots, \pi_i^*, \cdots \pi_N^*} &\brackb{\sum^\infty_{t=0} \gamma^t  r^i(s_t, a^1_t, \cdots, a^i_t, \cdots, a^{N}_t) } \\
     &\ge \mathbb{E}_{\pi_1^*, \cdots, \pi_i, \cdots \pi_N^*} \brackb{\sum^\infty_{t=0} \gamma^t  r^i(s_t, a^1_t, \cdots, a^i_t, \cdots, a^{N}_t) }
 \end{aligned}
 \end{equation}
-Nash equilibrium exists for all the games \cite{nash1950equilibrium}, which is very important result, which is where we should aim, however, solving Nash equilibrium is in complexity class PPAD, which is a subset of NP problems \cite{daskalakis2009complexity} and even approximating it is PPAD-complete \cite{daskalakis2013complexity}. We will leave the problem of define the \textit{optimality} of agent here and will explore it in chapter \ref{chapter:chap3}. Finally, we would like to denote the action that are not coming from agent $i$ as $a^{-i}$ i.e $a^{-i} = (a^1, \cdots, a^{i-1}, a^{i+1}, \cdots, a^N)$. 
+Nash equilibrium exists for all the games \cite{nash1950equilibrium}, which is very important result. Nash equilibrium policy is where we should aim, however, solving Nash equilibrium is in complexity class PPAD, which is a subset of NP problems \cite{daskalakis2009complexity} and even approximating it is PPAD-complete \cite{daskalakis2013complexity}. We will leave the problem of define the \textit{optimality} of agent here and will explore it in chapter \ref{chapter:chap3}. Finally, we would like to denote the action that are not coming from agent $i$ as $a^{-i}$ i.e $a^{-i} = (a^1, \cdots, a^{i-1}, a^{i+1}, \cdots, a^N)$. Finally, we define cooperative game to be the game that all the agents are optimizing a common reward.
 
 \subsection{Classical Reinforcement Algorithms}
-We will consider 2 basic algorithms for solving multi-agent reinforcement learning, which are both value function based\footnote{We find the optimal Q-value and then acts according to it.}. Starting with Nash Q-learning \cite{hu2003nash}, which we aim to estimate Nash Q-function defined as: given a set of Nash Equalibrium policies $\pi_1^*, \cdots, \pi_N^*$, we have 
+We will consider two basic algorithms for solving multi-agent reinforcement learning, which are both value function based\footnote{We find the optimal Q-value and then acts according to it.}. Starting with Nash Q-learning \cite{hu2003nash}, which we aim to estimate Nash Q-function. It is defined as: Given a set of Nash Equilibrium policies $\pi_1^*, \cdots, \pi_N^*$, we have 
 \begin{equation}
     Q^i_{\operatorname{Nash}}(s_t, a^1_t, \cdots, a^N_t) = r(s_t, a^1_t, \cdots, a^i_t, \cdots, a^N_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{V^i(s_{t+1}, \pi_1^*, \cdots, \pi_N^*)}
 \end{equation}
@@ -45,12 +45,12 @@ where $V^i$ is the cumulative discounted reward that follows $\pi_1^*, \cdots, \
 \begin{equation}
     \operatorname{Nash} Q^i_t(s) = \pi^1(s)\cdots\pi^n(s)Q^i(s, a_1, \cdots, a_n)
 \end{equation}
-which is the expected payoff of playing matrix game\footnote{There is one state game with immediate reward given once all the actions are executed.} Nash equilibrium given a list of value functions $Q^1(s', \vec{a}), \cdots, Q^N(s', \vec{a})$. The authors shown the following operator 
+which is the expected payoff of Nash equilibrium solution to matrix game\footnote{There is one state game with immediate reward given once all the actions are executed.} given a list of value functions $Q^1(s', \vec{a}), \cdots, Q^N(s', \vec{a})$ as a payoff function. The authors shown the following operator 
 \begin{equation}
     \contractop Q^i(s', a_1, \cdots, a_N) = r_i + \gamma \mathbb{E}_{s_{t+1}}\brackb{\operatorname{Nash} Q^i_t(s_{t+1}) }
 \end{equation}
-is a contraction mapping, which repeated applying the map will lead to optimal Nash action value function. The problem now is how can we select that Nash equilibrium. \cite{littman2001friend} proposed to use friend-or-foe Q-learning which identifies while agents are friends (i.e trying to maximize our reward) and foes (i.e trying to minimize our reward) and using this to update the value
+is a contraction mapping, which means when repeated applying the map will lead to Nash action value function. The problem with Nash-Q learning is how can we select that Nash equilibrium. \cite{littman2001friend} proposed to use friend-or-foe Q-learning that is based on the identification of the agents whether they are friends (i.e trying to maximize our reward) or foes (i.e trying to minimize our reward), and using this to update the value,
 \begin{equation}
     \max_{\pi_1, \cdots, \pi_k} \min_{\pi_k, \cdots, \pi_N}\sum_{s'} \pi^i(s')\cdots\pi^n(s')Q^i(s, a_1, \cdots, a_n)
 \end{equation}
-which has the same convergence property as Nash Q-learning\footnote{\textit{Spolier}: Balacing Q-learning is a \correctquote{soft} version of friend-or-foe Q-learning}. 
+Friend-or-foe Q-learning has the same convergence property as Nash Q-learning\footnote{\textit{Spolier}: Balacing Q-learning is a \correctquote{soft} version of friend-or-foe Q-learning}, while having a unique solution unlike Nash equilibrium solution.

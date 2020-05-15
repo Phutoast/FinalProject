@@ -1,11 +1,11 @@
 \label{sec:chap3-prob-balancing-q}
 
 \subsection{Graphical Model Representations}
-Now, we would like to represent the graphical model of Balancing Q-learning. Now, we can simply consider the variational distribution can be:
+Before we start, we can simply consider the variational distribution can be:
 \begin{equation}
     \cfrac{\pi_\theta(a^i_t | s_t,)^{\frac{1}{\beta^i}}}{\int  \pi_\theta(a^i_t | s_t)^{\frac{1}{\beta^i}}\dby a^i_t} \qquad \frac{\rho_\phi(a^{-i}_t | s_t)^{\frac{1}{\beta^{-i}}}}{\int  \rho_\phi(a^{-i}_t | s_t)^{\frac{1}{\beta^{-i}}}\dby a^i_t} 
 \end{equation}
-This might satisfies the need however, it doesn't give any other information and/or insight into Balancing Q-learning ability to works with both cooperative and competitive game. Now, let's show the graphical model. We will follows the insight from solving agent's policy, which requires us to consider its intermediate opponent model. Let's starting with the graphical model representation of the opponent model problem. We will consider the case, which the opponent assume an optimal agent's policy and update toward it. The graphical model is depicted in figure \ref{fig:chap3-balancing-Q-opponent}.
+This might satisfy the requirement. However, it doesn't give any other information or insight into Balancing Q-learning ability to works with both cooperative and competitive game. Now, let's show the graphical model of the opponent model. We will follow the insight from solving agent's policy in ROMMEO and the need for the intermediate opponent model. Let's start with the graphical model representation of the opponent model problem. We will consider the case, which the opponent assume an optimal agent's policy and update toward it. The graphical model is depicted in figure \ref{fig:chap3-balancing-Q-opponent}.
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
@@ -51,7 +51,7 @@ This might satisfies the need however, it doesn't give any other information and
     \label{fig:chap3-balancing-Q-opponent}
     \end{minipage}
 \end{figure}
-This gives the following joint probability. The difference between PR2 and Balancing Q-learning is that we assume to have the knowledge of optimal action:
+The graphical model gives the following joint probability. The difference between PR2 and Balancing Q-learning is that we assume to have the knowledge of optimal agent:
 \begin{equation}
 \begin{aligned}
     P(s_{1:T}, &a^i_{1:T}, a^{-i}_{1:T}, \optim^i_{1:T} = 1, \optim^{-i}_{1:T} = 1) \\
@@ -71,16 +71,16 @@ Now, we can see that the ELBO is simply:
     \mathbb{E}\brackb{\sum^T_{t=0} \beta^{-i} r(s_t, a^i_t, a^{-i}_t) - \log \frac{\rho_{\phi}(a^{-i}_t | s_t, a^i_t)}{ P_{\prior}(a^{-i}_t | s_t, a^i_t)}}
     % - \log \frac{\pi_{\theta}(a^{i}_t | s_t, \optim^{i}_{t} = 1)}{ P_{\prior}(a^{-i}_t | s_t, \optim^{i}_{t} = 1)}
 \end{equation}
-We can solve only for the opponent model, since we assume we have knowledge of agent's optimal policy. With the same working as ROMMEO and Balancing Q-learning, we arrived at the following policy definition:
+We can solve only for the opponent model since we assume we know agent's optimal policy. With the same working as ROMMEO and Balancing Q-learning, we arrived at the following policy definition:
 \begin{equation}
 \begin{aligned}
 \label{eqn:chap3-prob-opponent}
-    &\rho_{\phi}(a^{-i}_t | s_t, a^i_t) = \frac{\exp(Q(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t)}{\exp(Q(s_t, a^{i}_t))} \\
-    \text{ where }&Q(s_t, a^{i}_t) = \log \int \exp(Q(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t) \dby a^{-i}_t \\
+    &\rho_{\phi}(a^{-i}_t | s_t, a^i_t) = \frac{\exp(Q^{-i}(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t)}{\exp(Q(s_t, a^{i}_t))} \\
+    \text{ where }&Q(s_t, a^{i}_t) = \log \int \exp(Q^{-i}(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t) \dby a^{-i}_t \\
     % &Q(s_t, a^i_t, a^{-i}_t) = \beta^{-i} R(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}, a^{i}_{t+1}\sim\pi_\theta}\brackb{Q(s_{t+1}, a^{i}_{t+1})}
 \end{aligned}
 \end{equation}
-Now, please note that the definition of $Q(s_t, a^i_t, a^{-i}_t)$ isn't entirely correct because we are missing the regularization of the policy. We will left the action value as it be for now, once we have derived the agent's policy, let's re-calculate the action value function for more accurate value. Now, for policy, we have the following graphical model representation represented in figure \ref{fig:chap3-balancing-Q-agent}.
+Now, please note that the definition of $Q(s_t, a^i_t, a^{-i}_t)$ isn't entirely correct because we are missing the regularization of the policy. We will leave the action-value function as it is for now, once we have derived the agent's policy, let's re-calculate the action-value function for a more accurate value. Now, for policy, we have the following graphical model representation represented in figure \ref{fig:chap3-balancing-Q-agent}.
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
@@ -107,7 +107,7 @@ Given this, we define the optimality of an agent to be:
 \begin{equation}
     P(\optim^{i}_t = 1 | s_t, a^{-i}_t, \optim^{-i}_t = 1) = \exp \bracka{ \frac{\beta^{i}}{\beta^{-i}} Q(s_t, a^{i}_t))  }
 \end{equation}
-Note that now, we assume the optimality of the opponent model via the use of soft-max of action value function this works when we are aware that the opponent will \correctquote{maximize} its action value function, and the fraction represents a conversion to agent's reward term. The variational probability is simply 
+Note that now, we assume the optimality of the opponent model via the use of soft-max of action-value function this works when we are aware that the opponent will \correctquote{maximize} its action-value function. The fraction represents a conversion to the agent's reward term. The variational probability is simply 
 \begin{equation}
     q(s_t, a^{i}_t) = P(s_t) \pi_\theta(a^{i}_t | s_t)
 \end{equation}
@@ -116,7 +116,7 @@ Therefore, the optimal opponent model is equal to
 \begin{aligned}
 \label{eqn:chap3-prob-agent}
     &\pi_\theta(a^{i}_t | s_t) = \frac{\exp \bracka{ \cfrac{\beta^{i}}{\beta^{-i}} Q(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t)}{\exp\bracka{V^{i}(s_t)}} \\
-    \text{ where }& V^{i}(s_t) = \log \int \exp \bracka{ \cfrac{\beta^{i}}{\beta^{-i}} Q(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t) \dby a^{-i}_t
+    \text{ where }& V^{i}(s_t) = \log \int \exp \bracka{ \cfrac{\beta^{i}}{\beta^{-i}} Q(s_t, a^{i}_t)} P_\prior(a^{i}_t | s_t) \dby a^{i}_t
 \end{aligned}
 \end{equation}
 Now, let's consider the relationship between the $V^{i}(s_t)$, $Q(s_t, a_t^{i})$ and $Q(s_t, a^i_t, a^{-i}_t)$:
@@ -124,26 +124,31 @@ Now, let's consider the relationship between the $V^{i}(s_t)$, $Q(s_t, a_t^{i})$
 \label{eqn:chap3-prob-balance-val}
     V^{i}(s_t) = \mathbb{E}_{\pi, \rho}\brackb{\frac{\beta^{i}}{\beta^{-i}} Q(s_t, a^i_t, a^{-i}_t) - \frac{\beta^{i}}{\beta^{-i}}\log\frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior( a^{-i}_t| s_t, a^i_t)} - \log \frac{\pi_\theta(a^{i}_t | s_t)}{P_\prior(a^{i}_t | s_t)}}
 \end{equation}
-Given this, we can consider the corrected Q value as defined in following Bellman equation:
+Given this, we can consider the corrected Q value as defined in the following Bellman equation:
 \begin{equation}
-    Q(s_t, a^i_t, a^{-i}_t) = \beta^{-i} R(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}}\brackb{\frac{\beta^{-i}}{\beta^i}V^{i}(s_{t+1})}    
+    Q^{-i}(s_t, a^i_t, a^{-i}_t) = \beta^{-i} R(s_t, a^i_t, a^{-i}_t) + \gamma \mathbb{E}_{s_{t+1}}\brackb{\frac{\beta^{-i}}{\beta^i}V^{i}(s_{t+1})}    
 \end{equation}
-which we can used for the the calculation of opponent model. Now, we can see that by the use of the ratio between $\beta^{-i}$ and $\beta^{i}$, we can switch between the agent's action value function and opponent's action value function. Furthermore, from the use of extreamal operator in Bellman equation \cite{grau2018balancing} of Balancing Q-learning denotes similar notion to friend-or-foe learning \cite{littman2001friend}, which we can say that the Balancing Q-learning is the \correctquote{soft} version of friend-or-foe learning. The distinction between friend or foe is needed for the optimization of the agent.
+We can use this action-value function for the calculation of opponent model. Now, we can see that by the use of the ratio between $\beta^{-i}$ and $\beta^{i}$, we can switch between the agent's action-value function and the opponent's action-value function. Furthermore, from the use of extremal operator in Bellman equation \cite{grau2018balancing} of Balancing Q-learning denotes similar notion to friend-or-foe learning \cite{littman2001friend}, which we can say that the Balancing Q-learning is the \correctquote{soft} version of friend-or-foe learning. The distinction between friend or foe is needed for the optimization of the agent. Now, we haven't lose the property of Balancing Q-learning thus maintain the same form of value function and action-value function, where $Q^{-i}(s_t, a^i_t, a^{-i}_t) = \beta^{-i} Q(s_t, a^i_t, a^{-i}_t)$ in equation \ref{eqn:chap3-balance-bellman}. Tihs only works because of the guarantee that the value functions are the same as in corollary 1 of \cite{grau2018balancing}. 
 
 \subsection{Implementation}
-Now, we shall consider the implementation of the probabilistic Balancing Q-learning. Note that the current version of Balancing Q-learning based on discrete action, which we can find exact expected value. However, Balancing Q-learning can be implement in soft Actor-Critic like algorithm. The extension is trivial, while we are going to present similar algorithm, which is derived from the section before. This would require a total of 4 neural networks: $\pi_\theta(a^i_t | s_t, a^{-i}_t)$, $\rho_\phi(a^{-i}_t | s_t)$, $Q_\chi(s_t, a^i_t, a^{-i}_t)$ and $V_\psi(s_t)$. Let's consider the value function first. We will follows the definition of the value function that we have defined in equation \ref{eqn:chap3-prob-balance-val}, leading the following loss function:
+Now, we shall consider the implementation of the probabilistic Balancing Q-learning. Note that the current version of Balancing Q-learning based on discrete action, which we can find the exact expected value. However, Balancing Q-learning can be implemented in soft Actor-Critic like algorithm. The extension is trivial, while we are going to present a similar algorithm, which is derived from the section before. This would require a total of 4 neural networks: $\pi_\theta(a^i_t | s_t, a^{-i}_t)$, $\rho_\phi(a^{-i}_t | s_t)$, $Q_\chi(s_t, a^i_t, a^{-i}_t)$ and $V_\psi(s_t)$. Let's consider the value function first. We will follow the definition of the value function that we have defined in equation \ref{eqn:chap3-prob-balance-val}, leading the following loss function:
 \begin{equation}
-    \mathcal{L}_V(\phi) = \mathbb{E}_{s_t} \brackb{\frac{1}{2}\bracka{V_{t}(s_t) - \mathbb{E}_{\pi_\theta, \rho_\phi}\brackb{\frac{\beta^{i}}{\beta^{-i}} Q_\chi(s_t, a^i_t, a^{-i}_t) - \frac{\beta^{i}}{\beta^{-i}}\log\frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior( a^{-i}_t| s_t, a^i_t)} - \log \frac{\pi_\theta(a^{i}_t | s_t)}{P_\prior(a^{i}_t | s_t)}} }^2}
+    \mathcal{L}_V(\phi) = \mathbb{E}_{s_t \sim \mathcal{D}} \brackb{\frac{1}{2}\bracka{V^i(s_t) - \mathbb{E}_{\pi_\theta, \rho_\phi}\brackb{\frac{\beta^{i}}{\beta^{-i}} Q_\chi(s_t, a^i_t, a^{-i}_t) - \frac{\beta^{i}}{\beta^{-i}}\log\frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior( a^{-i}_t| s_t, a^i_t)} - \log \frac{\pi_\theta(a^{i}_t | s_t)}{P_\prior(a^{i}_t | s_t)}} }^2}
 \end{equation}
 Now, we can use the Bellman equation of the action value function as the target for training:
 \begin{equation}
-    \mathcal{L}_Q(\chi) = \mathbb{E}_{s_t, a^{i}_t, a^{-i}_t, r_t, s_{t+1} \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{Q_\chi(s_t, a^{i}_t, a^{-i}_t) - \beta^{-i} r_t - \frac{\gamma\beta^{-i}}{\beta^i}V_\psi(s_{t+1})     }^2}
+    \mathcal{L}_{Q_1}(\chi) = \mathbb{E}_{s_t, a^{i}_t, a^{-i}_t, r_t, s_{t+1} \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{Q_\chi(s_t, a^{i}_t, a^{-i}_t) - \beta^{-i} r_t - \frac{\gamma\beta^{-i}}{\beta^i}V_\psi(s_{t+1})     }^2}
 \end{equation}
 Given the action value function, we can try to train the opponent model, which is in the form of $\rho_\phi(a^{-i}_t | s_t, a^i_t) = f^{-i}_\phi(\xi ; s_t, a^i_t)$ where the noise $\xi \sim \mathcal{N}(0, I)$. Given the function, we would like to minimizing the KL-divergence between the network's output and the closed form solution in equation \ref{eqn:chap3-prob-opponent} i.e minimizing the following objective 
 \begin{equation}
     \mathcal{L}_\rho(\phi) = \kl\bracka{\rho_{\phi}(a^{-i}_t | s_t, a^i_t) \Bigg\| \frac{\exp(Q(s_t, a^i_t, a^{-i}_t))P_\prior(a^{-i}_t | s_t, a^i_t)}{\exp(Q(s_t, a^{i}_t))}}
 \end{equation}
-Now before we consider agent's objective, we will have to estimate the value $Q(s_t, a^{i}_t)$, which we are going to use Monte-Carlo estimate with importance sampling 
+Now before we consider agent's objective, we will have to estimate the value $Q(s_t, a^{i}_t)$
+\begin{equation}
+    \mathcal{L}_{Q_2} = \mseloss{(s_t, a^{i}_t) \sim \mathcal{D}}{Q(s_t, a^{i}_t)}{\mathbb{E}_{a^i_t \sim \pi_\theta}\brackb{\frac{\beta^{-i}}{\beta^i}V^i(s_t) + \frac{\beta^{-i}}{\beta^i}\log \frac{\pi_\theta(a^i_t | s_t)}{P_\prior(a^i_t | s_t)}}}
+\end{equation}
+This can be a backward, where alternatively, we can have to estimate the value $Q(s_t, a^{i}_t)$, which we are going to use Monte-Carlo estimate with importance sampling 
+% % (we can use the definition of )
 \begin{equation}
     Q^i(s_t, a^{i}_t) = \frac{\beta^{i}}{\beta^{-i}}\log \mathbb{E}_{a^{-i}_t \sim q}\brackb{\frac{\exp\bracka{Q(s_t, a^{i}_t, a^{-i}_t)} P_\prior(a^{-i}_t | s_t)}{q(a^{-i}_t)}}
 \end{equation}
@@ -151,6 +156,4 @@ Given our estimation, we can now optimize the agent's policy $f^{i}_\theta(\xi ;
 \begin{equation}
     \mathcal{L}_\pi(\theta) = \kl\bracka{\pi_\theta(a^{i}_t | s_t) \left\| \frac{\exp \bracka{Q^i(s_t, a^{i}_t)} P_\prior(a^i_t | s_t)}{\exp\bracka{V_\psi(s_t)}} \right.}
 \end{equation}
-This conclude the implementation of probabilistic Balancing Q-learning.
-
-% \Phu{TODO add ALGORITHM list and Gradient calculation}
+This conclude the implementation of probabilistic Balancing Q-learning. 

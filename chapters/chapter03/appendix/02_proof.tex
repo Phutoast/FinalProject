@@ -5,9 +5,9 @@ Starting off with the KL-divergence (we have shown that this is equivalent to EL
 \begin{equation*}
     \begin{aligned}
         &\kl\bracka{q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) \Big\| P(s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}|\optim^i_{1:T} = 1,  \optim^{-i}_{1:T} = 1) } \\
-        =& \mathbb{E}_{q}\brackb{\log \frac{q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) P(\optim^i_{1:T} = 1)}{P(s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}, \optim^i_{1:T} = 1 | \optim^{-i}_{1:T} = 1)}} \\
-        =& \mathbb{E}_{q}\brackb{\log \frac{P(\optim^i_{1:T} = 1)\cancel{P(s_0)} \prod^T_{t=0} \pi_{\theta}(a^i_t | s_t, a^{-i}_t) \rho_{\phi}(a^{-i}_t | s_t) \cancel{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)} \cancel{P(\optim^{-i}_t = 1)}}{\cancel{P(s_0)} \prod^T_{t=0} P_{\prior}(a^i_t | s_t, a^{-i}_t) P_{\prior}(a^{-i}_t | s_t) \cancel{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)} P(\optim^i_t = 1 | s_t, a^i_t, a^{-i}_t, \optim^{-i}_t = 1)\cancel{P(\optim^{-i}_t = 1)}} } \\
-        =& \mathbb{E}_{q}\brackb{ \log P(\optim^i_{1:T} = 1) + \sum^T_{t=0} - \beta R(s_t, a^i_t, a^{-i}_t)  + \log \frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } + \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)}} \\
+        =& \mathbb{E}_{q}\brackb{\log \frac{q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) P(\optim^i_{1:T} = 1,  \optim^{-i}_{1:T} = 1)}{P(s_{1:T}, a^i_{1:T}, a^{-i}_{1:T} | \optim^i_{1:T} = 1, \optim^{-i}_{1:T} = 1)}} \\
+        =& \mathbb{E}_{q}\brackb{\log \frac{P(\optim^i_{1:T} = 1, \optim^{-i}_{1:T} = 1)\cancel{P(s_0)} \prod^T_{t=0} \pi_{\theta}(a^i_t | s_t, a^{-i}_t) \rho_{\phi}(a^{-i}_t | s_t) \cancel{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)}}{\cancel{P(s_0)} \prod^T_{t=0} P_{\prior}(a^i_t | s_t, a^{-i}_t) P_{\prior}(a^{-i}_t | s_t) \cancel{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)} P(\optim^i_t = 1, \optim^{-i}_t = 1  | s_t, a^i_t, a^{-i}_t)} } \\
+        =& \mathbb{E}_{q}\brackb{ \log P(\optim^i_{1:T} = 1, \optim^{-i}_{1:T} = 1) + \sum^T_{t=0} - \beta R(s_t, a^i_t, a^{-i}_t)  + \log \frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } + \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)}} \\
         =& - \mathbb{E}_{q}\brackb{ \sum^T_{t=0} \beta R(s_t, a^i_t, a^{-i}_t)  - \log \frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } - \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)}} - \const \\
     \end{aligned}
 \end{equation*}

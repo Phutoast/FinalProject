@@ -1,5 +1,5 @@
 \label{sec:chap4-single-soft-HRL}
-We will associate our model with option learning paradigm, and extends the result in \cite{igl2019multitask} by cooperating Soft-Actor Critic type solution as it is standard method for solving probabilistic reinforcement learning. Furthermore, our approach is similar to \cite{daniel2016probabilistic}, in terms of using similar probabilistic technique, however, in the paper, the authors concerning more on inferring policies from expert data, while didn't explicitly solve for each policy given the optimally condition (what we are trying to do now). In the nutshell, we have a master policy $\pi^H$ that suggesting the "mode of execution" or option to lower level policy $\pi$ based on termination policy $\pi^T$, which telling what the next option should be. The joint distribution of actions i.e $P(s_{1:T}, a_{1:T}, \mathcal{O}_{1:T}, z_{1:T}, b_{1:T})$ is depicted in figure \ref{fig:chap4-single-agent-hierarchical}.
+We will associate our model with option learning paradigm, and extends the result in \cite{igl2019multitask} by cooperating Soft-Actor Critic type solution as it is a standard method for solving probabilistic reinforcement learning. Furthermore, our approach is similar to \cite{daniel2016probabilistic}, in terms of using a similar probabilistic technique, however, in the paper, the authors concerning more on inferring policies from expert data, while didn't explicitly solve for each policy given the optimally condition (what we are trying to do now). Folloing \cite{igl2019multitask}, we have a master policy $\pi^H$ that suggesting the "mode of execution" or an option to lower-level policy $\pi$ based on termination policy $\pi^T$, which tells what the next option should be. The joint distribution of actions i.e $P(s_{1:T}, a_{1:T}, \mathcal{O}_{1:T}, z_{1:T}, b_{1:T})$ is depicted in figure \ref{fig:chap4-single-agent-hierarchical}.
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
@@ -67,7 +67,7 @@ As it takes the value of $b_t$ to suggest when to change the option $z_t$. Now, 
 \begin{equation}
     \mathbb{E}\brackb{\sum^T_{t=1} \beta r(s_t, a_t) - \log \frac{\pi_{\theta}(a_t | s_t, z_t)}{P_\prior(a_t | s_t, z_t)}  - \log \frac{\pi^H_{\phi}(z_t | s_t, z_{t-1}, b_t)}{P_\prior^H(z_t | s_t, z_{t-1}, b_t)} - \log \frac{\pi^T_{\phi}(b_t | s_t, z_{t-1}) }{P_\prior^T(b_t | s_t, z_{t-1})}}
 \end{equation}
-This is the same as one defined in \cite{igl2019multitask}. Given the ELBO, we will consider the closed-form solution of the low-level policy/master policy and termination policy. For the low-level policy, we have 
+This objective is the same as the objective defined in \cite{igl2019multitask}. Given the ELBO, we will consider the closed-form solution of the low-level policy/master policy and termination policy. For the low-level policy, we have 
 \begin{equation}
 \begin{aligned}
 \label{eqn:chap4-single-HRL-lower}
@@ -99,7 +99,7 @@ Finally, the Bellman equation for soft-hierarchical single-agent reinforcement l
 \label{eqn:chap4-single-HRL-bellman}
     Q(s_t, a_t, z_t) = \beta r(s_t, a_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{V(s_{t+1}, z_t)}
 \end{equation}
-The proof will be in appendix \ref{appx:chap4-soft-single-HRL}. We can see that this is analogous to the option framework \cite{sutton1999between, bacon2017option}. Now, we have aware the work on similar topic \cite{lobo2019soft}, which the authors has almost the same solution as us but miss certain points on value function calculation, notably 
+The proof will be in appendix \ref{appx:chap4-soft-single-HRL}. We can see that this is analogous to the options framework \cite{sutton1999between, bacon2017option}. Now, we have aware the work on similar topic \cite{lobo2019soft}, which the authors have almost the same solution as us but miss specific points on value function calculation, notably 
 \begin{equation}
 \begin{aligned}
 Q(s_t, a_t, z_t) = \beta r(s_t, a_t) + \mathbb{E}_{s_{t+1}}\Big[\mathbb{E}_{b_{t+1} \sim P(b_{t+1} | s_{t+1}, z_t), z_{t+1}' \sim P(z_{t+1} | s_{t+1})}\Big[&(1-b_{t+1})V(s_{t+1 }, z_t)  \\
@@ -110,4 +110,4 @@ The authors fails to consider the case in which the master policy soft-max the v
 \begin{equation}
     \mathbb{E}_{z_{t+1}' \sim P(z_{t+1} | s_{t+1})}\brackb{V(s_{t+1}, z_{t+1})}
 \end{equation}
-instead, which we can see that this misses the regularization of the policy $\pi^H_\phi$. By using the soft-max, we have implicitly include the regularization. 
+Instead, which we can see that this misses the regularization of the policy $\pi^H_\phi$. By using the soft-max, we have implicitly included the regularization. 

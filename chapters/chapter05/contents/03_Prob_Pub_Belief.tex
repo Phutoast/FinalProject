@@ -1,6 +1,6 @@
 \label{sec:chap5-public-agent}
 
-Now, let's formulize the problem of public Belief into graphical model setting. We will follow closely from \cite{shvechikovjoint} as we assume that the observation of the next step is depending on the action of the agents. The graphical model is depicted in figure \ref{fig:chap4-public-belief-MARL}.
+Now, let's formalized the problem of public Belief into the graphical model setting. We will follow derivation from \cite{shvechikovjoint}. The graphical model is depicted in figure \ref{fig:chap4-public-belief-MARL}.
 \begin{figure}[h]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
@@ -60,11 +60,11 @@ Now, let's formulize the problem of public Belief into graphical model setting. 
     \end{tikzpicture}
     \end{minipage}%
     \begin{minipage}[t]{0.5\linewidth}
-    \caption{The graphical model representing the public belief POMDP $o^{\operatorname{pub}}$ representing the public observation, which depends on the current state and agents' action. We left the state transition function $P(s_{t+1} | s_t, a_t)$ to reduce the clusters. We assume a cooperative setting in which each agents (including the public belief agent) trying to optimize. }
+    \caption{The graphical model represents the public belief POMDP $o^{\operatorname{pub}}$ representing the public observation, which depends on the current state and agents' action. We left the state transition function $P(s_{t+1} | s_t, a_t)$ to reduce the clusters. We assume a cooperative setting in which each agent (including the public belief agent) trying to optimize}
     \label{fig:chap4-public-belief-MARL}
     \end{minipage}
 \end{figure}
-The reason we split between reward $r_t$ and optimality $\mathcal{O}_t$ is because the reward will depends on unknown state hence but when we are training agent we didn't have a knowledge of that state. This will be clear after we have derived the public agent. Let's start by defining our joint distribution for this:
+The reason we split between reward $r_t$ and optimality $\mathcal{O}_t$ is that the reward will depend on unknown state hence but when we are training agent we didn't know that state. This separation will be clear after we have derived the public agent. Let's start by defining our joint distribution for this:
 \begin{equation}
 \label{eqn:elbo-pub-belief}
 \begin{aligned}
@@ -72,7 +72,7 @@ The reason we split between reward $r_t$ and optimality $\mathcal{O}_t$ is becau
     &P(a^i_t | s_t, o^{\pri, i}_t, m_t, o^{\pub}_t) P(a^{-i}_t | s_t, o^{\pri, -i}_t, m_t, o^{\pub}_t) P(\mathcal{O}_t| r_t) P(r_t | s_t, a^i_t, a^{-i}_t) P(m_t | s_t)
 \end{aligned}
 \end{equation}
-Let's consider the following scenario: In card games, usually the public observation consists of action of agents and possibly a public card. The action of agents can also affects the public card. The state is the configuration of the cards for all players and the private observation is simple a mask to the card removing opponent private card and allows us to see only our card. The public observation is a mask over the private observations with past action. This shows that state is sufficiently statistic for individual private observation. Now, its the time to consider the derivation of public agent, which we can treat as POMDP problem, where the derivation follows \cite{shvechikovjoint} closely. We consider the variational distribution for the public agent:
+Let's consider the following scenario: In card games, usually, the public observation consists of action of agents and possibly a public card. The action of agents can also affect the state. The state is the configuration of the cards for all players, and the private observation process $P(o^{\pri, i}_{t+1} | s_{t+1}, a^i_t)$ is simply a mask to the state that allows us to see only our card, a similar process occurs with the public card $P(o^{\pub}_{t+1} | s_{t+1}, a^i_t, a^{-i}_t)$. This shows that the state is sufficiently statistic for individual private observation. Now, it's the time to consider the derivation of a public agent, which we can treat as POMDP problem, where the derivation follows \cite{shvechikovjoint}. We consider the variational distribution for the public agent:
 \begin{equation}
 \begin{aligned}
     P(s_0) &\bracka{\prod^T_{t=0} q(s_{t+1} | s_t, a^i_t, a^{-i}_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)}\bracka{\prod^T_{t=0}q( o^{\pri, i}_{t+1}| s_t, a^i_t, o^{\pub}_{t+1}, m_t, \mathcal{O}_t, r_t)} \\
@@ -93,7 +93,7 @@ Now, we want to infer the unknown given what we can observe:
     &= \frac{P(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1}| a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t})}{P(a^i_t, a^{-i}_t, \mathcal{O}_t, r_t, o^{\pub}_{t+1} | a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t})}
 \end{aligned}
 \end{equation}
-We shall consider the numerator as follows, since we can see that the current is conditional independent given the current state.
+We shall consider the numerator first, since we can see that the current is conditional independent given the current state.
 \begin{equation}
 \begin{aligned}
     P(s_{t+1}, &o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1}| a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t}) \\
@@ -144,7 +144,7 @@ where the $W^k_{t+1}$ is the re-normalized weight. Now, the probability over the
 \begin{equation}
     P(s_{t+1} | a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T}, o^{\pub}_{1:t+1}) = \frac{1}{K}\sum^K_{k=1} W^k_{t+1} \delta (s_{t+1} - s_{t+1}^k)
 \end{equation}
-which we can further sample using ancestor index similar to equation \ref{eqn:chap5-sample-index}. Now, since the probability of the observable variable is:
+which we can sample future state using ancestor index similar to equation \ref{eqn:chap5-sample-index}. Now, since the probability of the observable variable is:
 \begin{equation}
     P(a^{i}_{1:\tau}, a^{-i}_{1:\tau}, \mathcal{O}_{1:\tau}, r_{1:\tau} o^{\pub}_{1:\tau}) = \prod^\tau_{t=0}\frac{1}{K}\sum^K_{k=1} w_{t+1}(s_t^{u^k_t}, s_{t+1}^k, o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1}, m_t^1)
 \end{equation}
@@ -173,12 +173,12 @@ Now, in practice the public agent shall be a weighted sum of underlying state, p
 \begin{equation}
     \sum^K_{k=1} W^k_t \pi(m^k_t | s^k_t, o^{\pub}_t, a^i_t, a^{-i}_t)
 \end{equation}
-There are 2 points that we want to consider (that we have mentioned above):
+There are two minor issues that we want to consider (that we have mentioned above):
 \begin{itemize}
-    \item The interpretability of $o^{\pri, i, k}_t$ and $o^{\pri, -i, k}_t$. There isn't a lot we can do with this apart from constructing a network that would translate the public agent's private observation into the the agent's private observation. Or we can pretrain a network that output the agent's private observation. However, we have to make sure for the sake of the training to not change the main public agent's network by backpropagate the local feature, since it is cruitial for all the agent's to have the same public agent.
-    \item The joint action $P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i}_t, o^{\pri, -i}_t, m_t, o^{\pub}_t)$. After having all the private observation and public observation, we can trying to do the reconstruction loss on the agents' actions. However, we can further assume that the agents' policy are based on boltzmann distribution of action value function. Given this assumption, the maximum-log-likelihood estimation should follows the usual adversarial imitation learning that we have extensively discussed in \cite{yu2019multi}. For a normal scenario, we simply able to train its own Q function. As noted before, we shouldn't include any additional information from the agent to help us with the public agent (including agent's own action value function). 
+    \item The interpretability of $o^{\pri, i, k}_t$ and $o^{\pri, -i, k}_t$. There isn't a lot we can do with this apart from constructing a network that would translate the public agent's private observation into the agent's private observation. Or we can pretrain a network that output the agents' private observation. However, we have to make sure not to change the main public agent's network by backpropagating the local feature, since all the agents must have the same public agent.
+    \item The joint action $P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i}_t, o^{\pri, -i}_t, m_t, o^{\pub}_t)$. After having all the private observation and public observation, we can try to optimize the reconstruction loss on the agents' actions. However, we can further assume that the agents' policies are based on Boltzmann distribution of action-value function. Given this assumption, the maximum-log-likelihood estimation should follow the usual adversarial imitation learning that we have extensively discussed in \cite{finn2016connection, yu2019multi}. For a normal scenario, we simply able to train its action function. As noted before, we shouldn't include any additional information from the agent to help us with the public agent (including the agent's action-value function). 
 \end{itemize}
-We would like to state that all the problems above can be lifted if we assume that each agent owns its own public agent and trying to model the others using oneself or other methods. By ignoring the common knowledge of messages $m_t$, we lose a guarantee that the agents will be in "sync" of each other thus returning to a problem of equilibrium selection. Finally, we shall consider the individual agent that corresponds on the message, its own private observation, and the state. Let's start with the definition of action value function $Q(s_t, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which is defined as:
+We would like to state that all the problems above can be lifted if we assume that each agent has its own public agent and trying to model others using oneself or other methods. By ignoring the common knowledge of messages $m_t$, we lose a guarantee that the agents will be in "sync" of each other, thus returning to a problem of equilibrium selection. Finally, we shall consider the individual agent that corresponds on the message, its private observation, and the state. Let's start with the definition of action-value function $Q(s_t, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which is defined as:
 \begin{equation}
     Q(\{s_t\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t) = \sum^K_{k=1} W^k_t Q(s_t^k, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)
 \end{equation}

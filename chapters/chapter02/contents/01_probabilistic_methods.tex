@@ -1,34 +1,33 @@
 \label{sec:chap2-prob-ml}
 
-\subsection{Introduction To Baysian Method}
+\subsection{Introduction To Baysian Probability}
 \label{sec:chap2-intro-baysian}
-Most of the focus in this section will be to provide techniques that provides an approximate solution to Bayes' rule, suppose we want to infer a parameter $\theta$ given training data $X$ and training label $Y$ in supervised learning: 
+Most of the focus in this section will be to provide techniques that approximate the solution to Bayes' rule. Suppose we want to infer a parameter $\theta$ given training data $X$ and training label $Y$ in supervised learning: 
 \begin{equation}
     \label{eqn:chap2-bayes-theorem}
     P(\theta | X, Y) = \frac{P(Y | X, \theta) P(\theta)}{P(Y | X)} = \frac{P(Y | X, \theta) P(\theta)}{\int P(Y | X, \theta) P(\theta ) \dby \theta}
 \end{equation}
-For the prediction task, given the input data point $x^*$ that we would like to make prediction $y^*$ of, we can do marginalization of all parameters i.e
+For the prediction task, given the input data point $x^*$ that we would like to predict $y^*$, we can do marginalization of all parameters i.e
 \begin{equation}
     \label{eqn:chap2-bayes-pred}
     \int P(y^* | x^*, X, Y, \theta) \dby\theta = \int P(y^* | x^*, \theta) P(\theta | X, Y) \dby\theta
 \end{equation}
-The biggest problem in Bayesian inference is when the integral is intractable especially in the denominator of second equality in equation \ref{eqn:chap2-bayes-theorem}. Note that in equation \ref{eqn:chap2-bayes-pred}, we can approximate it via Monte-Carlo sample assuming we can sample $P(\theta | X, Y)$. In this thesis, we will focus on variational inference techniques, however, there are other techniques for example, conjugate prior.
-% \Phu{Do i have to cite Learning in Graphical Models ?}
+The biggest problem in Bayesian inference is when the integral is intractable, especially in the denominator of the second equality in equation \ref{eqn:chap2-bayes-theorem}. Note that in equation \ref{eqn:chap2-bayes-pred}, we can approximate it via Monte-Carlo sample assuming we can sample $P(\theta | X, Y)$. In this thesis, we will focus on variational inference techniques \cite{jordan1999introduction}. However, there are other techniques, for example, conjugate prior, but we will not discuss it here.
 
 \subsection{Variational inference techniques}
 \label{sec:chap2-vi-technique}
-We would like to approximate the posterior $P(\theta | X, Y)$ with parametric distribution $q_{\phi} (\theta)$. This can be done by minimizing Kullback–Leibler divergence(KL-divergence)\footnote{Note that given 2 difference distributions $q$ and $p$, $\kl(q \| p) \ne \kl(p \| q)$.} between them:
+We would like to approximate the posterior $P(\theta | X, Y)$ with parametric distribution $q_{\phi} (\theta)$, which can be done by minimizing Kullback–Leibler divergence (KL-divergence)\footnote{Note that given 2 difference distributions $q$ and $p$, $\kl(q \| p) \ne \kl(p \| q)$.} between them:
 \begin{equation}
     \kl\left( q_{\phi} (\theta) \Big\| P(\theta | X, Y) \right) = \int q_{\phi} (\theta) \log\left( \frac{q_{\phi} (\theta)}{P(\theta | X, Y)} \right) \dby \theta
 \end{equation}
-\textbf{Minimizing} the KL-divergence is equivalent to \textbf{maximized} the following value, which we will called it Evidence lower bound (ELBO) defined by
+\textit{Minimizing} the KL-divergence is equivalent to \textit{maximized} the following value, which we will call it Evidence lower bound (ELBO) defined by
 \begin{equation}
 \begin{aligned}
     \argmax{\theta} \mathbb{E}_{q_{\phi} (\theta)} \left[ P(Y | X, \theta) \right] - \kl \left(q_{\phi} (\theta) \Big\| P(\theta) \right) &= \argmax{\theta} \int q_{\phi}(\theta)\log\left(\frac{P(Y, \theta | X)}{q_{\phi}(\theta)}\right) \dby \theta \\
     &= \argmin{\theta } \kl\left( q_{\phi} (\theta) \Big\| P(\theta | X, Y) \right)
 \end{aligned}
 \end{equation}
-Given this can calculate this without relying on $P(Y | X)$, the intractable terms. The full derivation is in appendix \ref{appx:chap2-elbo-kl} for completeness. Furthermore, we can derive ELBO based on Jensen's inequality, which is shown in \ref{appx:chap2-elbo-jensen}.\footnote{We think that minimizing the KL-divergence makes more sense compared to Jensen's inequality. However, we still have to mention it because some of the key papers ultized this technique.}
+Given this, we can calculate the objective without relying on $P(Y | X)$, the intractable terms. The full derivation is in appendix \ref{appx:chap2-elbo-kl} for completeness. Furthermore, we can derive ELBO based on Jensen's inequality, which is shown in \ref{appx:chap2-elbo-jensen}\footnote{We think that minimizing the KL-divergence makes more sense compared to Jensen's inequality. However, we still have to mention it because some of the key papers utilized this technique.}. 
 
 % Now, we will step back and define the log-likelihood, note that we can also derive ELBO from this quantity using Jensen's inequality, see appendix \ref{appendix-1:elbo-jensen}
 % \begin{equation}
@@ -43,26 +42,26 @@ Given this can calculate this without relying on $P(Y | X)$, the intractable ter
 
 \subsection{Expectation Maximization (EM) Algorithm}
 \label{sec:chap2-em-algo}
-Now after we have explored the use of variational inference technique, we will now turn to EM algorithm. We will follows the example provided in \cite{fellows2019virel}. Suppose, we have a $N$ data points $X = \{x^{(n)}\}^N_{n=1}$ that we know that it is generated by each hidden variable $z = \brackc{z^{(n)}}^N_{n=1}$. We would like to learn the "process" that generates such a data point, i.e the variable $\theta$, such that $P_{\theta}(X | z)$. It is clear that we would like to find $\theta$ that maximizes the log-likelihood of the observed data point
+Now, after we have explored the use of variational inference technique, we will turn to EM algorithm. We will follow loosely on the example provided in \cite{fellows2019virel}. Suppose, we have $N$ data points $X = \{x^{(n)}\}^N_{n=1}$ that we assume it is each generated by a hidden variable $z = \brackc{z^{(n)}}^N_{n=1}$. We want to learn the "process" that generates such a data point, i.e. the variable $\theta$, such that $P_{\theta}(X | z)$. Finding $\theta$ is done by maximizing the log-likelihood of the observed data point
 \begin{equation}
     l_{\text{unsup}}(\theta) = \log \left( P_{\theta}(X) \right) = \log\bracka {\int P_{\theta}(X, z) \dby z}
 \end{equation}
-With this, we can also introduce the variational distribution over the posterior hidden variable (since we don't know what $P(z | X)$ is) $q_{\phi}(z)$, with similar pattern, we can decompose the marginal log-likelihood into:
+With this, we can also introduce the variational distribution over the posterior hidden variable (since we don't know what $P(z | X)$ is) $q_{\phi}(z)$. We can decompose the marginal log-likelihood into:
 \begin{equation}
     \begin{aligned}
         l_{\text{unsup}}(\theta) &= \int q_{\phi}(z) \log \bracka{\frac{P(X, z)}{P(z | X)}} \dby z \\
         &= \underbrace{\int q_{\phi}(z) \log \bracka{\frac{P_{\theta}(X, z)}{q_{\phi}(z)}} \dby z}_{\circled{1}} + \underbrace{\int q_{\phi}(z) \log \bracka{\frac{q_{\phi}(z)}{P_{\theta}(z | X)}} \dby z}_{\circled{2}}
     \end{aligned}
 \end{equation}
-We can show the equality above is true in \ref{appx:chap2-elbo-gap}. Now, if we look carefully we can see that part $\circled{2}$ is KL-divergence between $q_{\phi}(z)$ and $P_{\theta}(z | X)$. In theory, we can have the exact version of EM algorithm as follows: at step $k$, we first make the gap between part $\circled{1}$ and log-likelihood tight by setting the exact posterior to the variational distribution $q_{\phi}(z)$
+We can show the equality above is true in appendix \ref{appx:chap2-elbo-gap}. Now, if we look carefully we can see that part $\circled{2}$ is KL-divergence between $q_{\phi}(z)$ and $P_{\theta}(z | X)$. This decomposition leads to the exact version of EM algorithm as follows: at step $k$, we first make the gap between part $\circled{1}$ and log-likelihood tight by setting the exact posterior to the variational distribution $q_{\phi}(z)$
 \begin{equation}
     q_{\phi^{(k+1)}}(z) \leftarrow P_{\theta^{(k)}}(z | X)
 \end{equation}
-We call this \textit{Expectation-Step} or \textit{E-step}, then we can optimizing $\theta$ by maximizing the part $\circled{2}$ of the log-likelhood:
+We call this \textit{Expectation-Step} or \textit{E-step}, then we can optimizing $\theta$ by maximizing the part $\circled{2}$ of the log-likelihood:
 \begin{equation}
     \theta^{(k+1)} \leftarrow \argmax{\theta^{(k)}}  \int P_{\theta^{(k)}}(z | X) \log \bracka{\frac{P_{\theta^{(k)}}(X, z)}{P_{\theta^{(k)}}(z | X)}} \dby z 
 \end{equation}
-We can this \textit{Maximization-Step} or \textit{M-Step}. However, it is clear that in M-step we are maximizing ELBO with respect to $\theta$, while in E-step we maximizing ELBO with respect to $\phi$\footnote{Recall from section \ref{sec:chap2-vi-technique} that minimizing KL is same as maximizing ELBO}. Now, with this \correctquote{coincident}, we can perform variational EM\footnote{We are using variational distribution to approximate the posterior.} based on the following ELBO:
+We call this \textit{Maximization-Step} or \textit{M-Step}. However, it is clear that in M-step we are maximizing ELBO with respect to $\theta$, while in E-step we are maximizing ELBO with respect to $\phi$\footnote{Recall from section \ref{sec:chap2-vi-technique} that minimizing KL is same as maximizing ELBO}. Now, with this \correctquote{coincident}, we can perform variational EM\footnote{We are using variational distribution to approximate the posterior.} based on the following ELBO:
 \begin{equation}
     \begin{aligned}
         \mathcal{L}(\theta, \phi) &= \int q_{\phi}(z) \log \bracka{\frac{P_{\theta}(X, z)}{q_{\phi}(z)}} \dby z
@@ -75,18 +74,19 @@ Now, the training scheme for variational EM is as follows (at step $k$):
         &\text{E-Step:} \quad \phi^{(k+1)} \leftarrow \argmax{\phi^{(k)}}\mathcal{L}(\theta^{(k)}, \phi^{(k)}) \qquad \text{M-Step:} \quad \theta^{(k+1)} \leftarrow \argmax{\theta^{(k)}}\mathcal{L}(\theta^{(k)}, \phi^{(k+1)})
     \end{aligned}
 \end{equation}
+This is deployed in famous variational auto-encoder \cite{kingma2013auto}.
 
 \subsection{Stein Variational Gradient Descent (SVGD) \cite{liu2016stein}}
 \label{sec:chap2-svgd}
-SVDG is used in many of the algorithm that we are presenting (for example soft Q-learning \cite{haarnoja2017reinforcement} and PR2 \cite{wen2019probabilistic}). It is a \correctquote{general purpose variational inference algorithm} \cite{liu2016stein}, which can also be used to "sample" the data point from complex distribution (optimized variational distribution). This is extremely useful since we want to construct and use neural network based on variational distribution for our agents.
+SVDG is used in many of the algorithms that we are presenting (for example, soft Q-learning \cite{haarnoja2017reinforcement} and PR2 \cite{wen2019probabilistic}). According to the authors, it is a \correctquote{general purpose variational inference algorithm} \cite{liu2016stein}, which can also be used to "sample" the data point from complex distribution (optimized variational distribution). SVGD is extremely useful since we want to train our neural network to represent a particular distribution. 
 
 %\grammar{The algorithm itself is simple, yet, having very interesting mathematical formulation behind it. We suggest interested reader to check out the paper. We will described the general form of the algorithm, while the details will be left for each of its usage.} 
 
-Suppose that we want to sample the distribution\footnote{which is usually unnormalized i.e the denominator, similar to \ref{eqn:chap2-bayes-theorem} is intractable} $P$ by a set of $n$ particles $\{\xi^{(0)}_i\}^n_{i=1}$. Then we can update the set of such particles such that the final set of $n$ particles $\{\xi^{(T)}_i\}^n_{i=1}$ represent sampled point from the distribution $P$. The algorithm does the following update rule (for iteration at step $t$): 
+Suppose that we want to sample the distribution\footnote{which is usually unnormalized} $P$ by a set of $n$ particles $\{\xi^{(0)}_i\}^n_{i=1}$. Then we can update the set of such particles such that the final set of $n$ particles $\{\xi^{(T)}_i\}^n_{i=1}$ represent sampled point from the distribution $P$. The algorithm does the following update rule (for iteration at step $t$): 
 \begin{equation}
     x^{(t+1)}_i \leftarrow x^{(t)}_i + \alpha \bracka{\frac{1}{n}\sum^n_{j=1} \brackb{\kappa(x^{(t)}_j, x^{(t)}_i) \nabla_{x^{(t)_j}} \log P(x^{(t)}_j) + \nabla_{x^{(t)_j}} \kappa (x^{(t)}_j, x^{(t)}_i) }}
 \end{equation}
-where $\alpha$ is the updating step and $\kappa$ is the kernel function, which typically Gaussian. We can use other optimization methods, such as ADAM \cite{kingma2014adam}, to optimize the points. This works because this update rule follows the functional gradient of KL-divergence between the variational distribution ($q_{[T]}$ which is the density of $z = T(\xi)$) and the true distribution $P$ (Theorem 3.3). See the original paper for more details.
+where $\alpha$ is the updating step and $\kappa$ is the kernel function, which typically Gaussian. We can use other optimization methods, such as ADAM \cite{kingma2014adam}, to optimize the points. The intuition behind is that the update rule follows the functional gradient of KL-divergence between the variational distribution ($q_{[T]}$ which is the density of $z = T(\xi)$) and the true distribution $P$ (Theorem 3.3). See the original paper for more details.
 
 % \factcheck{}
 

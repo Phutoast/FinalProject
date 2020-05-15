@@ -1,5 +1,5 @@
 \label{sec:chap4-multi-soft-HRL-communication}
-Now, we are going to consider multi-agent case in which we have to consider the other agent's option last time step, which is a type of delayed communication. This would be a direct extension to the single agent HRL problem. The graphical model can be too complex to draw we therefore going to show only the factorization of joint probabilities. Consider the following joint probability distribution of the problem:
+Now, we are going to consider the multi-agent case in which we have to consider the other agent's option last time step, which is a type of delayed communication. This algorithm would be a direct extension to the single-agent HRL problem. The graphical model can be too complex to draw we, therefore, going to show only the factorization of joint probabilities. Consider the following joint probability distribution of the problem:
 \begin{equation}
 \begin{aligned}
     P(&s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}, z^i_{1:T}, z^{-i}_{1:T}, b^i_{1:T}, b^{-i}_{1:T}, \mathcal{O}^i_{1:T} = 1, \mathcal{O}^{-i}_{1:T} = 1) \\
@@ -111,4 +111,4 @@ Now, finally the bellman equation is
 \begin{equation}
     Q(s_t, a_t^i, a^{-i}_t, z^i_{t}, z^{-i}_{t} ) = \beta r(s_t, a_t^i, a^{-i}_t) + \gamma\mathbb{E}_{s_{t+1}}\brackb{Q(s_{t+1}, z^i_{t}, z^{-i}_{t})}
 \end{equation}
-Note that this is similar to the one proposed to \cite{han2019multi}. The agent's policy can be executed by message $z_{t-1}^{-i}$ sent from opponent. This is also interesting since by having the message from opponent, the agent can anticipate what the opponent can do next, which is shown in the calculation of the action value function.
+Note that this is similar to the one proposed to \cite{han2019multi}. The agent's policy can be executed by message $z_{t-1}^{-i}$ sent from the opponent. This process is also exciting since by having the message from an opponent, the agent can anticipate what the opponent can do next, which is shown in the calculation of the action-value function, and the agent can also understand how the message would affect the opponent's action.

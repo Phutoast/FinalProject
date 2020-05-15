@@ -1,12 +1,11 @@
 \label{sec:chap2-single-rl}
-In this section, we will go through the classical notion of single agent reinforcement learning as a basis to the next section, which is about deep reinforcement learning - a scale and approximated version of algorithms discuss here.
+In this section, we will go through the classical notion of single agent reinforcement learning as a basis to the next section, which is about deep reinforcement learning - a scale and approximated version of algorithms discuss here. The contents are re-arranged from \cite{sutton2018reinforcement} and \cite{silver}.
 
-\Phu{citing the courses and book ?}
 \subsection{Markov Decision Process}
 \label{sec:chap2-rl-defintions}
-Markov Decision process (MDP) formulates the task that reinforcement learning trying to solve\footnote{It is a mathematical description of \correctquote{game}.}. 
+Markov Decision Process (MDP) formulates the task that reinforcement learning trying to solve\footnote{It is a mathematical description of \correctquote{game}.}. 
 \begin{definition}
-    Markov decision process (MDP) is a tuple : $\langle S, A, R, T, p_0, \gamma \rangle$ where 
+    Markov Decision Process (MDP) is a tuple : $\langle S, A, R, T, p_0, \gamma \rangle$ where 
     \begin{itemize}
         \item State space: $S = \{s_0, s_1, \cdots , s_{|S|}\}$. Usually we have $s_i \in \mathbb{R}^{d_s}$
         \item Action space: $A = \{a_0, a_1, \cdots a_{|A|}\}$
@@ -15,14 +14,14 @@ Markov Decision process (MDP) formulates the task that reinforcement learning tr
         \item Initial state distribution: $p_0 : S \rightarrow [0, 1] $, where $s^{(0)} \sim p_0$
         \item Discounted factor: $\gamma \in (0, 1]$
     \end{itemize}
-    In almost all the cases, we include player's policy $\pi: S \rightarrow \Delta(A)$ where $\Delta(A)$ is probability simplex over $A$, where $a^{(t)} \sim \pi(a^{(t)} | s^{(t)})$ denote player choose action $a_t$ at state $s_t$ at time $t$. The goal of any reinforcement learning algorithms is to maximizes the reward with or without full description/experience of MDP.
+    We define player's policy $\pi: S \rightarrow \Delta(A)$ where $\Delta(A)$ is probability simplex over $A$, and $a^{(t)} \sim \pi(a^{(t)} | s^{(t)})$ denote player choose action $a_t$ at state $s_t$ at time $t$. The goal of any reinforcement learning algorithms is to maximizes the sum reward with or without full description/experience of MDP.
 \end{definition}
 \noindent
 We denote the value function of the player's policy $V^\pi(s)$ as the expected future cumulative reward given the state the agent is in:
 \begin{equation}
     V^\pi(s) = \mathbb{E}_{a_t \sim \pi, s_t \sim T}\brackb{\sum^\infty_{t=0} \gamma^t r(s_t, a_t) \Bigg| s_0 = s}
 \end{equation}
-And the action value function is defined as which is the expected future reward when agent perform action $a$ at state $s$: 
+And, the action-value function is the expected future reward when the agent performs an action $a$ at state $s$: 
 \begin{equation}
     Q^\pi(s, a) = \mathbb{E}_{a_t \sim \pi, s_t \sim T}\brackb{\sum^\infty_{t=0} \gamma^t r(s_t, a_t) \Bigg| s_0 = s, a_0 = a}
 \end{equation}
@@ -40,7 +39,7 @@ We can now slightly change the objective of reinforcement learning to \correctqu
 
 \subsection{Policy Iteration}
 \label{sec:chap2-policy-iter}
-We will now introduce the first algorithm that will solve the problem of reinforcement learning, called policy iteration. The strategy is based on simple observation: the agent will always doing better or equal if we set it's behavior to be following the optimal value function in equation \ref{eqn:chap2-optim-Q-and-V} i.e we can improve our policy $\pi$ by greedily chooses the action that would maximized expected future rewards given $Q^\pi$:
+We will now introduce the first algorithm that will solve the problem of reinforcement learning, called policy iteration. The algorithm is based on a simple observation that the agent will always doing better or equal if we follow the value function of the policy in equation \ref{eqn:chap2-optim-Q-and-V}. We can improve our policy $\pi$ by greedily chooses the action that would maximize expected future rewards given $Q^\pi$:
 \begin{equation}
     \label{eqn:chap2-greedy-Q}
     \pi'(a | s) = \begin{cases}
@@ -48,7 +47,7 @@ We will now introduce the first algorithm that will solve the problem of reinfor
         0 &\text{ otherwise }
     \end{cases}
 \end{equation}
-we can call this step, a policy improvement step. One can show that $\forall s \in S: V^\pi(s) \le V^{\pi'}(s)$. Furthermore, we can show that we will reach optimal value function if we keep improving the policy. The proof, for completeness, will be presented in appendix \ref{appx:chap2-rl-policy-improve}. What we have left is to find an algorithm that gives us value function $V^{\pi}(s)$ for any policy $\pi$, which we will call this step \textit{policy evaluation}. We can expanded the equality in equation \ref{eqn:chap2-Q-and-V} as:
+we call this step, a policy improvement step. One can show that $\forall s \in S: V^\pi(s) \le V^{\pi'}(s)$, which we can show that we will reach an optimal value function if we keep improving the policy. The proof, for completeness, will be presented in appendix \ref{appx:chap2-rl-policy-improve}. What we have left is to find an algorithm that gives us value function $V^{\pi}(s)$ for any policy $\pi$, which we will call this step \textit{policy evaluation}. We can expand the equality in equation \ref{eqn:chap2-Q-and-V} as:
 \begin{equation}
     V^\pi(s) = \mathbb{E}_{a \sim \pi(a | s)} \brackb{r(s, a) + \gamma \mathbb{E}_{s' \sim T(s' | s, a)}\brackb{V^\pi(s')}} 
 \end{equation}
@@ -57,7 +56,7 @@ We call this equation expected Bellman equation along with the following expecte
     \label{eqn:chap2-exp-bellman-operator}
     \contractop^{\pi} V(s) = \mathbb{E}_{a \sim \pi(a | s)} \brackb{r(s, a) + \gamma \mathbb{E}_{s' \sim \contractop(s' | s, a)}\brackb{V(s')}} 
 \end{equation}
-To solve the policy evaluation problem, we want to find $V(s)$ such that $\contractop^\pi V(s) = V(s)$ however, to solve this via matrix form would be too expensive. However, turn out this expected Bellman operator is an contraction mapping on $\infty$-norm i.e 
+To solve the policy evaluation problem, we want to find $V(s)$ such that $\contractop^\pi V(s) = V(s)$ however, to solve this via matrix inversion would be too expensive. However, turn out this expected Bellman operator is a contraction mapping on $\infty$-norm i.e 
 \begin{equation*}
     \| \contractop^\pi V_1(s) - \contractop^\pi V_2(s) \|_\infty \le \alpha \|V_1(s) - V_2(s)\|_\infty
 \end{equation*}
@@ -65,29 +64,29 @@ where $\|V(s)\|_\infty = \max_{s \in S} V(s)$. For some $0 \le \alpha < 1$ (See 
 \begin{theorem}{(Banach fixed-point theorem \cite{murfet_2019})}
     Given the complete (every Cauchy sequence converges to a point in that space) metric space $(X, d(\cdot, \cdot))$ and the contraction mapping $\contractop : X \rightarrow X$, the sequence $(\contractop^{(n)} x)^{\infty}_{n=1}$ converges to a fixed point $x^*$ where $\contractop x^* = x^*$, for all points $x \in X$. 
 \end{theorem}
-repeatedly apply the Bellman operator will lead us to a solution of $V^{\pi}$.  In conclusion, Policy iteration is an algorithm that solves the MDP by involving the alternation between the following 2 steps
+repeatedly apply the Bellman operator will lead us to a solution of $V^{\pi}$.  In conclusion, Policy iteration is an algorithm that solves the MDP by involving the alternation between the following two steps.
 \begin{enumerate}
     \item \textbf{Policy Evaluation}: Starting with randomized value function and Repeatedly applying Bellman operator defined in equation \ref{eqn:chap2-exp-bellman-operator} until converge to get true value function $V^{\pi}(s)$.
-    \item \textbf{Policy Improvement}: Update the policy by choosing the best action from action value function (we can calculate this by the equation \ref{eqn:chap2-Q-and-V}) following the equation \ref{eqn:chap2-greedy-Q}.
+    \item \textbf{Policy Improvement}: Update the policy by choosing the best action from action-value function (we can calculate this by the equation \ref{eqn:chap2-Q-and-V}) following the equation \ref{eqn:chap2-greedy-Q}.
 \end{enumerate}
 Since the value function always increases in every state, this algorithm is guaranteed to reach the optimal value function and policy. 
 
 \subsection{Value Iteration}
 \label{sec:chap2-value-iter}
-Now, it is quite computational ineffective to evaluates the policy every times to update the policy. Can we just update the value function using single Bellman update and then uses the policy improvement to come-up with the next value function? The answer is \textit{Yes}. We define optimal value Bellman update operator as:
+Now, it is computational ineffective to evaluates the policy every time to update the policy. Can we update the value function using single Bellman update to reach the optimal value function? The answer is \textit{Yes}. We define optimal value Bellman update operator as:
 \begin{equation}
     \label{eqn:chap2-optimal-bellman-operator}
     \contractop^*_V V(s) = \max_{a \in A}\Big[r(s, a) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{V(s')} \Big]
 \end{equation}
-Note that it is related to optimal Bellman equation represented in equation \ref{eqn:chap2-optim-Q-and-V}. In this case, we update the the value function toward the action that yields highest value given only one update. This is, indeed, a contraction mapping, thus repeatedly updating the value function by optimal value Bellman operator will give us optimal value function. The proof will be similar to the proof done in section above. Finally, given the optimal value function, one can calculate the optimal action value function, and optimal policy. 
+Note that it is related to optimal Bellman equation represented in equation \ref{eqn:chap2-optim-Q-and-V}, where $V^*$ is a fixed point. In this case, we update the value function toward the action that yields the highest value given only one update. This operator is, indeed, a contraction mapping, thus repeatedly updating the value function by optimal value Bellman operator will provide us with optimal value function. The proof will be similar to the proof done in the section above. Finally, given the optimal value function, one can calculate the optimal action-value function and optimal policy. 
 
 \subsection{Q Iteration}
 \label{sec:chap2-Q-iter}
-Now, instead of using value function as in value iteration, it is always desirable for us to estimate optimal action value function $Q^*(s, a)$ direction and without having to calculate transition function expectation. By using the same technique, one can define the optimal action value Bellman operator as 
+Now, instead of using value function as in value iteration, it is always more desirable for us to estimate optimal action-value function $Q^*(s, a)$ directly. The optimal action-value function has an advantage, in which we can find the best action directly without any extra calculation. One can define the optimal action-value Bellman operator as 
 \begin{equation}
     \contractop^*_Q Q(s, a) = r(s, a) + \gamma \mathbb{E}_{s' \sim \mathcal{T}(s' | s, a)}\brackb{\max_{a\in A} Q(s', a)} 
 \end{equation}
-this operator is indeed a contraction mapping. The proof is similar compare to other algorithms. However, there is more to this. Since there is no need to explicitly consider the transition function, we defined the following update rule given iteartion $k$ and $(s_t, a_t)$ experience:
+this operator is indeed a contraction mapping. The proof is similar compare to other algorithms. However, there is more to this. Since there is no need to consider the transition function explicitly, we defined the following update rule given iteration $k$ and $(s_t, a_t)$ experience:
 \begin{equation}
 \label{eqn:chap2-Q-stochastic-update}
     Q^{(k+1)}(s_t, a_t) \leftarrow (1-\alpha_t) Q^{(k)}(s_t, a_t) + \alpha\brackb{r(s_t, a_t) + \gamma \max_{a'} Q^{(k)}(s_{t+1}, a')}
@@ -98,3 +97,20 @@ where $0 < \alpha < 1$. Following the theorem 1 of \cite{jaakkola1994convergence
     The process $\Delta_{t+1} = (1-\alpha_t(x)) \Delta_t + \alpha_t(x) F_n(x) $ will converge to zero if and only if The state space is finite, $\sum_t \alpha_t(x) = \infty$, $\sum_t \alpha_t(x)^2 < \infty$, $\left\|\mathbb{E}\brackb{F_n(x) \big| P_n} \right\| \le \beta \|\Delta_n\|$ where $\beta \in (0, 1)$ and  $\operatorname{Var}\brackb{F_n(x) \big| P_n} \le C\bracka{1 + \|\Delta_n\|}^2$, where $P_n$ is a collection of histories. 
 \end{theorem}
 By subtracting optimal Q function at both ends i.e $\Delta_t = Q^{(k)}(s_t, a_t) - Q^*(s_t, a_t)$ and $F_n(x) = r(s_t, a_t) + \gamma \max_{a'} Q^{(k)}(s_{t+1}, a') - Q^*(s_t, a_t)$, we can proof that the update in equation \label{eqn:chap2-Q-stochastic-update} will converge to the optimal Q-value. Given Theorem \ref{thm:updaate-stochastic}, we can now change any contraction mapping into a stochastic update rule and still maintains the convergence property. We will use this throughout the text.
+
+\subsection{Partially observable Markov decision process}
+Before we move to deep reinforcement learning, we shall consider another problem that requires special attention, which will be useful in chapter \ref{chapter:chap6}. Partial observable MDP (POMDP) is defined as 
+\begin{definition}
+    We define a POMDP as a tuple where $\langle S, A, O, \mathcal{T}, p_0, U, R, \gamma\rangle$ where
+    \begin{itemize}
+        \item State space: $S = \{s_0, s_1, \cdots , s_{|S|}\}$
+        \item Action space: $A = \{a_0, a_1, \cdots a_{|A|}\}$
+        \item Observation space: $O = \{o_0, o_1, \cdots, o_{|O|}\}$
+        \item Transition function: $T: S \times A \times S \rightarrow [0, 1]$
+        \item Initial state distribution: $p_0 : S \rightarrow [0, 1]$
+        \item Noisy or partially occluded observation: $o_{t+1} \sim U(o_{t+1} | s_{t+1}, a_t)$
+        \item Reward distribution function: $r_{t+ 1} \sim R(r_{t+1} | s_{t+1}, a_t)$
+        \item Discount factor $\gamma \in \mathbb{R}$ 
+    \end{itemize}
+    The policy conditions its action based on histories of observation $\pi(a_t | o_{\le t})$ where $o_{\le t}$ is the history of observation before time $t+1$. 
+\end{definition}
