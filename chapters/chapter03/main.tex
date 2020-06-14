@@ -1,7 +1,8 @@
 \label{chapter:chap3}
 
 \begin{miniabstract}
-Now, we will survey the maximum entropy multi-agent reinforcement learning (MEMARL) framework, where we examine more deeply into each algorithm in control as probabilistic inference framework (MAPI). By re-derive one of the algorithms ROMMEO \cite{tian2019regularized} in MAPI framework, we understand how current MAPI operates. The main aim is to gain more understanding of the algorithms that will be used as a basis to construct other algorithms in this thesis. We conclude this chapter with a derivation of Balance Q-learning \cite{grau2018balancing} and a probabilistic interpretation of it.
+% Now, we will survey the maximum entropy multi-agent reinforcement learning (MEMARL) framework, where we examine more deeply into each algorithm in control as probabilistic inference framework (MAPI). By re-derive one of the algorithms ROMMEO \cite{tian2019regularized} in MAPI framework, we understand how current MAPI operates. The main aim is to gain more understanding of the algorithms that will be used as a basis to construct other algorithms in this thesis. We conclude this chapter with a derivation of Balance Q-learning \cite{grau2018balancing} and a probabilistic interpretation of it.
+Now, we will survey the maximum entropy multi-agent reinforcement learning (MEMARL) framework, where we examine into algorithms within control as probabilistic inference framework (MAPI). By, re-deriving one of the algorithms, ROMMEO \cite{tian2019regularized}, we understand how the algorithms in MAPI generally operates. The rederivation and re-interpretation of ROMMEO will lead us to the alternative derivation of Balance Q-learning \cite{grau2018balancing} and a probabilistic interpretation of this algorithm.
 \end{miniabstract}
 
 
@@ -19,3 +20,9 @@ Now, we will survey the maximum entropy multi-agent reinforcement learning (MEMA
 
 \section{Probabilistic Balancing-Q}
 \input{chapters/chapter03/contents/05_Prob_Balancing_Q_impl}
+
+\section{Conclusion}
+We showed that ROMMEO and PR2 don't work in an adversarial setting due to its inability to represent its opponent correctly. To fix this, we have reinterpreted Balancing Q-learning as probabilistic inference with some theoretical guarantee. Finally, we proposed an algorithm that is similar to Balancing Q-learning, which can be implemented using soft Actor-Critic like algorithm, while based on control as probabilistic inference framework. 
+
+% \section{Experiments}
+% \input{chapters/chapter03/contents/06_experiments}

@@ -6,7 +6,7 @@ Instead of having a ELBO that we want to maximize, we initially have the followi
 \begin{equation}
     \mathbb{E}_q\left[ \sum^T_{t=0} \gamma^t \bracka{r(s_t, a_t, a^{-i}_t) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a_t|s_t)}{P_\prior(a^i_t|s_t)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_t|s_t)}{P_\prior(a^{-i}_t|s_t)}} \right]
 \end{equation}
-However, as noted in the section before that by using our familiar method, we should consider the conditional opponent model $\rho_\phi(a^{-i}_t | s_t, a^i_t)$ to arrive at the final optimal policy. In \cite{grau2018balancing}, the authors don't explicitly show us the method of solving; we, therefore, are going to propose one of the ways, the derivation can be done. Note that the loss function above assumes no opponent model. However, to turn closer to MAPI approach, we shall consider similar formulation as PR2 \cite{wen2019probabilistic} case i.e 
+However, as noted in the section before, we should consider the conditional opponent model $\rho_\phi(a^{-i}_t | s_t, a^i_t)$ to arrive at the final optimal policy. In \cite{grau2018balancing}, the authors don't explicitly show us the method of solving; we, therefore, are going to propose one of the ways, the derivation can be carried out. Note that the loss function above assumes no opponent model. However, to have similar formulation to MAPI approach, we shall consider similar formulation as PR2 \cite{wen2019probabilistic} case i.e 
 \begin{equation}
     \mathbb{E}_q\left[ \sum^T_{t=0} \gamma^t \bracka{r(s_t, a_t, a^{-i}_t) - \frac{1}{\beta^i} \log\frac{\pi_{\theta}(a_t|s_t)}{P_\prior(a^i_t|s_t)} - \frac{1}{\beta^{-i}}\log \frac{\rho_\phi(a^{-i}_t | s_t, a^i_t)}{P_\prior(a^{-i}_t | s_t, a^i_t)}} \right]
 \end{equation}
@@ -80,7 +80,7 @@ Now, we shall consider the theoretical property of the algorithm. We start with 
 \begin{equation}
     \contractop_{\text{Balance}} Q(s_t, a^i_t, a^{-i}_t) = r(s_t, a_t, a^{-i}_t) + \mathbb{E}_{P(s_{t+1} | s_t, a_t, a^{-i}_t)}\brackb{V(s_{t+1})}
 \end{equation}
-is a contraction mapping. We would like to further investigate more on how the agent's update affects the action-value function. Suppose a fixed policy $\pi$, how would an updated opponent affects the action-value function given the value $\beta^{-i}$
+is a contraction mapping. We would like to further investigate more on how the agent's update affects the action-value function. Suppose a fixed policy $\pi$, how would an updated opponent affect the action-value function given the value $\beta^{-i}$
 \begin{theorem}
 \label{thm:update-balance-opponent}
     The action value function $Q^{-i, \pi, \rho}(s_t, a^i_t, a^{-i}_t)$ defined by Bellman equation as:

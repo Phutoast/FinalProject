@@ -1,6 +1,6 @@
 \label{chapter:chap4}
 \begin{miniabstract}
-After we have a unified view on MAPI framework, which we have reinterpreted Balancing Q-learning \cite{grau2018balancing} as probabilistic inference. We are now going to consider extensions to the agent's functionality. In this chapter, we are going to consider the case of temporal abstraction and communication in a cooperative multi-agent reinforcement learning problem. We will start by finding single-agent option learning problem and solving it together with soft actor-critic like algorithm, as a minor contribution. After considering the single-agent problem, we are going to define a model in which the agent can plan and communicate and solving in a multi-agent setting.
+After we have a unified view on MAPI framework, which we have reinterpreted Balancing Q-learning \cite{grau2018balancing} as probabilistic inference. We are now going to consider extensions to the agent's functionality. In this chapter, we are going to consider the case of temporal abstraction and communication in a cooperative multi-agent reinforcement learning problem. We will start by finding a single-agent option learning problem and solving it together with soft actor-critic like algorithm, as a minor contribution. After considering the single-agent problem, we are going to define a model in which the agent can plan in a more extended period of time and communicate with each others. 
 \end{miniabstract}
 
 
@@ -13,3 +13,5 @@ After we have a unified view on MAPI framework, which we have reinterpreted Bala
 \section{Implementation}
 \input{chapters/chapter04/contents/03_implementations}
 
+\section{Conclusion}
+We have shown that soft option framework in the single-agent scenario can be solved in closed-form, which allows us to train it using soft Actor-Critic while clearing some misconception about the final results. We then move to a multi-agent setting, where we successfully derived an algorithm for training agent that can do temporal abstraction and communicate with each other. 

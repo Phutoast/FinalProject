@@ -16,6 +16,9 @@
 \usepackage{hyperref}
 \usepackage[perpage]{footmisc}
 \usepackage{lipsum} % package that provides filler text
+\usepackage{subcaption}
+\usepackage{algorithm} 
+\usepackage{algpseudocode} 
 
 
 \tcolorboxenvironment{definition}{
@@ -96,10 +99,10 @@ $\Box$ \end{quotation}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\title{{{\Huge Multi-agent Learning with Bayesian inference (DRAFT)}}\\
+\title{{{\Huge Multi-agent Learning with Bayesian Inference}}\\
 % {\large Optional Subtitle}\\
 }
-\date{Submission date: Day May 2020}
+\date{Submission date: 18 May 2020}
 \author{Phu Sakulwongtana\thanks{
 {\bf Disclaimer:}
 This report is submitted as part requirement for the BSc Computer Science at UCL. It is
@@ -120,6 +123,18 @@ Jun Wang, Philip Treleaven}
 
 \usepackage[includefoot,bottom=20pt]{geometry}
 \addtolength{\skip\footins}{2pc plus 3pt}
+\makeatletter
+\renewenvironment{abstract}{%
+    \if@twocolumn
+      \section*{\abstractname}%
+    \else %% <- here I've removed \small
+      \begin{center}%
+        {\bfseries \Large\abstractname\vspace{\z@}}%  %% <- here I've added \Large
+      \end{center}%
+      \quotation
+    \fi}
+    {\if@twocolumn\else\endquotation\fi}
+\makeatother
 
 \begin{document}
  
@@ -130,19 +145,19 @@ Jun Wang, Philip Treleaven}
 \input{non_content/abstract}
 \end{abstract}
 
-\clearpage
-\vspace*{\fill}
-\thispagestyle{empty} % optional -- suppress showing of page number
-\begin{quotation}
-% \em % optional -- to switch to emphasis (italics) mode
-\correctquote{but what analogy to do you detect in the inquiry about justice?} \correctquote{I will tell you,} I said: \correctquote{there is a justice of one man, we say, and, I suppose, also of an entire city.} \correctquote{Assuredly,} said he. \correctquote{Is not the city larger than the man?} \correctquote{It is larger,} he said. \correctquote{Then, perhaps, there would be more justice in the larger object and more easy to apprehend. If it please you, then, let us first look for its quality in states, and then only examine it also in the individual, looking for the likeness of the greater in the form of the less.} \correctquote{I think that is a good suggestion,} he said. \correctquote{If, then,} said I, \correctquote{our argument should observe the origin of a state, we should see also the origin of justice and injustice in it.} \correctquote{It may be,} said he. \correctquote{And if this is done, we may expect to find more easily what we are seeking?}
+% \clearpage
+% \vspace*{\fill}
+% \thispagestyle{empty} % optional -- suppress showing of page number
+% \begin{quotation}
+% % \em % optional -- to switch to emphasis (italics) mode
+% \correctquote{but what analogy to do you detect in the inquiry about justice?} \correctquote{I will tell you,} I said: \correctquote{there is a justice of one man, we say, and, I suppose, also of an entire city.} \correctquote{Assuredly,} said he. \correctquote{Is not the city larger than the man?} \correctquote{It is larger,} he said. \correctquote{Then, perhaps, there would be more justice in the larger object and more easy to apprehend. If it please you, then, let us first look for its quality in states, and then only examine it also in the individual, looking for the likeness of the greater in the form of the less.} \correctquote{I think that is a good suggestion,} he said. \correctquote{If, then,} said I, \correctquote{our argument should observe the origin of a state, we should see also the origin of justice and injustice in it.} \correctquote{It may be,} said he. \correctquote{And if this is done, we may expect to find more easily what we are seeking?}
 
-\medskip
-\raggedleft
-Plato, Republic 368e - 369a \\
-Translated by Paul Shorey \cite{gregory_crane}
-\end{quotation}
-\vspace*{\fill}
+% \medskip
+% \raggedleft
+% Plato, Republic 368e - 369a \\
+% Translated by Paul Shorey \cite{gregory_crane}
+% \end{quotation}
+% \vspace*{\fill}
 
 \setcounter{tocdepth}{1}
 \tableofcontents
@@ -179,7 +194,7 @@ Translated by Paul Shorey \cite{gregory_crane}
 \bibliographystyle{plain}
 \bibliography{bibilography}
 
-\chapter{Proofs for Chapter 2}
+\chapter{Chapter 2: Appendix}
 
 \section {Probabilistic Machine Learning}
 \input{chapters/chapter02/appendix/01_proof}
@@ -190,7 +205,7 @@ Translated by Paul Shorey \cite{gregory_crane}
 \section {Control as Inference Framework}
 \input{chapters/chapter02/appendix/04_proof}
 
-\chapter{Proofs for Chapter 3}
+\chapter{Chapter 3: Appendix}
 
 \section {ROMMEO}
 \input{chapters/chapter03/appendix/02_proof}
@@ -198,7 +213,10 @@ Translated by Paul Shorey \cite{gregory_crane}
 \section {Balancing-Q}
 \input{chapters/chapter03/appendix/04_proof}
 
-\chapter{Proofs for Chapter 4}
+\section{Experimentation}
+\input{chapters/chapter03/appendix/06_proof}
+
+\chapter{Chapter 4: Appendix}
 \input{chapters/chapter04/appendix/01_proof}
 \input{chapters/chapter04/appendix/02_proof}
 

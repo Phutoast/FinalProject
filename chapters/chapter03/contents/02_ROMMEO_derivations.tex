@@ -1,8 +1,8 @@
-Now, we shall consider the derivation of ROMMEO using technique introduced in \cite{levine2018reinforcement}, which has been applied to single-agent reinforcement learning shown briefly in section \ref{sec:chap2-derivation-soft-closed-form}. The working is partially covered in \cite{yu2019multi, wen2019multi} however a full derivation is required for the understanding of the algorithm. We will base our derivation for ROMMEO \cite{tian2019regularized}, while the same technique can be applied to PR2 \cite{wen2019probabilistic}. ROMMEO assumes that the joint probability between 2 agents can be factorized as
+Now, we shall consider the derivation of ROMMEO using the technique introduced in \cite{levine2018reinforcement}, which is shown briefly in section \ref{sec:chap2-derivation-soft-closed-form}. The working is partially covered in \cite{yu2019multi, wen2019multi} however a full derivation is required for the understanding of the algorithm. We will base our derivation for ROMMEO \cite{tian2019regularized}, while the same technique can be applied to PR2 \cite{wen2019probabilistic}. ROMMEO assumes that the joint probability between 2 agents, which can be factorized as
 \begin{equation}
     \pi(a, a^{-i} | s) = \pi(a | a^{-i}, s) \rho(a^{-i} | s)
 \end{equation}
-factorizing in other ways yields PR2. We will start by drawing the graphical model of joint probabilities that we want to approximate is depicted in Figure \ref{fig:chap3-approximated-ROMMEO}. 
+factorizing in other ways yields PR2. We will start by drawing the graphical model of joint probabilities that we want to approximate, and is depicted in Figure \ref{fig:chap3-approximated-ROMMEO}. 
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
@@ -61,10 +61,10 @@ where the optimality variable is defined as
 \begin{equation}
 \begin{aligned}
     &P(\optim_t^{-i} = 1, \optim^{i}_t = 1 | s_t, a^i_t, a^{-i}_t) \propto \exp \bracka{ \beta r(s_t, a^i_t, a^{-i}_t)  } \\
-    &P(\optim_t^{-i} = 1, \optim^{i}_t = 1 | s_t, a^i_t, a^{-i}_t) = P(\optim_t^{-i} = 1 |\optim^{i}_t = 1, s_t, a^i_t, a^{-i}_t) P(\optim^{i}_t = 1 | s_t, a^i_t, a^{-i}_t)
+    &P(\optim_t^{-i} = 1, \optim^{i}_t = 1 | s_t, a^i_t, a^{-i}_t) = P(\optim_t^{-i} = 1 |\optim^{i}_t = 1, s_t, a^i_t, a^{-i}_t) P(\optim^{i}_t = 1 | \optim^{-i}_t = 1, s_t, a^i_t, a^{-i}_t)
 \end{aligned}
 \end{equation}
-This definition is different from the one proposed in \cite{tian2019regularized}. However, we would like to point out that the opponent model has optimized \textit{after} the agent's policy as we will show in a later section. Therefore, before the opponent model is optimized, it has assumed that the agent's policy is already being optimal, hence the factorization of the optimality. Furthermore, the factorization of the optimality random variables is a mere representation because the distinction between agent's and its policy lies during the close-form solution calculation and not during the inference. Now for the variational joint probabilities that we want to optimize on the graphical model is depicted in Figure \ref{fig:chap3-variational-ROMMEO}.
+This definition is different from the one proposed in \cite{tian2019regularized}. However, we would like to point out that the opponent model has been optimized \textit{after} the agent's policy, which will show in a later section. Therefore, during the optimization of the opponent model, it has assumed that the agent's policy is optimal, hence the factorization of the optimality. Furthermore, the factorization of the optimality random variables above is a mere representation because the distinction between agent's and its opponent model lies during the calculation of the solution and not during the inference. Now for the variational joint probabilities that we want to optimize on the graphical model is depicted in Figure \ref{fig:chap3-variational-ROMMEO}.
 \begin{figure}[ht]
     \begin{minipage}[t]{0.5\linewidth}
     \centering
@@ -104,7 +104,7 @@ This definition is different from the one proposed in \cite{tian2019regularized}
     \end{tikzpicture}
     \end{minipage}%
     \begin{minipage}[t]{0.5\linewidth}
-    \caption{Graphical model that we are going to optimize our policies on. This has almost the same structure as the version that we want to approximate. However, we doesn't care about the optimality of the agent itself, as we want to approximate its policy (denote as $\pi$) and the its opponent model (denote as $\rho$)}
+    \caption{Graphical model that we are going to optimize our policies on. This has almost the same structure as the version that we want to approximate. However, we don't care about the optimality of the agent itself, as we want to approximate its policy (denote as $\pi$) and the its opponent model (denote as $\rho$)}
     \label{fig:chap3-variational-ROMMEO}
     \end{minipage}
 \end{figure}
@@ -116,12 +116,12 @@ We would like to solve the following optimization problem
 \begin{equation}
     \argmin{\pi, \phi \in \Pi \times \Phi}  \kl\bracka{q(s_{1:T}, a_{1:T}^i, a^{-i}_{1:T}) \Big\| P(s_{1:T}, a^i_{1:T}, a^{-i}_{1:T}|\optim^i_{1:T} = 1  \optim^{-i}_{1:T} = 1) }
 \end{equation}
-This lead to optimizing the following ELBO. The derivation is shown in the appendix \ref{appx:chap3-ROMMEO-ELBO}, which translates the problem into a maximization problem of the following objective
+This leads to optimizing the following ELBO. The derivation is shown in the appendix \ref{appx:chap3-ROMMEO-ELBO}, which translates the problem into a maximization problem of the following objective
 \begin{equation}
 \label{eqn:chap3-ROMMEO-ELBO}
     \argmax{\pi, \phi \in \Pi \times \Phi} \mathbb{E}_{q}\brackb{ \sum^T_{t=0} \gamma^t\bracka{\beta r(s_t, a^i_t, a^{-i}_t)  - \log \frac{\pi_{\theta}(a^i_t | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } - \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)}}}
 \end{equation}
-We will starting off by consider the last time step, as we will progress backward in time. Considering the last time step:
+We will start off by considering the last time step, as we will progress backwards in time. Considering the last time step:
 \begin{equation}
 \label{eqn:training-obj-last-time}
     \mathbb{E}_{q} \brackb{ \beta r(s_T, a^i_T, a^{-i}_T)  - \log \frac{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}{P_{\prior}(a^i_T | s_T, a^{-i}_T) } - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)}}
@@ -133,11 +133,11 @@ We can show that the optimal policy is equal to
     \text{where }& Q(s_T, a^{-i}_T) = \log \int \exp \bracka{\beta R(s_T, a^i_T, a^{-i}_T}P_{\prior}(a^i_T | s_T, a^{-i}_T)  \dby a^i_T
 \end{aligned}
 \end{equation}
-The proof will be presented in the appendix \ref{appx:chap3-ROMMEO-agent-last-time}. This part is where we can assume that the agent policy is optimal and allow us to calculate the opponent model objective. Plugging optimal policy back in and we are left with opponent's objective:
+The proof will be presented in the appendix \ref{appx:chap3-ROMMEO-agent-last-time}. This part is where we can assume that the agent policy is optimal and allow us to calculate the opponent model objective. By plugging the optimal policy back, we are left with the opponent's objective:
 \begin{equation}
     \mathbb{E}_{ \rho_{\phi}(a^{-i}_T | s_T) P(s_T)}\brackb{ Q(s_T, a^{-i}_T) - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} }
 \end{equation}
-which will gives us the optimal opponent model at time step $T$ to be as the following:
+which will give us the optimal opponent model at time step $T$ to be as the following:
 \begin{equation}
 \begin{aligned}
     &\rho_{\phi}(a^{-i}_T | s_T)  = \frac{ \exp\bracka{Q(s_T, a^{-i}_T)}P_{\prior}(a^{-i}_T | s_T) }{\exp\bracka{V(s_T)}}  \\
@@ -152,7 +152,7 @@ This quantity will be passed down to the later time. Now for time $t$, the objec
 \begin{equation}
     \mathbb{E}_{q} \Bigg[ \underbrace{\beta r(s_t, a^i_T, a^{-i}_T) + \gamma \mathbb{E}_{P(s_{t+1} | s_t, a^i_t, a^{-i}_t)}  \brackb{V(s_{t+1})}}_{Q(s_t, a^i_t, a^{-i}_t)}  - \log \frac{\pi_{\theta}(a^i_T | s_t, a^{-i}_t)}{P_{\prior}(a^i_t | s_t, a^{-i}_t) } - \log \frac{\rho_{\phi}(a^{-i}_t | s_t)}{P_{\prior}(a^{-i}_t | s_t)} \Bigg]
 \end{equation}
-We can see that this leads to very similar problems as the one we have before, therefore, by using the same proving process, we can derive the optimal agent's policy and  optimal opponent model policy to be 
+We can see that this leads to very similar problem as the one we have solved before. Therefore, by using the same proving process, we can derive the optimal agent's policy and optimal opponent model policy to be 
 \begin{equation}
 \begin{aligned}
     \label{eqn:chap3-final-ROMMEO-policy}
@@ -168,5 +168,5 @@ where the analogous "Bellman equation" is the following (with the value and acti
         &V(s_t) = \log \int \exp\bracka{Q(s_t, a^{-i}_t)}P_{\prior}(a^{-i}_t | s_t) \dby a^{-i}_t \\
     \end{aligned}
 \end{equation}    
-This finishes the derivation for ROMMEO in its most general form. If we consider PR2 then we have to maximize opponent model first, then by similar form we have similar problem.
+This concludes the derivation for ROMMEO in its most general form. If we consider PR2, then we have to maximize opponent model first, by using a similar process.
 

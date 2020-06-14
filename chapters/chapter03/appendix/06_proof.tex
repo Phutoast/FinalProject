@@ -1,0 +1,32 @@
+\subsection{Matrix Game Detailed Experiment}
+\label{appx:chap4-matrix-game-explain}
+
+In this experiment, we use the learning rate $\alpha$ of $0.6$, given the agent $i$ and agent $j$'s $\beta$ value to both $0.1$ in cooperative setting, and assign the value $0.1$ and $-0.1$, respectively, in competitive setting. The reward in each time step is calculated by averaging $50$ rollouts. Finally, the temperature is scheduled to increase exponentially i.e $\omega^t$, for each time step $t$, where $\omega$ is the scheduling weight and it is equal to $1.01$ for all experiments. The pseudo-code is equal the following:
+\begin{algorithm}[H]
+    \caption{Balancing Q-Learning in Matrix Game for agent $i$}
+	\begin{algorithmic}[1]
+	    \State \textbf{Input}: $\beta^{\text{agent}}$, $\beta^{\text{opp}}$
+	   \State Initialized the following function $Q(a^i, a^j) = 0$, $P_\prior(a^j | a^i) = \mathcal{U}$ and $P_\prior(a^i) = \mathcal{U}$ where $\mathcal{U}$ is a uniform distribution.
+		\For {$i=1,2,\cdots, T$}
+		    \State Calculated agent's q-function based of opponent's model
+		    \begin{equation*}
+		        Q(a^i) = \frac{\beta^{\text{agent}}}{\beta^{\text{opp}}} \cdot \log \sum_{a^{j}} \exp(\beta^{\text{opp}} \cdot \omega \cdot Q(a^\text{agent}, a^j)) P_\prior(a^j | a^i)
+		    \end{equation*}
+		    \State Calculate agent's policy
+		    \begin{equation}
+		        \pi(a^i) = \frac{P_\prior(a^i)\cdot Q(a^i)}{\sum_{a^i} P_\prior(a^i)\cdot Q(a^i)}
+		    \end{equation}
+		    \State Acts on the environment
+		    \State Given common reward $r$ with opponent's action $a^j$ and agent's own action $a^i$ update the agent's action value function
+		    \begin{equation*}
+		        Q(a^i, a^j) \leftarrow Q(a^i, a^j) + \alpha (r - Q(a^i, a^j))
+		    \end{equation*}
+		    \State Update $\omega$ 
+		    \begin{equation*}
+		        \omega \leftarrow \omega * 1.01
+		    \end{equation*}
+		\EndFor
+	\end{algorithmic} 
+\end{algorithm}
+\noindent
+The code for the experiment will be in \texttt{examples/experiments/} in the attached zip file.

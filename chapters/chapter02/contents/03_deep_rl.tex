@@ -1,17 +1,17 @@
 \label{sec:chap2-deep-rl}
-Now, it is always the case that the state action value is too big for us to represent the exact value function or action-value function. We will now present the way that we can approximate these values, together with another method for control, notably policy gradient and the combination of both paradigms: actor-critic algorithm.
+Now, it is always the case that the total number of states is too big for us to represent the exact value function or action-value function. We will now present the way that we can approximate these values, together with another method for control, notably policy gradient and the combination of both paradigms: Actor-Critic algorithm.
 
-\subsection{Deep Q learning \cite{mnih2015human}}
-Deep Q learning is based on traditional Q iterating, whereby instead of using stochastic iteration (see section \ref{sec:chap2-Q-iter}), the authors try to approximate optimal Q-function using neural network $Q_\theta^*(s, a)$ by training to minimize mean square error between its prediction and the target prediction i.e
+\subsection{Deep Q-learning \cite{mnih2015human}}
+Deep Q-learning is based on traditional Q-iteration, whereby instead of using stochastic iteration (see section \ref{sec:chap2-Q-iter}), the authors try to approximate optimal Q-function using neural network $Q_\theta(s, a)$ by training it to minimize mean square error between its prediction and the target prediction i.e
 \begin{equation}
     \mathcal{L}(\theta) = \mathbb{E}_{(s, a, r, s')^n_{i=1} \sim B(\mathcal{D})}\brackb{ \frac{1}{n}\sum^n_{i=1} \bracka{Q_{\theta}(s_i, a_i) - r(s_i, a_i) - \gamma\max_{a'} Q_{\theta^-}(s'_i, a'_i)}^2 }
 \end{equation}
-The training relies on experience replay $\mathcal{D}$, which stores the past experiences in the tuple, and target action-value function $Q_{\theta'}(s, a)$ added to increase stability in training. The following process updates the target action-value function 
+The training relies on experience replay $\mathcal{D}$, which stores the past experiences in the tuple, and target action-value function $Q_{\theta'}(s, a)$ added to increase stability in training. The following process updates the target action-value function at time step $t$
 \begin{equation}
 \label{eqn:chap2-update-target}
-    \theta^- \leftarrow \rho \theta^- + (1-\rho) \theta
+    \theta^-_{t+1} \leftarrow \rho \theta^-_t + (1-\rho) \theta_t
 \end{equation}
-which is a common way to update a target function. $\mathcal{B}$ being mini-batch sampler. Furthermore, due to the size of state space, the authors use $\varepsilon$-greedy policy to help the agent collecting the experience (better exploration) so that it gets more diverse set of training data. The policy is defined as
+which is a common way to update a target function. $\mathcal{B}$ is a mini-batch sampler. Furthermore, due to the size of state space, the authors use $\varepsilon$-greedy policy to help the agent collecting the experience (better exploration) so that it gets more diverse set of training data. The policy is defined as
 \begin{equation}
     \pi(a | s) = \begin{cases}
         \argmax{a'} Q(s, a') &\text{ with probability } \varepsilon \\
@@ -37,11 +37,11 @@ The strategy is to find the gradient of the sum of expected reward, which we can
 \begin{equation}
     \frac{\partial}{\partial \theta} \mathbb{E}_{a_t, s_t \sim \pi_\theta}\brackb{\sum^\infty_{t=0}\gamma^t r(s_t, a_t)} = \mathbb{E}_{a_t, s_t \sim \pi_\theta}\brackb{R_t\frac{\partial}{\partial \theta} \log \pi_\theta(a_t | s_t) }
 \end{equation}
-where $Q^\pi(s_t, a_t) = \mathbb{E}\left[R_t | s_0 = s_t, a_0 = a_t\right]$. Now, we can perform stochastic approximation via Monte Carlo sampling, while we can train a neural network using stochastic gradient ascent. We call this basic algorithm REINFORCE \cite{sutton2000policy}. However, this algorithm is notoriously hard to train due to the high variance of the estimator. We can reduce the variance by minus the Q-value estimation by a baseline $B(s)$ value that is independent of $\theta$ and $a$. In usual case, we use value function estimator $B_t$\footnote{where $V^\pi(s_t) = \mathbb{E}\brackb{B_t}$}, which leads us to use of advantage function $A^\pi(s, a)$ estimator\footnote{This would make sense intuitively because advantage function only estimates how good each action is given the current state, which is the only measurement we want for policy gradient algorithm.}. Furthermore, we can add an entropy regularizer to help the policy learns via maximum entropy principles, see section \ref{sec:chap1-MERL-intro} for a quick introduction.
+where $Q^\pi(s_t, a_t) = \mathbb{E}\left[R_t | s_0 = s_t, a_0 = a_t\right]$. Now, we can perform stochastic approximation via Monte Carlo sampling, while we can train a neural network using stochastic gradient ascent. We call this basic algorithm REINFORCE \cite{sutton2000policy}. However, this algorithm is notoriously hard to train due to the high variance of the estimator. We can reduce the variance by minus the Q-value estimation by a baseline $B(s)$ value that is independent of $\theta$ and $a$. In usual case, we use value function estimator $B_t$\footnote{where $V^\pi(s_t) = \mathbb{E}\brackb{B_t | s_0 = s_t}$}, which leads us to use of advantage function $A^\pi(s, a)$ estimator\footnote{This would make sense intuitively because advantage function only estimates how good each action is given the current state, which is the only measurement we want for policy gradient algorithm.}. Furthermore, we can add an entropy regularizer to help the policy learns via maximum entropy principles, see section \ref{sec:chap1-MERL-intro} for a quick introduction.
 
-\subsection{Actor Critic}
+\subsection{Actor-Critic}
 \label{sec:chap2-ator-critic}
-Now, instead of using a Monte Carlo estimation of the reward, why don't we try to estimate this quality using function approximator like a neural network? By using a neural network approximation, we now move toward actor-critic algorithm; hence, the name \correctquote{Advantage Actor-Critic Algorithms}. \cite{mnih2016asynchronous}\footnote{Also see  \url{https://openai.com/blog/baselines-acktr-a2c/}}. The usual implementation is as follows, for the actor/policy network, the implementation is similar. But for critic/advantage function estimator, we only need to train value function $V_\theta(s_t)$  and estimate the advantage function as follows:
+Now, instead of using a Monte Carlo estimation of the reward, why don't we try to estimate this quality using function approximator like a neural network? By using a neural network approximation, we now move toward Actor-Critic algorithm; hence, the name \correctquote{Advantage Actor-Critic Algorithms}. \cite{mnih2016asynchronous}\footnote{Also see  \url{https://openai.com/blog/baselines-acktr-a2c/}}. The usual implementation is as follows: for the actor/policy network, the implementation is similar. But for critic/advantage function estimator, we only need to train value function $V_\theta(s_t)$  and estimate the advantage function:
 \begin{equation}
     A(s_t, a_t) \approx \underbrace{\sum^n_{i=0} \gamma^i r_{t + i} + \gamma^{n+1} V_\theta(s_{n+1})}_{\approx Q_\theta(s_t, a_t)} - V_\theta(s_t)
 \end{equation}
@@ -50,7 +50,7 @@ The longer the $n$ times steps, the more accurate (and more variance) the estima
 \label{eqn:chap2-ac-critic-loss}
     \loss(\theta) = \mathbb{E}_{(r_0, \cdots, r_{n+1}), s_{n+1} \sim \mathcal{D}}\brackb{\frac{1}{2}\bracka{V_\theta(s_0) - \sum^n_{i=0} \gamma^i r_i - \gamma^{n+1}V_\theta(s_{n+1})}^2}
 \end{equation}
-which is a mean-square error between predictive value and bootstrapped\footnote{Bootstrap is the act that we include $V_\theta(s_{n+1})$ after a certain length of cumulative reward instead of having full trajectory, i.e. using one prediction as part of the target for other prediction} value. Now, we have laid the essential foundation to Actor critic (AC) method let's consider two variances of successful extension to AC, which are TRPO \cite{schulman2015trust} and PPO \cite{schulman2017proximal}. Let's start with TRPO, which is based on the following theorem presented in \cite{schulman2015trust}:
+which is a mean-square error between predictive value and bootstrapped\footnote{Bootstrap is the act that we include $V_\theta(s_{n+1})$ after a certain length of cumulative reward instead of having full trajectory, i.e. using one prediction as part of the target for other prediction} value. Now, we have laid the essential foundation to Actor-Critic (AC) method let's consider two variances of successful extension to AC, which are TRPO \cite{schulman2015trust} and PPO \cite{schulman2017proximal}. Let's start with TRPO, which is based on the following theorem presented in \cite{schulman2015trust}:
 \begin{theorem}
 Let $\kl^{\max}\bracka{\pi, \tilde{\pi}} = \max_s \kl\bracka{\pi(\cdot | s) \big\| \tilde{\pi}(\cdot | s)}$  then the following holds
 \begin{equation}
@@ -97,7 +97,7 @@ The trust region is the KL-constraint imposed on policy optimization by not allo
 
 \subsection{Deep Deterministic Policy Gradient}
 \label{sec:chap2-ddpg}
-Now, we will consider the problem in which the agent's action is continuous. The resulting algorithm based on Actor critic variance called Deep Deterministic Policy Gradient (DDPG) \cite{lillicrap2015continuous}. We will also consider the extension to Twin Delayed DDPG (TD3) \cite{fujimoto2018addressing} to make the training of DDPG more stable. Starting with DDPG, the core intuition behind it\footnote{There are more into the theory of how it works. We suggest reading \cite{silver2014deterministic}} is that we train the agent to maximize critic's prediction of reward, i.e. maximizing the following objective with respect to $\theta$
+Now, we will consider the problem in which the agent's action is continuous. The resulting algorithm based on Actor-Critic variance called Deep Deterministic Policy Gradient (DDPG) \cite{lillicrap2015continuous}. We will also consider the extension to Twin Delayed DDPG (TD3) \cite{fujimoto2018addressing} to make the training of DDPG more stable. Starting with DDPG, the core intuition behind it\footnote{There are more into the theory of how it works. We suggest reading \cite{silver2014deterministic}} is that we train the agent to maximize critic's prediction of reward, i.e. maximizing the following objective with respect to $\theta$
 \begin{equation}
     \loss(\theta) = Q_\phi(s, \pi_\theta(s))
 \end{equation}
@@ -107,7 +107,7 @@ Note that we didn't do any sampling the agent, hence the name \textit{determinis
 \end{equation}
 Now, TD3 extends DDPG algorithms as follows
 \begin{itemize}
-    \item Using double-Q learning. By training the 2 critics together with the following target (Hence the name twin)
+    \item Using double-Q learning. By training the 2 critics together with the following target (hence the name \correctquote{twin})
     \begin{equation}
     \begin{aligned}
         &r + \gamma \min_{i \in \brackc{1, 2}} Q_{i, \phi^-}(s', a') \\
@@ -116,4 +116,4 @@ Now, TD3 extends DDPG algorithms as follows
     \end{equation}
     \item We update actor network in lesser frequency than the critic (this includes the target actor, which is updated similar to equation \ref{eqn:chap2-update-target})
 \end{itemize}
-This two techniques will be a trick for other algorithms to improve the performance and stability, especially for continuous action.
+This two techniques will be a trick for other algorithms to improve the performance and stability.

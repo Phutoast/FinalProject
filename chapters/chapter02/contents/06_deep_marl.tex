@@ -1,6 +1,6 @@
 \label{sec:chap2-deep-marl}
 
-There are two types of algorithm used for training for multi-agent problems: centralized training and decentralized training algorithm. Centralized training algorithms are algorithms that required shared components between each agent to train, while the decentralized algorithm doesn't. Note that most of the algorithms here are centralized training algorithm. On the other hand, we can also follow single-agent training algorithms classification, which separates value-based algorithms (for example DQN \cite{mnih2015human}) from policy-based algorithms (for example, REINFORCE \cite{sutton2000policy} and A2C \cite{mnih2016asynchronous}). 
+There are two types of algorithm used for training for multi-agent problems: centralized training and decentralized training algorithms. Centralized training algorithms are algorithms that require shared components between each agent to train, while the decentralized algorithms don't. Note that most of the algorithms here are centralized training algorithms. On the other hand, we can also follow single-agent training algorithms classification, which separates value-based algorithms (for example DQN \cite{mnih2015human}) from policy-based algorithms (for example, REINFORCE \cite{sutton2000policy} and A2C \cite{mnih2016asynchronous}). 
 
 \subsection{Policy Based}
 
@@ -28,10 +28,10 @@ where $\mathcal{D}$ is experience replay that contains a tuple $(s, s', a_1, \do
 \begin{equation}
     \mathcal{L}(\theta_i) = \mathbb{E}_{(s, a, s', r) \sim \mathcal{D}}\left[ \left( Q^{\mu}_i (s, a_1, \dots, a_N) - r_i - \gamma Q^{\bar{\mu}}_i(s', a'_1, \dots, a'_N) |_{a'_i = \bar{\mu}(s_i')} \right)^2  \right]
 \end{equation}
-There is a notion of \textit{centralized} as we have to have a full knowledge of other agent's policy, while \textit{decentralized}\footnote{This is what we aim for} is where we doesn't assume any knowledge of other agent's inner policy, but we can still observe their actions. 
+The algorithm is \textit{centralized} as we need have to have full knowledge of other agent's policy and observation.
 
 \subsection{Value Function Based}
-Now we have seen the use of value estimation in MADDPG; let's consider the method of centralized value function estimation. Please note that all the algorithms in this section assume a cooperative setting. The main intuition behind all value function based algorithm is that the action value function Q can be decomposed to each agent's value. In value decomposition network (VDN) \cite{sunehag2017value}, the authors assume the following factorization of the agent:
+Now we have seen the use of value estimation in MADDPG; let's consider the method of centralized value function estimation. Please note that all the algorithms in this section assume a cooperative setting. The main intuition behind all value function based algorithm is that the action value function Q can be decomposed to each agent's action value function. In value decomposition network (VDN) \cite{sunehag2017value}, the authors assume the following factorization of the agent:
 \begin{equation}
 \begin{aligned}
 Q(s (a^1, \dots, a^N)) \approx \sum^N_{i=1} \tilde{Q}_i(s, a^i)
@@ -47,27 +47,27 @@ The VDN satisfies the condition but there is a more generalized notion of this, 
 \begin{equation}
 \forall n \in [N] : \frac{\partial Q_{\text{tot}}}{\partial Q_{n}} \ge 0
 \end{equation}
-A monotonic function can be represented relatively well \cite{dugas2009incorporating} by making the function positive ($\ge 0$), which we can use ReLU function \cite{nair2010rectified} to satisfies the condition. The training is standard Q-value objective. Finally, as shown in \cite{mahajan2019maven}, QMIX can suffer from learning sub-optimal action-value function with poor exploration. To prevent this from happening, MAVEN \cite{mahajan2019maven} learns multiple modes of value functions given latent variable $z$, with the following process
+A monotonic function can be represented relatively well \cite{dugas2009incorporating} by making the function positive ($\ge 0$), which we can use ReLU function \cite{nair2010rectified} to satisfies this condition. The training is a standard Q-value objective. Finally, as shown in \cite{mahajan2019maven}, QMIX can suffer from learning sub-optimal action-value function with a poor exploration. To prevent this from happening, MAVEN \cite{mahajan2019maven} learns multiple modes of value functions given latent variable $z$, with the following process
 \begin{itemize}
     \item The value function is conditioned on shared latent variables $z$ which is controlled by hierarchical policy $z = g_\theta(x, s_0)$ where $x$ is value that is sampled from simple distribution $P(x)$
     \item For a given $z$, each joint action-value function is monotonic approximation of optimal action value function $g_{\eta}^a(o^a_{1:t}, a_{1:t}, u^{a}_{1:t-1})$ together with $g_{\phi}(z, a)$ that is a neural network that modify the utility for particular mode of exploration. Now all value function are mixed using $g_{\psi}$ function 
 \end{itemize}
 We will train the Q-network as following 
 \begin{equation}
-    \mathcal{L}_{Q}(\phi, \eta,\psi) = \mathbb{E}_{\pi_a}  \left[ Q(u_t, s_t ; z) - \left[r(u_t, s) + \gamma \max_{u_{t+1}} Q(u_{t+1}, s_{t+1} ; z)\right] \right]
+    \mathcal{L}_{Q}(\phi, \eta,\psi) = \mathbb{E}_{\pi_a}  \left[ Q(s_t, a_t ; z) - \left[r(s_t, a_t) + \gamma \max_{a_{t+1}} Q(s_{t+1}, a_{t+1} ; z)\right] \right]
 \end{equation}
 while the hierarchical policy is trained cumulative rewards $R(\tau, z | \phi, \eta, \psi)= \sum_t r_t$ 
 \begin{equation}
     \mathcal{L}_{RL}(\theta) = \int R(\tau_A | z)P_{\theta}(z | s_0) \ \dby z\dby s_0
 \end{equation}
-To prevent collapse of the latent variable $z$, the mutual information objective for a trajectory $\tau = \{(u_t, s_t)\}$ is introduced where we need $\sigma$ which returns Boltzman policy given the action-value function, while the trajectory is encoded using RNN. Now, the mutual information loss is lower bounded by
+To prevent collapse of the latent variable $z$, the mutual information objective for a trajectory $\tau = \{(u_t, s_t)\}$ is introduced. Now, the mutual information loss is lower bounded by
 \begin{equation}
 \begin{aligned}
     \mathcal{L}_{ML} &= \mathcal{H}(\sigma(\tau)) - \mathcal{H}(\sigma(\tau) | z) = \mathcal{H}(z) - \mathcal{H}(z | \sigma(z)) \\
     &\ge \underbrace{\mathcal{H}(z) + \mathbb{E}_{\sigma(z), z} \left[ \log q_v(z | \sigma(\tau)) \right]}_{\mathcal{L}_v(\phi, \eta, \psi, v)}
 \end{aligned}
 \end{equation}
-which leads to an auxiliary reward as $r^z_{\text{aux}} (z) = \log(q_v(z | \sigma(z))) - \log  (p(z))$. The final objective is 
+where we need $\sigma$, an operator which returns Boltzman policy given the action-value function, while the trajectory is encoded using RNN. This regularization leads to an auxiliary reward as $r^z_{\text{aux}} (z) = \log(q_v(z | \sigma(z))) - \log  (p(z))$. The final objective is 
 \begin{equation}
     \max_{v, \phi, \eta, \psi, \theta} \mathcal{L}_{RL}(\theta) + \lambda_{MI}\mathcal{L}_v(\phi, \eta, \psi, v) - \lambda_{Q}\mathcal{L}_{Q}(\phi, \eta,\psi)
 \end{equation}

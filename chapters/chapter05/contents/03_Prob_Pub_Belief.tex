@@ -93,7 +93,7 @@ Now, we want to infer the unknown given what we can observe:
     &= \frac{P(s_{t+1}, o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1}| a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t})}{P(a^i_t, a^{-i}_t, \mathcal{O}_t, r_t, o^{\pub}_{t+1} | a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t})}
 \end{aligned}
 \end{equation}
-We shall consider the numerator first, since we can see that the current is conditional independent given the current state.
+We shall consider the numerator first. We can see that the current joint distribution at time $t$ is conditional independent given the current state.
 \begin{equation}
 \begin{aligned}
     P(s_{t+1}, &o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t, a^i_t, a^{-i}_t, \mathcal{O}_t, r_t , o^{\pub}_{t+1}| a^{i}_{1:t-1}, a^{-i}_{1:t-1}, \mathcal{O}_{1:t-1}, r_{1:t-1}, o^{\pub}_{1:t}) \\
@@ -133,7 +133,7 @@ Now given the following importance sampling, we can see that we can sample the s
     \end{aligned} \\
 \end{aligned}
 \end{equation}
-We can see above that we can further approximate our equation using sampling from our proposal/variational distribution. Now, we can fine the denominator by marginalization. Given this we have the final posterior being weighted mixture of particles:
+We can see above that we can further approximate our equation using sampling from our proposal/variational distribution. Now, we can find the denominator by marginalization. Given this, we have the final posterior being weighted mixture of particles:
 \begin{equation}
 \begin{aligned}
     P(s_{t+1},& o^{\pri, i}_{t+1}, o^{\pri, -i}_{t+1}, m_t | a^{i}_{1:t}, a^{-i}_{1:t}, \mathcal{O}_{1:T}, r_{1:T}, o^{\pub}_{1:t+1}) \\
@@ -175,10 +175,10 @@ Now, in practice the public agent shall be a weighted sum of underlying state, p
 \end{equation}
 There are two minor issues that we want to consider (that we have mentioned above):
 \begin{itemize}
-    \item The interpretability of $o^{\pri, i, k}_t$ and $o^{\pri, -i, k}_t$. There isn't a lot we can do with this apart from constructing a network that would translate the public agent's private observation into the agent's private observation. Or we can pretrain a network that output the agents' private observation. However, we have to make sure not to change the main public agent's network by backpropagating the local feature, since all the agents must have the same public agent.
-    \item The joint action $P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i}_t, o^{\pri, -i}_t, m_t, o^{\pub}_t)$. After having all the private observation and public observation, we can try to optimize the reconstruction loss on the agents' actions. However, we can further assume that the agents' policies are based on Boltzmann distribution of action-value function. Given this assumption, the maximum-log-likelihood estimation should follow the usual adversarial imitation learning that we have extensively discussed in \cite{finn2016connection, yu2019multi}. For a normal scenario, we simply able to train its action function. As noted before, we shouldn't include any additional information from the agent to help us with the public agent (including the agent's action-value function). 
+    \item The interpretability of $o^{\pri, i, k}_t$ and $o^{\pri, -i, k}_t$. There isn't a lot we can do with this apart from constructing a network that would translate the public agent's private observation into the agent's private observation. Or we can pretrain a neural network that outputs the agents' private observation. However, we have to make sure not to change the main public agent's network by backpropagating the local feature, since all the agents must have the same public agent.
+    \item The joint action $P(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i}_t, o^{\pri, -i}_t, m_t, o^{\pub}_t)$. After having all the private observation and public observation, we can try to optimize the reconstruction loss on the agents' actions. However, we can further assume that the agents' policies are based on Boltzmann distribution of action-value function. Given this assumption, the maximum-log-likelihood estimation should follow the usual adversarial imitation learning that have been extensively discussed in \cite{finn2016connection, yu2019multi}. For a normal scenario, we simply able to train its directly using supervised learning. As noted before, we shouldn't include any additional information from the agent to help us with the public agent (including the agent's action-value function). 
 \end{itemize}
-We would like to state that all the problems above can be lifted if we assume that each agent has its own public agent and trying to model others using oneself or other methods. By ignoring the common knowledge of messages $m_t$, we lose a guarantee that the agents will be in "sync" of each other, thus returning to a problem of equilibrium selection. Finally, we shall consider the individual agent that corresponds on the message, its private observation, and the state. Let's start with the definition of action-value function $Q(s_t, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which is defined as:
+We would like to state that all the problems above can be lifted if we assume that each agent has its own public agent and trying to model others using oneself or other methods. By ignoring the common knowledge of messages $m_t$, we lose a guarantee that the agents will be in \correctquote{sync} with each other, thus returning to a problem of equilibrium selection. Finally, we shall consider the individual agent that corresponds on the message, its private observation, and the state. Let's start with the definition of action-value function $Q(s_t, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which is defined as:
 \begin{equation}
     Q(\{s_t\}^K_{k=1}, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t) = \sum^K_{k=1} W^k_t Q(s_t^k, a^i_t, m_t, o^{\pri, i}_t, o^{\pub}_t)
 \end{equation}

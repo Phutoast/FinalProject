@@ -14,7 +14,7 @@ Starting off with the KL-divergence (we have shown that this is equivalent to EL
 
 \subsection{ROMMEO Optimal Agent's Policy}
 \label{appx:chap3-ROMMEO-agent-last-time}
-We starting by expanding the equation and separate the opponent's model. We then going to see that the objective is equivalent to minimizing the KL-divergence, which by Gibbs' inequality, we can imply that the optimal agent's policy can be found by setting the agent's policy to be equal to the quantity in KL-divergence. 
+We start by expanding the equation and separate the opponent's model. We are going to see that the objective is equivalent to minimizing the KL-divergence, which by Gibbs' inequality, we can imply that the optimal agent's policy can be found by setting the agent's policy to be equal to the quantity in KL-divergence. 
 \begin{equation*}
 \begin{aligned}
     &\mathbb{E}_{q}\brackb{ \beta R(s_T, a^i_T, a^{-i}_T)  - \log \frac{\pi_{\theta}(a^i_T | s_T, a^{-i}_T)}{P_{\prior}(a^i_T | s_T, a^{-i}_T) } - \log \frac{\rho_{\phi}(a^{-i}_T | s_T)}{P_{\prior}(a^{-i}_T | s_T)} + Q(s_T, a^{-i}_T) - Q(s_T, a^{-i}_T) } \\
@@ -29,7 +29,7 @@ We will consider the only part $\circled{1}$ as it depends only on the optimal p
     =& - \kl\bracka{\pi_{\theta}(a^i_T | s_T, a^{-i}_T) \Bigg\| \frac{\exp \bracka{\beta R(s_T, a^i_T, a^{-i}_T)P_{\prior}(a^i_T | s_T, a^{-i}_T}) }{\exp\bracka{Q(s_T, a^{-i}_T)}}  }
 \end{aligned}
 \end{equation*}
-We can maximizing this value by minimizing the KL-divergence. And we can see that we can set $Q(s_T, a^{-i}_T)$ to be normalizing constant. Thus finish the proof. 
+We can maximize this value by minimizing the KL-divergence. And we can see that, we can set $Q(s_T, a^{-i}_T)$ to be normalizing constant. Thus finishes the proof. 
 
 \subsection{ROMMEO Optimal Opponent's Policy}
 \label{appx:chap3-ROMMEO-opponent-last-time}

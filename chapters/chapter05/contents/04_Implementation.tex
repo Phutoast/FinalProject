@@ -1,5 +1,5 @@
 \label{sec:chap5-public-agent-implementation}
-Now, let's consider the implementation of public agent, which is similar to DVRL. Starting with the hidden state calculation for each time step, we have 3 hidden variables that we have to infer
+Now, let's consider the implementation of public agent, which is similar to DVRL. Starting with the hidden state calculation. For each time step, we have 3 hidden variables that we have to infer
 \begin{equation}
 \begin{aligned}
     &u^k_{t-1} \sim \text{Categorical}\bracka{\frac{w^k_{t-1}}{\sum^K_{k=1}w^k_{t-1}}} \\
@@ -29,7 +29,7 @@ where
     &\cdot \frac{P_\theta(a^i_t, a^{-i}_t | s_t^{u^k_t}, o^{\pri, i, k}_t, o^{\pri, -i, k}_t, m_t, o^{\pub}_t) P_\theta(m_t | s_t^{u^k_t}) P_\theta(\mathcal{O}_t | r_t)}{q_\psi(o^{\pri, i, k}_{t+1}, o^{\pri, -i, k}_{t+1} | s_t^{u^k_t}, a^i_t, a^{-i}_t, m_t, o^{\pub}_{t+1}, \mathcal{O}_t, r_t)} 
 \end{aligned}
 \end{equation}
-Now, let's consider the lower agent objective. We are going to start with the definition of the value function $V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which trained to minimize:
+Now, let's consider the lower level agent's objective. We are going to start with the definition of the value function $V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t)$, which trained to minimize:
 \begin{equation}
 \begin{aligned}
 \mathcal{L}_{V} = \mathbb{E}_{\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t\sim \mathcal{D}} \Bigg[\frac{1}{2}\Bigg(&V(\{s_t^k\}^K_{k=1}, m_t, o^{\pri, i}_t, o^{\pub}_t) \\

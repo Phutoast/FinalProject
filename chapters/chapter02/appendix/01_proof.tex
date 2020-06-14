@@ -1,6 +1,6 @@
 \subsection{ELBO from KL-divergence}
 \label{appx:chap2-elbo-kl}
-We will start with the initial equation that we get and then expanded from that 
+We will start with the initial equation that we get and then expand from that 
 \begin{equation*}
     \begin{aligned}
         -\int q_{\phi} (\theta) \log\left( \frac{q_{\phi} (\theta)}{P(\theta | X, Y)} \right) \dby \theta &= \int q_{\phi} (\theta) \log\left( \frac{P(\theta | X, Y)}{q_{\phi} (\theta)} \right) \dby \theta \\ 
@@ -41,4 +41,4 @@ Starting by expanding the integral and algebraic manipulation, we can see that t
         &= \log\left( P(Y | X) \right) \int q_{\phi}(\theta) \dby \theta = \log\left( P(Y | X) \right) \cdot 1
     \end{aligned}
 \end{equation*}
-This can also be seen as putting the rationa of variational distribution using similar technique in appendix \ref{appx:chap2-elbo-gap}.
+This can also be seen as putting the variational distribution using similar technique in appendix \ref{appx:chap2-elbo-jensen}.

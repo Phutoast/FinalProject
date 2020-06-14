@@ -1,7 +1,7 @@
 \subsection{Derivations for closed form solution}
 \label{sec:chap2-derivation-soft-closed-form}
 
-We will base the derivation on \cite{levine2018reinforcement}. The derivation of this will be the basis for \textit{all} derivation of algorithms in this thesis; therefore, we will state full proof within the section. As introduced in section \ref{sec:chap1-MERL-intro}, we would like to find the posterior where the agent is optimal. Let's recall the definition of optimality. 
+We will base the derivation on \cite{levine2018reinforcement}. The derivation of this will be the basis for \textit{all} derivations of the algorithms in this thesis; therefore, we will state full proof within the section. As introduced in section \ref{sec:chap1-MERL-intro}, we would like to find the posterior where the agent is optimal. Let's recall the definition of optimality. 
 \begin{equation}
     P(\mathcal{O}_t = 1 | s_t, a_t) \propto \exp (\beta r (s_t, a_t))
 \end{equation}
@@ -71,7 +71,7 @@ Now, we want to approximate this joint probability using the following graphical
     \label{fig:chap2-single-graphical-approx}
     \end{minipage}
 \end{figure}
-Now, the variational joint probability is equal to 
+Now, the variational joint probability is equal to\footnote{see the equation below}
 \begin{equation}
     q(s_{1:T}, a_{1:T}) = P(s_0) \prod^{T}_{t=1} P(s_{t+1} | s_t, a_t) \pi(a_t | s_t) 
 \end{equation}
@@ -83,7 +83,7 @@ Let's try to maximizing the negative KL-divergence between 2 probability distrib
     &= \mathbb{E}_{q(s_{1:T}, a_{1:T})} \brackb{\sum^{T}_{t=1} \beta r(s_t, a_t) - \log \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)} }
 \end{aligned}
 \end{equation}
-The full expansion will be in the appendix \ref{appx:chap2-ELBO-KL-Single} with alternative Jensen's inequality derivation in appendix \ref{appx:chap2-ELBO-Jensen-Single} for completeness\footnote{We have shown in section \ref{sec:chap2-vi-technique}, and this is going to be the last derivation with Jensen's inequality}, please note that $\tau = (s_{1:T}, a_{1:T})$. We can use a policy gradient to help us on optimizing the objective: that is fine. But, let's consider the closed-form solution to this problem. We are trying to solve it from the last time step and then inductively solving the equation to general time step $t$. Start with the final time step $T$, which we want to maximize the following objective:
+The full expansion will be in the appendix \ref{appx:chap2-ELBO-KL-Single} with alternative Jensen's inequality derivation in appendix \ref{appx:chap2-ELBO-Jensen-Single} for completeness\footnote{We have shown in section \ref{sec:chap2-vi-technique}, and this is going to be the last derivation with Jensen's inequality}, and please note that $\tau = (s_{1:T}, a_{1:T})$. We can use a policy gradient to help us on optimizing the objective: that is fine. But, let's consider the closed-form solution to this problem. We are trying to solve it from the last time step and then inductively solving the equation to general time step $t$. Start with the final time step $T$, which we want to maximize the following objective:
 \begin{equation}
     \mathbb{E}_{q} \left[\beta r(s_T, a_T) - \log \frac{\pi(a_T | s_T)}{P_{\prior}(a_T | s_T)}\right]
 \end{equation}
@@ -128,7 +128,7 @@ Note that, we consider the policy to be the one represented in equation \ref{eqn
 \begin{equation}
     V(s_t) = \mathbb{E}_{a_t \sim \pi(a_t | s_t)} \left[\beta r(s_t, a_t) - \frac{\pi(a_t | s_t)}{P_{\prior}(a_t | s_t)} + \gamma\mathbb{E}_{s_{t+1}}[V(s_{t+1})]\right]
 \end{equation}
-Which we can roll out as the sum of regularized reward. This equality, therefore, has established the connection between the value function and reinforcement learning value function. Before we move to the implementation, let's consider some theoretical property of this Bellman equation. First, we can construct the soft Bellman operator as follows: 
+Which we can roll out as the sum of regularized reward. This equality, therefore, has established the connection between this value function and reinforcement learning value function. Before we move to the implementation, let's consider some theoretical property of this Bellman equation. First, we can construct the soft Bellman operator as follows: 
 \begin{equation}
     \contractop^{\pi} Q(s_t, a_t) = r(s_t, a_t) + \gamma \mathbb{E}_{s_{t+1} \sim p_{s}}\left[ \log \int \exp(Q(s_{t+1}, a)) P_{\prior}(a | s_{t+1}) \dby a \right]
 \end{equation}
@@ -185,4 +185,4 @@ where $\mathcal{D}$ is just the replay memory. The action-value function trainin
 \begin{equation}
     \loss_{\pi}(\phi) = \mathbb{E}_{s_t \sim \mathcal{D}} \left[ \kl\left( \pi_{\phi}(\cdot | s_t) \bigg| \bigg| \frac{\exp(Q_{\theta}(s_t, \cdot)) P_{\prior}(\cdot | s_t)}{Z_{\theta}(s_t)} \right) \right]
 \end{equation}
-The authors also use normalizing flow to get the range of action bounded. We suggested \cite{haarnoja2018softa} for more details.
+The authors also use normalizing flow to get the output of the policy to be bounded within a range. We suggested \cite{haarnoja2018softa} for more details.
